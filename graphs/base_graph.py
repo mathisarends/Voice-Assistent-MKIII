@@ -11,16 +11,15 @@ class BaseGraph:
     """Basisklasse für alle Graph-Workflows in der Anwendung."""
     
     def __init__(
-        self, 
+        self,
         tools: List[BaseTool], 
         model_name: Optional[str] = None
     ):
         self.tools = tools
         self.model_name = model_name or DEFAULT_LLM_MODEL
-        # Hier ist der Fix: State als Datentyp verwenden
         self.graph_builder = StateGraph(State)
         self.llm = ChatAnthropic(model=self.model_name)
-        self.llm_with_tools = self.llm.bind_tools(tools)  # Vereinfacht
+        self.llm_with_tools = self.llm.bind_tools(tools)
         self.memory = MemorySaver()
         
     def build_graph(self) -> StateGraph:
