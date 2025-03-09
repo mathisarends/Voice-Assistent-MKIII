@@ -23,8 +23,6 @@ class YoutubeSummaryState(State):
 
 
 class YoutubeSummaryWorkflow(BaseGraph):
-    """Ein Workflow für die Zusammenfassung eines YouTube-Videos basierend auf einer Beschreibung."""
-    
     SEARCH_QUERY_PROMPT = """
     Du bist ein Experte für YouTube-Suchen. Extrahiere aus der folgenden Anfrage den YouTuber-Namen und das Videothema.
     Formuliere einen präzisen Suchbegriff für YouTube im Format "youtubername thema".
@@ -53,7 +51,6 @@ class YoutubeSummaryWorkflow(BaseGraph):
         self.notion_clipboard_manager = NotionClipboardManager()
     
     def _extract_user_message(self, messages):
-        """Extrahiert die letzte Benutzernachricht aus den Nachrichten."""
         for message in messages:
             if hasattr(message, "type") and message.type == "human":
                 return message.content
@@ -62,7 +59,6 @@ class YoutubeSummaryWorkflow(BaseGraph):
         return ""
         
     def _optimize_search_query_from_prompt(self, state: YoutubeSummaryState) -> Dict[str, Any]:
-        """Optimiert die Suchanfrage basierend auf der Benutzereingabe."""
         messages = state.get("messages", [])
         last_user_message = self._extract_user_message(messages)
         
@@ -76,11 +72,9 @@ class YoutubeSummaryWorkflow(BaseGraph):
         }
     
     async def _find_video(self, search_query: str) -> Dict[str, str]:
-        """Findet ein YouTube-Video basierend auf der Suchanfrage."""
         return await self.youtube_finder.find_youtube_video(search_query)
     
     async def _find_video_url_and_title_by_prompt(self, state: YoutubeSummaryState) -> Dict[str, Any]:
-        """Findet ein YouTube-Video basierend auf der optimierten Suchanfrage."""
         search_query = state.get("search_query", "")
         
         result = await self._find_video(search_query)
@@ -92,7 +86,6 @@ class YoutubeSummaryWorkflow(BaseGraph):
         }
                 
     def _get_transcript_for_youtube_video_by_transcript(self, state: YoutubeSummaryState) -> Dict[str, Any]:
-        """Ruft das Transkript für das identifizierte YouTube-Video ab."""
         video_url = state.get("video_url")
         video_title = state.get("video_title", "")
         
@@ -109,57 +102,28 @@ class YoutubeSummaryWorkflow(BaseGraph):
         }
     
     async def _get_summary_for_youtube_video_by_transcript(self, state: YoutubeSummaryState) -> Dict[str, Any]:
-        """Erstellt eine Zusammenfassung des Video-Transkripts."""
         transcript = state.get("transcript", "")
         video_title = state.get("video_title", "")
+        video_url = state.get("video_url", "")
         
-        if isinstance(transcript, str) and "Fehler" in transcript:
-            return {
-                "summary": "Zusammenfassung nicht möglich: Kein Transkript verfügbar",
-                "messages": [{"role": "assistant", "content": f"Leider konnte ich keine Zusammenfassung erstellen, da kein Transkript für '{video_title}' verfügbar ist."}]
-            }
-        
-        summary = await self.youtube_video_summarizer.create_summary(transcript, video_title)
+        summary = await self.youtube_video_summarizer.create_summary(transcript, video_title, video_url)
 
         return {
             "summary": summary,
             "messages": [{"role": "assistant", "content": f"Ich habe eine Zusammenfassung des Videos '{video_title}' erstellt und bereite sie für die Zwischenablage vor."}]
         }
     
-    def _format_clipboard_content(self, video_title: str, video_url: str, summary: str) -> str:
-        """Formatiert den Inhalt für die Zwischenablage."""
-        return f"""
-        # Zusammenfassung: {video_title}
-        Video-Link: {video_url}
-        
-        ## Zusammenfassung
-        
-        {summary}
-        """
-    
     async def _save_summary_to_clipboard(self, state: YoutubeSummaryState) -> Dict[str, Any]:
-        """Speichert die Zusammenfassung in der Zwischenablage für Notion."""
         summary = state.get("summary", "")
         video_title = state.get("video_title", "")
-        video_url = state.get("video_url", "")
         
-        if not summary or summary == "Zusammenfassung nicht möglich: Kein Transkript verfügbar":
-            return {
-                "messages": [{"role": "assistant", "content": f"Ich konnte keine Zusammenfassung für '{video_title}' in die Zwischenablage kopieren, da keine Zusammenfassung erstellt werden konnte."}]
-            }
-        
-        content = self._format_clipboard_content(video_title, video_url, summary)
-        
-        await self.notion_clipboard_manager.append_to_clipboard(content)
+        await self.notion_clipboard_manager.append_to_clipboard(summary)
         
         return {
             "messages": [{"role": "assistant", "content": f"✅ Fertig! Ich habe eine Zusammenfassung des Videos '{video_title}' erstellt und in die Zwischenablage kopiert. Du kannst sie jetzt in Notion einsehen."}]
         }
         
     def build_graph(self):
-        """
-        Baut den Graphen für den YouTube-Summary-Workflow.
-        """
         # Knoten zum Graphen hinzufügen
         self.graph_builder.add_node("start_node", lambda state: state)
         self.graph_builder.add_node("optimize_search_query", self._optimize_search_query_from_prompt)
@@ -186,9 +150,9 @@ class YoutubeSummaryWorkflow(BaseGraph):
         
 async def main():
     workflow = YoutubeSummaryWorkflow()
-    results = await workflow.run("Ich möchte das Youtube Video von Ali Abdaal zu dem Thema 'Why you feel behind in live' zusammenfassen lassen.")
+    results = await workflow.arun("Ich möchte das Youtube Video von Ali Abdaal zu dem Thema 'Why you feel behind in live' zusammenfassen lassen.")
     for result in results:
-        print(result["messages"][-1]["content"])
+        print(result["messages"][-1].content)
     
 if __name__ == "__main__":
     asyncio.run(main())
