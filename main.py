@@ -2,6 +2,11 @@ from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry
 from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.document_workflow import DocumentWorkflow
+from graphs.workflows.volume_control_workflow import VolumeControlWorkflow
+from graphs.workflows.youtube_summary_workflow import YoutubeSummaryWorkflow
+
+# TODO: nehmen diesem Dispatcher auch noch einen Sub-Dispatcher machen | wir können auch in verschiedene Themen unterteilen z.B. wenn Notion dann Notion-Dispatcher und
+# dann weiter machen auf die einzelnen Notion-Tools könnte die Accuracy hier weiter verbessern
 
 def register_workflows():
     """Registriert alle verfügbaren Workflows in der Registry."""
@@ -18,6 +23,21 @@ def register_workflows():
         "Erstellt Dokumente und Zusammenfassungen ohne externe Recherche",
         ["Dokumentenerstellung", "Markdown", "Formatierung"]
     )
+    
+    WorkflowRegistry.register(
+        "youtube_summary",
+        YoutubeSummaryWorkflow,
+        "Findet YouTube-Videos, erstellt Transkripte und generiert Zusammenfassungen",
+        ["YouTube", "Transkription", "Zusammenfassung", "Video"]
+    )
+    
+    WorkflowRegistry.register(
+        "volume_control",
+        VolumeControlWorkflow,
+        "Steuert die Systemlautstärke und ermöglicht Audio-Feedback",
+        ["Audio", "Lautstärke"]
+    )
+    
 
 def demo_dispatcher():
     """Demonstriert die Verwendung des Dispatchers für intelligentes Routing."""
@@ -26,9 +46,13 @@ def demo_dispatcher():
     dispatcher = WorkflowDispatcher()
     
     queries = [
-        "Recherchiere die neuesten Informationen zu LangGraph und erstelle eine Zusammenfassung",
-        "Erstelle mir ein schönes Markdown-Dokument mit den wichtigsten Python-Libraries für KI",
-        "Was ist der Unterschied zwischen LangChain und LangGraph?",
+        # "Recherchiere die neuesten Informationen zu LangGraph und erstelle eine Zusammenfassung",
+        # "Erstelle mir ein schönes Markdown-Dokument mit den wichtigsten Python-Libraries für KI",
+        # "Was ist der Unterschied zwischen LangChain und LangGraph?",
+        # YouTube-bezogene Anfragen hinzufügen
+        # "Fasse das Video von Ali Abdaal zum Thema Produktivität zusammen",
+        # "Ich möchte eine Zusammenfassung des neuesten TED-Talk Videos zu künstlicher Intelligenz"
+        "Setze die Lautstärke auf 5"
     ]
     
     for i, query in enumerate(queries):
@@ -58,7 +82,6 @@ def demo_direct_workflows():
 def main():
     register_workflows()
     
-    # Demo: Dispatcher für intelligentes Routing
     demo_dispatcher()
     
     

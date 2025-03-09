@@ -166,12 +166,3 @@ class YoutubeSummaryWorkflow(BaseGraph):
         self.graph_builder.add_edge("create_spoken_summary", "save_to_clipboard")
         
         self.graph_builder.add_edge("save_to_clipboard", END)
-        
-async def main():
-    workflow = YoutubeSummaryWorkflow()
-    results = await workflow.arun("Ich möchte das Youtube Video von Ali Abdaal zu dem Thema 'Why you feel behind in live' zusammenfassen lassen.")
-    for result in results:
-        print(result["messages"][-1].content)
-    
-if __name__ == "__main__":
-    asyncio.run(main())
