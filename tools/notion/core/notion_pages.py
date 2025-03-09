@@ -18,7 +18,7 @@ class NotionPages:
         for name, id in PROJECT_PAGES.items():
             if id == page_id:
                 return name
-        return "UNKNOWN_PROJECT"    
+        return "UNKNOWN_PROJECT"
 
     @staticmethod
     def list_all_project_pages() -> List[str]:
