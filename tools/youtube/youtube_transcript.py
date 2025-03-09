@@ -1,30 +1,28 @@
 # youtube_transcript.py
 import re
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
 
 
 class YoutubeTranscript:
     """Klasse zum Abrufen von Transkripten aus YouTube-Videos."""
     
-    def get_transcript(self, url: str, format_text: bool = True):
+    def get_transcript_by_url(self, url: str):
         try:
             video_id = self._extract_video_id(url)
             
             if not video_id:
-                return "Fehler: Ungültige YouTube-URL."
+                return {"transcript": "Fehler: Ungültige YouTube-Video-ID."}
             
+            # Abrufen des Transkripts als Liste von Dictionaries
             transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
             
-            if format_text:
-                formatter = TextFormatter()
-                formatted_transcript = formatter.format_transcript(transcript_list)
-                return formatted_transcript
+            # Konvertieren in einen zusammenhängenden Text
+            transcript_text = " ".join([entry.get('text', '') for entry in transcript_list])
             
-            return transcript_list
-            
+            return transcript_text
+                
         except Exception as e:
-            return f"Fehler beim Abrufen des Transkripts: {str(e)}"
+            return {"transcript": f"Fehler beim Abrufen des Transkripts: {str(e)}"}
     
     def _extract_video_id(self, url: str) -> str:
         patterns = [
@@ -38,3 +36,10 @@ class YoutubeTranscript:
                 return match.group(1) if len(match.groups()) == 1 else match.group(5)
         
         return ""
+    
+    
+if __name__ == "__main__":
+    yt = YoutubeTranscript()
+    url = "https://www.youtube.com/watch?v=NWfIrmIgaCU&t=7s&ab_channel=AliAbdaal"
+    result = yt.get_transcript_by_url(url)
+    print(result)

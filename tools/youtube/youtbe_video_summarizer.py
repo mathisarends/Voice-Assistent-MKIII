@@ -2,8 +2,6 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
 class YoutubeVideoSummarizer:
-
-    
     def __init__(self, model_name: str = "gpt-4o", temperature: float = 0.3):
 
         self.llm = ChatOpenAI(model_name=model_name, temperature=temperature)
@@ -26,12 +24,13 @@ class YoutubeVideoSummarizer:
         """)
     
     async def create_summary(self, transcript: str, video_title=None):
-        cleaned_transcript = " ".join(transcript.split())
+        print("="*80)
+        print(transcript)
         
         if video_title:
-            context = f"Titel des Videos: {video_title}\n\n{cleaned_transcript}"
+            context = f"Titel des Videos: {video_title}\n\n{transcript}"
         else:
-            context = cleaned_transcript
+            context = transcript
         
         chain = self.prompt | self.llm
         response = await chain.ainvoke({"transcript": context})
