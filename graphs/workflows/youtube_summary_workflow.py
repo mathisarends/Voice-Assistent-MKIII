@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, override
 
 from langchain_anthropic import ChatAnthropic
 from config.settings import DEFAULT_LLM_MODEL
@@ -79,11 +79,11 @@ class YoutubeSummaryWorkflow(BaseGraph):
         """Findet ein YouTube-Video basierend auf der Suchanfrage."""
         return await self.youtube_finder.find_youtube_video(search_query)
     
-    def _find_video_url_and_title_by_prompt(self, state: YoutubeSummaryState) -> Dict[str, Any]:
+    async def _find_video_url_and_title_by_prompt(self, state: YoutubeSummaryState) -> Dict[str, Any]:
         """Findet ein YouTube-Video basierend auf der optimierten Suchanfrage."""
         search_query = state.get("search_query", "")
         
-        result = asyncio.run(self._find_video(search_query))
+        result = await self._find_video(search_query)
         
         return {
             "video_url": result.get("url"),
@@ -108,11 +108,7 @@ class YoutubeSummaryWorkflow(BaseGraph):
             "messages": [{"role": "assistant", "content": f"Ich habe das Transkript für '{video_title}' erfolgreich abgerufen und bereite nun die Zusammenfassung vor."}]
         }
     
-    async def _create_summary(self, transcript: str, video_title: str) -> str:
-        """Erstellt eine Zusammenfassung des Transkripts."""
-        return await self.youtube_video_summarizer.create_summary(transcript, video_title)
-    
-    def _get_summary_for_youtube_video_by_transcript(self, state: YoutubeSummaryState) -> Dict[str, Any]:
+    async def _get_summary_for_youtube_video_by_transcript(self, state: YoutubeSummaryState) -> Dict[str, Any]:
         """Erstellt eine Zusammenfassung des Video-Transkripts."""
         transcript = state.get("transcript", "")
         video_title = state.get("video_title", "")
@@ -123,7 +119,7 @@ class YoutubeSummaryWorkflow(BaseGraph):
                 "messages": [{"role": "assistant", "content": f"Leider konnte ich keine Zusammenfassung erstellen, da kein Transkript für '{video_title}' verfügbar ist."}]
             }
         
-        summary = asyncio.run(self._create_summary(transcript, video_title))
+        summary = await self.youtube_video_summarizer.create_summary(transcript, video_title)
 
         return {
             "summary": summary,
@@ -141,7 +137,7 @@ class YoutubeSummaryWorkflow(BaseGraph):
         {summary}
         """
     
-    def _save_summary_to_clipboard(self, state: YoutubeSummaryState) -> Dict[str, Any]:
+    async def _save_summary_to_clipboard(self, state: YoutubeSummaryState) -> Dict[str, Any]:
         """Speichert die Zusammenfassung in der Zwischenablage für Notion."""
         summary = state.get("summary", "")
         video_title = state.get("video_title", "")
@@ -154,7 +150,7 @@ class YoutubeSummaryWorkflow(BaseGraph):
         
         content = self._format_clipboard_content(video_title, video_url, summary)
         
-        asyncio.run(self.notion_clipboard_manager.append_to_clipboard(content))
+        await self.notion_clipboard_manager.append_to_clipboard(content)
         
         return {
             "messages": [{"role": "assistant", "content": f"✅ Fertig! Ich habe eine Zusammenfassung des Videos '{video_title}' erstellt und in die Zwischenablage kopiert. Du kannst sie jetzt in Notion einsehen."}]
@@ -187,9 +183,12 @@ class YoutubeSummaryWorkflow(BaseGraph):
         self.graph_builder.add_edge("get_transcript", "create_summary")
         self.graph_builder.add_edge("create_summary", "save_to_clipboard")
         self.graph_builder.add_edge("save_to_clipboard", END)
-    
-if __name__ == "__main__":
+        
+async def main():
     workflow = YoutubeSummaryWorkflow()
-    results = workflow.run("Ich möchte das Youtube Video von Ali Abdaal zu dem Thema 'Why you feel behind in live' zusammenfassen lassen.")
+    results = await workflow.run("Ich möchte das Youtube Video von Ali Abdaal zu dem Thema 'Why you feel behind in live' zusammenfassen lassen.")
     for result in results:
         print(result["messages"][-1]["content"])
+    
+if __name__ == "__main__":
+    asyncio.run(main())

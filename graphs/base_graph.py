@@ -48,16 +48,6 @@ class BaseGraph:
         return self.graph_builder.compile(checkpointer=self.memory)
     
     def run(self, input_message: str, thread_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        """
-        Führt den Graphen mit einer Benutzereingabe aus.
-        
-        Args:
-            input_message: Die Benutzereingabe
-            thread_id: Optional. Eine eindeutige ID für den Thread
-            
-        Returns:
-            Die Ergebnisse der Ausführung
-        """
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
@@ -69,6 +59,24 @@ class BaseGraph:
         )
         
         for event in events:
+            if "messages" in event:
+                event["messages"][-1].pretty_print()
+                results.append(event)
+                
+        return results
+    
+    async def arun(self, input_message: str, thread_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        graph = self.build_graph()
+        config = {"configurable": {"thread_id": thread_id or "1"}}
+        
+        results = []
+        events = graph.astream(
+            {"messages": [{"role": "user", "content": input_message}]},
+            config,
+            stream_mode="values",
+        )
+        
+        async for event in events:
             if "messages" in event:
                 event["messages"][-1].pretty_print()
                 results.append(event)
