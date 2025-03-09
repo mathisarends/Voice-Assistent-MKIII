@@ -7,6 +7,8 @@ from states.state_definitions import State
 from tools.base import BaseTool
 from config.settings import DEFAULT_LLM_MODEL
 
+# TODO: Was hier auch cool wäre wenn das hier yielden würde.
+
 class BaseGraph:
     """Basisklasse für alle Graph-Workflows in der Anwendung."""
     

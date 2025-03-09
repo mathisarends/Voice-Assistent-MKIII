@@ -42,4 +42,3 @@ if __name__ == "__main__":
     yt = YoutubeTranscript()
     url = "https://www.youtube.com/watch?v=NWfIrmIgaCU&t=7s&ab_channel=AliAbdaal"
     result = yt.get_transcript_by_url(url)
-    print(result)
