@@ -52,7 +52,7 @@ async def main():
     # print(await notion_todo_manager.get_daily_top_tasks())
     
     # Get TODOs for a project by name
-    print("TODOs für JARVIS_PROJECT:")
+    # print("TODOs für JARVIS_PROJECT:")
     print(await notion_todo_manager.get_todos_by_project(project_name="JARVIS_PROJECT"))
     
     # Example of adding a new TODO
