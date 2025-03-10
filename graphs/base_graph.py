@@ -14,14 +14,14 @@ class BaseGraph:
     
     def __init__(
         self,
-        tools: List[BaseTool], 
+        tools: Optional[List[BaseTool]] = None,
         model_name: Optional[str] = None
     ):
-        self.tools = tools
+        self.tools = tools or []
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.graph_builder = StateGraph(State)
         self.llm = ChatAnthropic(model=self.model_name)
-        self.llm_with_tools = self.llm.bind_tools(tools)
+        self.llm_with_tools = self.llm.bind_tools(self.tools)
         self.memory = MemorySaver()
         
     def build_graph(self) -> StateGraph:

@@ -1,8 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
-
-from agents.tools.notion.core.abstract_notion_client import AbstractNotionClient
+import asyncio
+from tools.notion.core.abstract_notion_client import AbstractNotionClient
 
 class NotionUtility(AbstractNotionClient):
     """Utility class for general Notion operations."""
@@ -79,6 +76,15 @@ class NotionUtility(AbstractNotionClient):
         return "Unnamed Page"
     
     
+async def main():
+    notion_utility_manager = NotionUtility()
+    # return await notion_utility_manager.get_accessible_pages()
+    
+    SECOND_BRAIN_ID = "1a6389d5-7bd3-80c5-9a87-e90b034989d0"
+    SECOND_BRAIN_DATABASE = "1a6389d5-7bd3-8097-aa38-e93cb052615a"
+    
+    return await notion_utility_manager.get_database_schema(SECOND_BRAIN_DATABASE)
+    
 if __name__ == "__main__":
     util = NotionUtility()
 
@@ -87,4 +93,4 @@ if __name__ == "__main__":
     # - TODOs & Ideen (ID: 1a6389d5-7bd3-80b2-a8a7-e1e93f4d8dac)
     # - Wissens & Notizen Datenbank  1a6389d5-7bd3-8097-aa38-e93cb052615a
 
-    print(util.get_database_schema("1a6389d5-7bd3-8097-aa38-e93cb052615a"))
+    print(asyncio.run(main()))

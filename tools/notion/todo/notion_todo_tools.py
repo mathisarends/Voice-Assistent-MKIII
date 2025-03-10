@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from tools.notion.todo.notion_todo_manager import NotionTodoManager
 from tools.notion.todo.todo_models import TodoPriority
 
+# TODO_ Die hier in weiter Domänen aufspeichern.
 
 class GetTodosByProjectInput(BaseModel):
     project_name: str = Field(description="Der Name des Projekts, für das TODOs abgefragt werden sollen")

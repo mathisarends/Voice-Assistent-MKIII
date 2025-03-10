@@ -2,6 +2,7 @@ from typing import Optional
 from graphs.base_graph import BaseGraph
 from tools.notion.todo.notion_todo_tools import NotionAddTodoTool, NotionGetDailyTopTasksTool, NotionGetTodosByProjectTool
 
+# Kleinen Graphen für den get Tasks by Project.
 class NotionTodoWorkflow(BaseGraph):
     """Ein Workflow für Recherche und Dokumentation."""
     
@@ -13,7 +14,6 @@ class NotionTodoWorkflow(BaseGraph):
         tools = [notion_add_todo_tool, notion_get_todos_by_project_tool, notion_get_daily_top_tasks_tool]
         
         super().__init__(tools, model_name)
-
 
 if __name__ == "__main__":
     notion_todo_workflow = NotionTodoWorkflow()
