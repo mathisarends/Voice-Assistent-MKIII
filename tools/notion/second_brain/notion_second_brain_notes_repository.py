@@ -1,6 +1,8 @@
+from textwrap import dedent
 from typing import Dict, Any, Optional, TypedDict
 from tools.notion.core.abstract_notion_client import AbstractNotionClient
 from config.notion_config import NOTION_DATABASES
+from tools.notion.core.parsing.notion_markdown_parser import NotionMarkdownParser
 
 class NoteInfo(TypedDict):
     """Definition für die Informationen einer Notiz."""
@@ -77,22 +79,34 @@ class NotionNotesRepository(AbstractNotionClient):
         }
         
         if content:
-            request_body["children"] = [
-                {
-                    "object": "block",
-                    "type": "paragraph",
-                    "paragraph": {
-                        "rich_text": [
-                            {
-                                "type": "text",
-                                "text": {
-                                    "content": content
+            content = dedent(content)  # Entfernt unnötige Einrückungen
+            
+            # Verwende den Markdown-Parser
+            content_blocks = NotionMarkdownParser.parse_markdown(content)
+            
+            if content_blocks:
+                for block in content_blocks:
+                    block["object"] = "block"
+                
+                request_body["children"] = content_blocks
+            else:
+                request_body["children"] = [
+                    {
+                        "object": "block",
+                        "type": "paragraph",
+                        "paragraph": {
+                            "rich_text": [
+                                {
+                                    "type": "text",
+                                    "text": {
+                                        "content": content
+                                    }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     }
-                }
-            ]
+                ]
+                
         
         response = await self._make_request("post", "pages", request_body)
         

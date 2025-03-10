@@ -2,8 +2,6 @@ from tools.base import BaseTool
 from config.settings import TAVILY_MAX_RESULTS
 from langchain_community.tools.tavily_search import TavilySearchResults
 
-
-
 class TavilySearchTool(BaseTool):
     """Tool für die Tavily-Websuche mit zusätzlichen Optionen für Quellenpräferenzen."""
     
@@ -36,21 +34,3 @@ class TavilySearchTool(BaseTool):
     
     def _run(self, query: str) -> str:
         return self._tavily_tool.invoke(query)
-    
-    @classmethod
-    def create_github_focused(cls, max_results=None):
-        """Factory-Methode für ein GitHub-fokussiertes Suchtool."""
-        return cls(
-            max_results=max_results,
-            include_domains=["github.com", "stackoverflow.com", "dev.to"],
-            search_depth="advanced"
-        )
-    
-    @classmethod
-    def create_with_preferred_sources(cls, preferred_domains, max_results=None):
-        """Factory-Methode für ein Suchtool mit benutzerdefinierten bevorzugten Quellen."""
-        return cls(
-            max_results=max_results,
-            include_domains=preferred_domains,
-            search_depth="advanced"
-        )

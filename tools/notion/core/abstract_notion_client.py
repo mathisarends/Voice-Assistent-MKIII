@@ -43,4 +43,5 @@ class AbstractNotionClient(ABC):
             return response
 
         except httpx.HTTPStatusError as e:
+            print("Fehler ist passiert Fehler ", e)
             return {"error": f"API request failed: {str(e)}"}
