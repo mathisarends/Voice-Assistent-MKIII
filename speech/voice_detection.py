@@ -10,7 +10,7 @@ import logging
 load_dotenv()
 
 class WakeWordListener:
-    def __init__(self, wakeword="computer", sensitivity=0.7):
+    def __init__(self, wakeword="picovoice", sensitivity=0.8):
         self.logger = logging.getLogger(self.__class__.__name__)
         
         if not 0.0 <= sensitivity <= 1.0:

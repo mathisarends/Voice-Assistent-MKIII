@@ -1,0 +1,103 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+
+from speech.voice_detection import WakeWordListener
+from speech.recognition.speech_recorder import SpeechRecorder
+from speech.recognition.audio_transcriber import AudioTranscriber
+
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("assistant")
+
+class AudioAssistant:
+    """Einfache Klasse für Sprachassistenten-Logik ohne externe APIs"""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info("Initialisiere Audio-Assistenten")
+        
+    async def process_and_respond(self, user_text):
+        """Verarbeitet Benutzereingabe und gibt eine Antwort zurück"""
+        self.logger.info("Verarbeite Anfrage: %s", user_text)
+        
+        # Hier könnte später die Integration mit einem echten Chat-Assistenten erfolgen
+        # Aktuell einfache Echo-Antwort
+        response = f"Sie sagten: {user_text}"
+        
+        self.logger.info("Antwort: %s", response)
+        return response
+        
+    async def speak_response(self, user_text):
+        """Generiert eine Antwort und würde sie aussprechen"""
+        response = await self.process_and_respond(user_text)
+        
+        # Hier könnte später Text-to-Speech eingebaut werden
+        print(f"🤖 Assistenten-Antwort: {response}")
+        return response
+
+@asynccontextmanager
+async def create_wakeword_listener(wakeword="computer"):
+    """Erstellt einen WakeWordListener als async context manager"""
+    listener = WakeWordListener(wakeword=wakeword)
+    try:
+        yield listener
+    finally:
+        listener.cleanup()
+        
+async def main():
+    # Komponenten initialisieren
+    speech_recorder = SpeechRecorder()
+    audio_transcriber = AudioTranscriber()
+    assistant = AudioAssistant()
+    
+    logger.info("🚀 Starte den Sprachassistenten")
+    
+    async with create_wakeword_listener(wakeword="computer") as wakeword_listener:
+        try:
+            logger.info("🎤 Warte auf Wake-Word...")
+            
+            # Hauptschleife
+            while True:
+                # Auf Wake-Word warten
+                if wakeword_listener.listen_for_wakeword():
+                    logger.info("🔔 Wake-Word erkannt, starte Sprachaufnahme")
+                    
+                    # Temporäre Deaktivierung des Wake-Word-Listeners durch Stoppen
+                    # der is_listening Flag (ersetzt die pause_listening Methode)
+                    was_listening = wakeword_listener.is_listening
+                    wakeword_listener.is_listening = False
+                    
+                    try:
+                        audio_data = speech_recorder.record_audio()
+                        
+                        user_prompt = await audio_transcriber.transcribe_audio(audio_data, vocabulary="Wetterbericht, Abendroutine")
+                        
+                        if not user_prompt or user_prompt.strip() == "":
+                            logger.info("⚠️ Keine Sprache erkannt oder leerer Text")
+                            continue
+                        
+                        logger.info("🗣 Erkannt: %s", user_prompt)
+                        
+                        await assistant.speak_response(user_prompt)
+                            
+                    except Exception as e:
+                        logger.error("Fehler bei der Sprachverarbeitung: %s", e)
+                        
+                    finally:
+                        wakeword_listener.is_listening = was_listening
+                        logger.info("🎤 Warte wieder auf Wake-Word...")
+
+        except KeyboardInterrupt:
+            logger.info("🛑 Programm manuell beendet.")
+            
+        except Exception as e:
+            logger.error("❌ Unerwarteter Fehler: %s", e)
+
+if __name__ == "__main__":
+    asyncio.run(main())
