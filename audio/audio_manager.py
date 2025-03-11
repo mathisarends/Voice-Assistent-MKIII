@@ -1,65 +1,62 @@
 import os
-import threading
+from pathlib import Path
+from typing import Dict, List
 import pygame
+import threading
 from io import BytesIO
 from pydub import AudioSegment
-from typing import Dict
 
-class SimpleAudio:
-    """Eine schlanke, einfach zu nutzende Audio-Klasse."""
-    
-    # Singleton-Instanz
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(SimpleAudio, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-    
-    def __init__(self):
-        if self._initialized:
-            return
-            
-        self._initialized = True
-        self.base_path = os.path.dirname(os.path.abspath(__file__))
+class AudioManager:
+    """Erstellt automatisch ein Mapping aller Audiodateien im System."""
+    def __init__(self, root_dir: str = "audio/sounds"):
+        # Basisverzeichnis setzen
+        self.project_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.audio_dir = self.project_dir / root_dir
         
-        # Mixer initialisieren
+        self.sound_map: Dict[str, Dict] = {}
+        
         pygame.mixer.init()
         
-        # Sound-Cache
-        self._sounds: Dict[str, str] = {}
+        # Thread-Lock für Audiowiedergabe
         self._lock = threading.Lock()
-    
-    def register(self, sound_id: str, file_path: str) -> bool:
-        """
-        Registriert einen Sound ohne ihn zu laden.
         
-        Args:
-            sound_id: Name/ID des Sounds
-            file_path: Pfad zur Sound-Datei
+        self._discover_sounds()
+    
+    def _discover_sounds(self):
+        """Durchsucht rekursiv das Audio-Verzeichnis nach Sounddateien."""
+        print(f"🔍 Durchsuche Verzeichnis: {self.audio_dir}")
+        
+        if not self.audio_dir.exists():
+            print(f"❌ Verzeichnis nicht gefunden: {self.audio_dir}")
+            return
+        
+        # Rekursiv alle MP3-Dateien finden
+        sound_files = list(self.audio_dir.glob("**/*.mp3"))
+        
+        if not sound_files:
+            print(f"❌ Keine Sounddateien gefunden in: {self.audio_dir}")
+            return
+        
+        for sound_file in sound_files:
+            rel_path = sound_file.relative_to(self.audio_dir)
             
-        Returns:
-            True wenn erfolgreich, False sonst
-        """
-        try:
-            # Konvertiere zu absolutem Pfad wenn nötig
-            if not os.path.isabs(file_path):
-                full_path = os.path.join(self.base_path, file_path)
-            else:
-                full_path = file_path
-                
-            if not os.path.exists(full_path):
-                print(f"Datei nicht gefunden: {full_path}")
-                return False
-                
-            # Nur Pfad speichern
-            self._sounds[sound_id] = full_path
-            return True
+            category = rel_path.parts[0] if len(rel_path.parts) > 1 else "default"
             
-        except Exception as e:
-            print(f"Fehler beim Registrieren von '{sound_id}': {e}")
-            return False
+            filename = sound_file.name
+            
+            # Sound-ID generieren (letzter Teil des Dateinamens nach Bindestrichen)
+            # z.B. "get-up-aurora.mp3" -> "aurora"
+            parts = sound_file.stem.split("-")
+            sound_id = parts[-1] if len(parts) > 1 else sound_file.stem
+            
+            # Erstelle Eintrag im Sound-Map
+            self.sound_map[sound_id] = {
+                "path": str(sound_file),
+                "category": category,
+                "filename": filename
+            }
+        
+        print(f"✅ {len(self.sound_map)} Sounds gefunden und gemappt.")
     
     def play(self, sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
         """
@@ -73,10 +70,10 @@ class SimpleAudio:
         Returns:
             True wenn erfolgreich, False sonst
         """
-        if sound_id not in self._sounds:
-            print(f"Sound '{sound_id}' nicht registriert")
+        if sound_id not in self.sound_map:
+            print(f"❌ Sound '{sound_id}' nicht gefunden")
             return False
-            
+        
         if block:
             # Im aktuellen Thread abspielen
             return self._play_sound(sound_id, volume)
@@ -93,8 +90,8 @@ class SimpleAudio:
         """Interne Methode zum Abspielen eines Sounds."""
         with self._lock:
             try:
-                # Sound laden
-                sound_path = self._sounds[sound_id]
+                sound_path = self.sound_map[sound_id]["path"]
+                
                 sound = AudioSegment.from_file(sound_path)
                 
                 # Audio in Bytes konvertieren
@@ -102,23 +99,20 @@ class SimpleAudio:
                 sound.export(audio_io, format="wav")
                 audio_io.seek(0)
                 
-                # Sound als pygame Sound-Objekt laden
                 pygame_sound = pygame.mixer.Sound(audio_io)
                 
                 # Lautstärke setzen
                 pygame_sound.set_volume(max(0.0, min(1.0, volume)))
                 
-                # Abspielen
                 pygame_sound.play()
                 
-                # Warten bis Abspielen beendet
                 while pygame.mixer.get_busy():
                     pygame.time.wait(100)
                     
                 return True
                 
             except Exception as e:
-                print(f"Fehler beim Abspielen von '{sound_id}': {e}")
+                print(f"❌ Fehler beim Abspielen von '{sound_id}': {e}")
                 return False
             finally:
                 # Ressourcen freigeben
@@ -130,32 +124,23 @@ class SimpleAudio:
         pygame.mixer.stop()
 
 
-_audio = SimpleAudio()
+_mapper = None
 
-def register(sound_id: str, file_path: str) -> bool:
-    """Registriert einen Sound für spätere Verwendung."""
-    # Normalisiere Pfad (konvertiert / und \ konsistent)
-    normalized_path = os.path.normpath(file_path)
-    return _audio.register(sound_id, normalized_path)
+def get_mapper(root_dir: str = "audio/sounds") -> AudioManager:
+    """Gibt die globale SoundMapper-Instanz zurück."""
+    global _mapper
+    if _mapper is None:
+        _mapper = AudioManager(root_dir)
+    return _mapper
 
 def play(sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
-    """Spielt einen registrierten Sound ab."""
-    return _audio.play(sound_id, block, volume)
+    """Spielt einen Sound ab."""
+    return get_mapper().play(sound_id, block, volume)
 
-def stop():
-    """Stoppt alle laufenden Sounds."""
-    _audio.stop()
-
-
-# Beispielverwendung
 if __name__ == "__main__":
-    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    audio_path = os.path.join(project_dir, "audio", "get_up_sounds", "get-up-aurora.mp3")
-    register("aurora", audio_path)
+    print("🔊 Sound-System wird initialisiert...")
     
-    # Nicht-blockierend abspielen
     play("aurora")
-    print("Diese Nachricht erscheint sofort!")
     
-    import time
-    import time.sleep(10)
+    import time 
+    time.sleep(10)
