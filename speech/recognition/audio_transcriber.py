@@ -1,3 +1,5 @@
+import time
+import os
 from openai import OpenAI
 
 class AudioTranscriber:
@@ -9,6 +11,8 @@ class AudioTranscriber:
         print("📝 Sende Audiodatei an OpenAI...")
         
         try:
+            start_time = time.time()
+            
             with open(filename, "rb") as audio_file:
                 transcription = self.openai.audio.transcriptions.create(
                     model="whisper-1", 
@@ -16,6 +20,11 @@ class AudioTranscriber:
                     response_format="text",
                     # prompt="" kann optionale hinzugefügt werden
                 )
+            
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"⏱️ API-Antwortzeit: {elapsed_time:.2f} Sekunden")
+            print(f"📊 Dateigröße: {os.path.getsize(filename) / 1024:.2f} KB")
 
             return transcription  
             

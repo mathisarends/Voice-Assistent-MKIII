@@ -1,6 +1,9 @@
 from speech.recognition.audio_transcriber import AudioTranscriber
 from speech.recognition.speech_recorder import SpeechRecorder
 
+from dotenv import load_dotenv
+load_dotenv()
+
 if __name__ == "__main__":
     speech_recorder = SpeechRecorder()
     audio_transcriber = AudioTranscriber()
