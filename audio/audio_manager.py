@@ -20,6 +20,9 @@ class AudioManager:
         # Thread-Lock für Audiowiedergabe
         self._lock = threading.Lock()
         
+        # Unterstützte Audioformate
+        self.supported_formats = [".mp3", ".wav"]
+        
         self._discover_sounds()
     
     def _discover_sounds(self):
@@ -30,8 +33,12 @@ class AudioManager:
             print(f"❌ Verzeichnis nicht gefunden: {self.audio_dir}")
             return
         
-        # Rekursiv alle MP3-Dateien finden
-        sound_files = list(self.audio_dir.glob("**/*.mp3"))
+        # Liste für alle gefundenen Sounddateien
+        sound_files = []
+        
+        # Alle unterstützten Formate suchen
+        for format_ext in self.supported_formats:
+            sound_files.extend(list(self.audio_dir.glob(f"**/*{format_ext}")))
         
         if not sound_files:
             print(f"❌ Keine Sounddateien gefunden in: {self.audio_dir}")
@@ -44,19 +51,54 @@ class AudioManager:
             
             filename = sound_file.name
             
-            # Sound-ID generieren (letzter Teil des Dateinamens nach Bindestrichen)
-            # z.B. "get-up-aurora.mp3" -> "aurora"
-            parts = sound_file.stem.split("-")
-            sound_id = parts[-1] if len(parts) > 1 else sound_file.stem
+            sound_id = sound_file.stem
             
             # Erstelle Eintrag im Sound-Map
             self.sound_map[sound_id] = {
                 "path": str(sound_file),
                 "category": category,
-                "filename": filename
+                "filename": filename,
+                "format": sound_file.suffix.lower()
             }
         
         print(f"✅ {len(self.sound_map)} Sounds gefunden und gemappt.")
+        
+        # Zeige Statistik der gefundenen Formate
+        format_stats = {}
+        for info in self.sound_map.values():
+            format_ext = info["format"]
+            format_stats[format_ext] = format_stats.get(format_ext, 0) + 1
+        
+        for fmt, count in format_stats.items():
+            print(f"  - {fmt}: {count} Dateien")
+    
+    def get_sounds_by_category(self, category: str) -> Dict[str, Dict]:
+        """Gibt alle Sounds einer bestimmten Kategorie zurück."""
+        return {
+            sound_id: info for sound_id, info in self.sound_map.items()
+            if info["category"] == category
+        }
+    
+    def get_categories(self) -> List[str]:
+        """Gibt alle verfügbaren Sound-Kategorien zurück."""
+        categories = set()
+        for sound_info in self.sound_map.values():
+            categories.add(sound_info["category"])
+        return sorted(list(categories))
+    
+    def print_sound_map(self):
+        """Gibt das komplette Sound-Mapping in der Konsole aus."""
+        categories = self.get_categories()
+        
+        print("\n📊 Sound-Mapping:\n")
+        for category in categories:
+            sounds = self.get_sounds_by_category(category)
+            print(f"📁 {category.upper()} ({len(sounds)} Sounds)")
+            
+            for sound_id, info in sounds.items():
+                print(f"  🔊 {sound_id}: {info['filename']} ({info['format']})")
+            
+            print()
     
     def play(self, sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
         """
@@ -91,7 +133,25 @@ class AudioManager:
         with self._lock:
             try:
                 sound_path = self.sound_map[sound_id]["path"]
+                sound_format = self.sound_map[sound_id]["format"]
                 
+                # Optimierung: Bei WAV-Dateien direkt pygame verwenden
+                if sound_format == ".wav" and os.path.exists(sound_path):
+                    try:
+                        # Versuche direkte Wiedergabe mit pygame
+                        pygame_sound = pygame.mixer.Sound(sound_path)
+                        pygame_sound.set_volume(max(0.0, min(1.0, volume)))
+                        pygame_sound.play()
+                        
+                        while pygame.mixer.get_busy():
+                            pygame.time.wait(100)
+                            
+                        return True
+                    except Exception as e:
+                        print(f"⚠️ Direkte WAV-Wiedergabe fehlgeschlagen, versuche mit pydub: {e}")
+                        # Fallback auf pydub-Methode
+                
+                # Wiedergabe mit pydub (funktioniert für MP3 und als Fallback für WAV)
                 sound = AudioSegment.from_file(sound_path)
                 
                 # Audio in Bytes konvertieren
@@ -127,7 +187,7 @@ class AudioManager:
 _mapper = None
 
 def get_mapper(root_dir: str = "audio/sounds") -> AudioManager:
-    """Gibt die globale SoundMapper-Instanz zurück."""
+    """Gibt die globale AudioManager-Instanz zurück."""
     global _mapper
     if _mapper is None:
         _mapper = AudioManager(root_dir)
@@ -137,10 +197,24 @@ def play(sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
     """Spielt einen Sound ab."""
     return get_mapper().play(sound_id, block, volume)
 
+def stop():
+    """Stoppt alle Sounds."""
+    get_mapper().stop()
+
+def list_sounds():
+    """Listet alle verfügbaren Sounds auf."""
+    get_mapper().print_sound_map()
+
 if __name__ == "__main__":
     print("🔊 Sound-System wird initialisiert...")
     
-    play("aurora")
+    # Zeige alle verfügbaren Sounds
+    list_sounds()
+    
+    # Beispiel: Sound abspielen
+    print("\nVersuche 'get-up-aurora' abzuspielen...")
+    if play("start-listening-official"):
+        print("Sound wird abgespielt!")
     
     import time 
-    time.sleep(10)
+    time.sleep(5)  # Gib dem Sound Zeit zum Abspielen

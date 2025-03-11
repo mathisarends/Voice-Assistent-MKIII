@@ -2,9 +2,10 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from speech.voice_detection import WakeWordListener
+from speech.wake_word_listener import WakeWordListener
 from speech.recognition.speech_recorder import SpeechRecorder
 from speech.recognition.audio_transcriber import AudioTranscriber
+from audio.audio_manager import get_mapper
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -14,6 +15,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("assistant")
+
+mapper = get_mapper()
 
 class AudioAssistant:
     """Einfache Klasse für Sprachassistenten-Logik ohne externe APIs"""
@@ -68,15 +71,10 @@ async def main():
                 if wakeword_listener.listen_for_wakeword():
                     logger.info("🔔 Wake-Word erkannt, starte Sprachaufnahme")
                     
-                    # Temporäre Deaktivierung des Wake-Word-Listeners durch Stoppen
-                    # der is_listening Flag (ersetzt die pause_listening Methode)
-                    was_listening = wakeword_listener.is_listening
-                    wakeword_listener.is_listening = False
-                    
                     try:
                         audio_data = speech_recorder.record_audio()
                         
-                        user_prompt = await audio_transcriber.transcribe_audio(audio_data, vocabulary="Wetterbericht, Abendroutine")
+                        user_prompt = await audio_transcriber.transcribe_audio(audio_data, vocabulary="Wetterbericht, Abendroutine, Stopp")
                         
                         if not user_prompt or user_prompt.strip() == "":
                             logger.info("⚠️ Keine Sprache erkannt oder leerer Text")
@@ -89,10 +87,6 @@ async def main():
                     except Exception as e:
                         logger.error("Fehler bei der Sprachverarbeitung: %s", e)
                         
-                    finally:
-                        wakeword_listener.is_listening = was_listening
-                        logger.info("🎤 Warte wieder auf Wake-Word...")
-
         except KeyboardInterrupt:
             logger.info("🛑 Programm manuell beendet.")
             

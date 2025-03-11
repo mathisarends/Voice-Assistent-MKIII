@@ -42,8 +42,6 @@ class AudioTranscriber:
             elapsed_time = end_time - start_time
             print(f"⏱️ API-Antwortzeit: {elapsed_time:.2f} Sekunden")
             print(f"📊 Dateigröße: {os.path.getsize(filename) / 1024:.2f} KB")
-            if prompt:
-                print(f"🔍 Verwendeter Prompt: \"{prompt}\"")
 
             return transcription  
             
