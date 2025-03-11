@@ -10,6 +10,9 @@ from pydub import AudioSegment
 
 load_dotenv()
 
+# TODO: Die Terminierung ist hier echt schnell aber möglicherweise zu schnell Informationen gehen verloren
+# Evevntuell kann man weiter aufnehmen und hier zwischen den Klassen kommunzieren, das hier noch informationen nachgeliefert werden.
+
 class SpeechRecorder:
     def __init__(self, samplerate=16000):
         self.openai = OpenAI()
