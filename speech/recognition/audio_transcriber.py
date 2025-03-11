@@ -1,5 +1,6 @@
 import time
 import os
+from typing import Optional
 import aiofiles
 from openai import AsyncOpenAI
 
@@ -7,7 +8,7 @@ class AudioTranscriber:
     def __init__(self):
         self.openai = AsyncOpenAI()
         
-    async def transcribe_audio(self, filename, vocabulary=None, language="de"):
+    async def transcribe_audio(self, filename, vocabulary=None, language="de") -> Optional[str]:
         """Sendet die Audiodatei an OpenAI Whisper API und gibt den erkannten Text zurück"""
         print("📝 Sende Audiodatei an OpenAI...")
         

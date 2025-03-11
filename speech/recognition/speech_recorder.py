@@ -32,49 +32,73 @@ class SpeechRecorder:
         
         return audio_data
 
-    def record_audio(self, silence_threshold=0.1, silence_duration=1.5):
+    def record_audio(self, base_silence_threshold=0.05, silence_duration=1.0, zcr_threshold=0.1):
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        temp_wav = os.path.join(script_dir, "temp", "temp_audio.wav")
         final_mp3 = os.path.join(script_dir, "temp", "recorded_audio.mp3")
-        os.makedirs(os.path.dirname(temp_wav), exist_ok=True)
+        os.makedirs(os.path.dirname(final_mp3), exist_ok=True)
         
         self.is_recording = True
         buffer = []
-        start_time = time.time()
+        silence_start_time = None
+        
+        # Für adaptive Schwellenwerte
+        background_energy = []
+        window_size = int(self.samplerate * 0.2)  # 200ms Fenster
         print("🎙 Aufnahme gestartet...")
-
+        
         with sd.InputStream(samplerate=self.samplerate, channels=1,
                             dtype=np.int16,
-                            blocksize=int(self.samplerate * 0.1),
+                            blocksize=int(self.samplerate * 0.05),  
                             callback=self.audio_callback):
+            calibration_time = time.time() + 0.5
+            while time.time() < calibration_time:
+                if not self.audio_queue.empty():
+                    current_audio = self.audio_queue.get()
+                    background_energy.append(np.mean(np.abs(current_audio)))
+                    time.sleep(0.01)
+            
+            if background_energy:
+                adaptive_threshold = max(base_silence_threshold, 
+                                        np.mean(background_energy) * 1.5 / 32767.0)
+            else:
+                adaptive_threshold = base_silence_threshold
+                
+            print(f"Adaptiver Schwellenwert: {adaptive_threshold:.4f}")
+            
             while True:
                 if not self.audio_queue.empty():
                     current_audio = self.audio_queue.get()
                     buffer.append(current_audio)
                     
-                    window_size = int(self.samplerate * 0.5)
-                    recent_samples = np.concatenate(buffer[-5:]) if len(buffer) > 5 else np.concatenate(buffer)
+                    recent_samples = np.concatenate(buffer[-4:]) if len(buffer) >= 4 else np.concatenate(buffer)
                     if len(recent_samples) > window_size:
                         recent_samples = recent_samples[-window_size:]
-                        
-                    volume = np.max(np.abs(recent_samples)) / 32767.0
-
-                    if volume < silence_threshold:
-                        if time.time() - start_time > silence_duration:
+                    
+                    energy = np.mean(np.abs(recent_samples)) / 32767.0
+                    
+                    zero_crossings = np.sum(np.diff(np.signbit(recent_samples).astype(int)))
+                    zcr = zero_crossings / len(recent_samples)
+                    
+                    is_silence = energy < adaptive_threshold and zcr < zcr_threshold
+                    
+                    if is_silence:
+                        if silence_start_time is None:
+                            silence_start_time = time.time()
+                        elif time.time() - silence_start_time > silence_duration:
                             print("⏸ Stille erkannt, Aufnahme stoppt.")
                             break
                     else:
-                        start_time = time.time()
-
+                        silence_start_time = None
+        
         self.is_recording = False
-
-        if len(buffer) < 20:
+        
+        if len(buffer) < 10:  # Mindestlänge (500ms)
             return None
-
+        
         audio_data = np.concatenate(buffer, axis=0)
         audio_data = self.optimize_audio(audio_data)
         
-        # Zuerst als WAV speichern (temporär)
+        # Direkt zu MP3 konvertieren ohne temporäre WAV-Datei
         with io.BytesIO() as wav_io:
             import wave
             with wave.open(wav_io, "wb") as wf:
@@ -87,7 +111,7 @@ class SpeechRecorder:
             
             # Konvertiere zu MP3 mit pydub
             audio = AudioSegment.from_wav(wav_io)
-            audio.export(final_mp3, format="mp3", bitrate="32k")  # Niedrige Bitrate für kleinere Dateien
-        
+            audio.export(final_mp3, format="mp3", bitrate="32k")
+
         print(f"📊 Dateigröße MP3: {os.path.getsize(final_mp3) / 1024:.2f} KB")
         return final_mp3
