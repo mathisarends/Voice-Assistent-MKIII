@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from speech.wake_word_listener import WakeWordListener
 from speech.recognition.speech_recorder import SpeechRecorder
 from speech.recognition.audio_transcriber import AudioTranscriber
-from audio.audio_manager import get_mapper
+from audio.audio_manager import play
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("assistant")
 
-mapper = get_mapper()
+
 
 class AudioAssistant:
     """Einfache Klasse für Sprachassistenten-Logik ohne externe APIs"""
@@ -53,7 +53,6 @@ async def create_wakeword_listener(wakeword="computer"):
         listener.cleanup()
         
 async def main():
-    # Komponenten initialisieren
     speech_recorder = SpeechRecorder()
     audio_transcriber = AudioTranscriber()
     assistant = AudioAssistant()
@@ -76,9 +75,11 @@ async def main():
                         user_prompt = await audio_transcriber.transcribe_audio(audio_data, vocabulary="Wetterbericht, Abendroutine, Stopp")
                         
                         if not user_prompt or user_prompt.strip() == "":
+                            play("stop-listening-no-message")
                             logger.info("⚠️ Keine Sprache erkannt oder leerer Text")
                             continue
                         
+                        play("stop-listening")
                         logger.info("🗣 Erkannt: %s", user_prompt)
                         
                         await assistant.speak_response(user_prompt)
