@@ -40,7 +40,6 @@ class AudioAssistant:
         """Generiert eine Antwort und würde sie aussprechen"""
         response = await self.process_and_respond(user_text)
         
-        # Hier könnte später Text-to-Speech eingebaut werden
         print(f"🤖 Assistenten-Antwort: {response}")
         return response
 
@@ -61,7 +60,7 @@ async def main():
     
     logger.info("🚀 Starte den Sprachassistenten")
     
-    async with create_wakeword_listener(wakeword="computer") as wakeword_listener:
+    async with create_wakeword_listener(wakeword="picovoice") as wakeword_listener:
         try:
             logger.info("🎤 Warte auf Wake-Word...")
             

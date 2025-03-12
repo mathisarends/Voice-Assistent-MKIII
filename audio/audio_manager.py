@@ -293,26 +293,3 @@ def play_loop(sound_id: str, duration: float, volume: float = 1.0) -> bool:
 def stop_loop():
     """Stoppt den aktuellen Sound-Loop mit Fade-Out."""
     get_mapper().stop_loop()
-
-if __name__ == "__main__":
-    print("🔊 Sound-System wird initialisiert...")
-    
-    # Beispiel: Sound im Loop abspielen
-    print("\nVersuche 'wake-up-focus' für 10 Sekunden zu loopen...")
-    if play_loop("wake-up-focus", 10):
-        print("Sound wird geloopt!")
-    
-    # Nach 5 Sekunden stoppen wir mit Fade-Out
-    time.sleep(5)
-    print("Stoppe mit Fade-Out...")
-    stop()
-    
-    time.sleep(2)  # Kurz warten
-    
-    # Noch ein Sound abspielen und dann mit Fade-Out beenden
-    print("\nSpiele einen Sound ab und beende mit Fade-Out...")
-    play("wake-up-focus")
-    time.sleep(3)
-    fade_out(2.0)
-    
-    time.sleep(3)
