@@ -313,6 +313,6 @@ if __name__ == "__main__":
     print("\nSpiele einen Sound ab und beende mit Fade-Out...")
     play("wake-up-focus")
     time.sleep(3)
-    fade_out(2.0)  # 2 Sekunden Fade-Out
+    fade_out(2.0)
     
-    time.sleep(3)  # Warte, bis alles fertig ist
+    time.sleep(3)
