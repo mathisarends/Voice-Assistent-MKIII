@@ -75,3 +75,11 @@ class StartConcentrationPhaseCommand(SpotifyCommand):
     
     def execute(self) -> Optional[str]:
         return self.player.start_concentration_phase(self.playlist_type)
+    
+class StartEveningPhaseCommand(SpotifyCommand):
+    def __init__(self, player: SpotifyPlayer, playlist_type: Optional[str] = None) -> None:
+        self.player: SpotifyPlayer = player
+        self.playlist_type: Optional[str] = playlist_type
+    
+    def execute(self) -> Optional[str]:
+        return self.player.start_evening_phase(self.playlist_type)

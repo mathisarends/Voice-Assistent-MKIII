@@ -1,31 +1,31 @@
 import os
+import re
+import random
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import re
-import random
-from audio.spotify.playlist_config import CONCENTRATION_PLAYLISTS
+from audio.spotify.playlist_config import CONCENTRATION_PLAYLISTS, EVENING_PLAYLISTS
 
-# Diesen Player hier beef up mit Algorithmischen Empfehlungen:
-class SpotifyPlayer:
-    def __init__(self, device_name="MATHISPC"):
-        """Initialisiert die Spotify API und wählt das gewünschte Gerät aus."""
+
+class SpotifyClient:
+    def __init__(self):
         load_dotenv()
-        
-        self.sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+        self.api = spotipy.Spotify(auth_manager=SpotifyOAuth(
             client_id=os.getenv("SPOTIFY_CLIENT_ID"),
             client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
             redirect_uri="http://localhost:8080",
             scope="user-modify-playback-state,user-read-playback-state"
         ))
-            
+
+class SpotifyPlayer:
+    def __init__(self, device_name="MATHISPC"):
+        self.client = SpotifyClient().api
         self.device_name = device_name
         self.device_id = None
         self.set_device_id(self.device_name)
     
     def set_device_id(self, device_name):
-        """Sucht nach einem Spotify-Gerät anhand des Namens und gibt die ID zurück."""
-        devices = self.sp.devices()
+        devices = self.client.devices()
         
         for device in devices.get("devices", []):
             if device["name"] == device_name:
@@ -35,9 +35,14 @@ class SpotifyPlayer:
         
         print("❌ Kein passendes Gerät gefunden!")
     
+    def _ensure_device_connection(self):
+        if not self.device_id:
+            self.set_device_id(self.device_name)
+            return bool(self.device_id)
+        return True
+    
     def search_track(self, query):
-        """Sucht einen Song bei Spotify und gibt die Track-URI zurück."""
-        results = self.sp.search(q=query, type="track", limit=1)
+        results = self.client.search(q=query, type="track", limit=1)
         
         if results["tracks"]["items"]:
             track = results["tracks"]["items"][0]
@@ -48,72 +53,20 @@ class SpotifyPlayer:
         return None
     
     def play_track(self, query):
-        """Sucht einen Song und spielt ihn ab, falls ein Gerät vorhanden ist."""
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return
+        if not self._ensure_device_connection():
+            return
         
         track_uri = self.search_track(query)
         if track_uri:
-            self.sp.start_playback(device_id=self.device_id, uris=[track_uri])
+            self.client.start_playback(device_id=self.device_id, uris=[track_uri])
             print("🎶 Song wird abgespielt!")
         else:
             print("❌ Song konnte nicht abgespielt werden!")
-                
-    def play_playlist(self, playlist_identifier):
-        """
-        Spielt eine Playlist ab.
-        playlist_identifier kann eine Spotify-URI oder eine Web-URL sein.
-        """
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return
-        
-        # Konvertiere URL zu URI falls nötig
-        playlist_uri = self.convert_to_uri(playlist_identifier)
-        
-        if playlist_uri:
-            try:
-                self.sp.start_playback(device_id=self.device_id, context_uri=playlist_uri)
-                # Hole Playlist-Name für besseres Feedback
-                playlist_id = playlist_uri.split(":")[-1]
-                try:
-                    playlist_info = self.sp.playlist(playlist_id)
-                    playlist_name = playlist_info["name"]
-                    print(f"📂 Playlist wird abgespielt: {playlist_name}")
-                except:
-                    print(f"📂 Playlist wird abgespielt: {playlist_uri}")
-            except spotipy.exceptions.SpotifyException as e:
-                print(f"❌ Fehler beim Abspielen der Playlist: {e}")
-        else:
-            print("❌ Ungültige Playlist-URL oder URI")
-    
-    def set_volume(self, volume):
-        """Setzt die Lautstärke (0-100%)"""
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return
-        
-        volume = max(0, min(100, volume))
-        self.sp.volume(volume, device_id=self.device_id)
-        print(f"🔊 Lautstärke auf {volume}% gesetzt")
     
     def convert_to_uri(self, identifier):
-        """
-        Konvertiert verschiedene Spotify-Identifikatoren in URIs.
-        Unterstützt:
-        - Spotify URIs (spotify:playlist:xxxx)
-        - Spotify Web URLs (https://open.spotify.com/playlist/xxxx)
-        - Spotify Web URLs mit Query-Parametern (https://open.spotify.com/playlist/xxxx?si=yyyy)
-        """
-        # Wenn es bereits eine URI ist
         if identifier.startswith("spotify:"):
             return identifier
         
-        # Extrahiere ID aus URL
         patterns = {
             "playlist": r"open\.spotify\.com/playlist/([a-zA-Z0-9]+)",
             "track": r"open\.spotify\.com/track/([a-zA-Z0-9]+)",
@@ -127,20 +80,37 @@ class SpotifyPlayer:
                 return f"spotify:{content_type}:{content_id}"
         
         return None
-
+    
+    def play_playlist(self, playlist_identifier):
+        if not self._ensure_device_connection():
+            return
+        
+        playlist_uri = self.convert_to_uri(playlist_identifier)
+        
+        if playlist_uri:
+            try:
+                self.client.start_playback(device_id=self.device_id, context_uri=playlist_uri)
+                playlist_id = playlist_uri.split(":")[-1]
+                try:
+                    playlist_info = self.client.playlist(playlist_id)
+                    playlist_name = playlist_info["name"]
+                    print(f"📂 Playlist wird abgespielt: {playlist_name}")
+                except:
+                    print(f"📂 Playlist wird abgespielt: {playlist_uri}")
+            except spotipy.exceptions.SpotifyException as e:
+                print(f"❌ Fehler beim Abspielen der Playlist: {e}")
+        else:
+            print("❌ Ungültige Playlist-URL oder URI")
+    
+    def set_volume(self, volume):
+        if not self._ensure_device_connection():
+            return
+        
+        volume = max(0, min(100, volume))
+        self.client.volume(volume, device_id=self.device_id)
+        print(f"🔊 Lautstärke auf {volume}% gesetzt")
+    
     def start_concentration_phase(self, playlist_type=None):
-        """
-        Startet eine Konzentrations-Playlist und setzt die Lautstärke auf 40%.
-        Verwendet immer das Gerät "MATHISPC".
-        
-        Args:
-            playlist_type: Der Typ der Playlist ("WHITE_NOISE", "BROWN_NOISE", "BINAURAL_BEATS")
-                          Wenn None, wird eine zufällige Playlist ausgewählt.
-        
-        Returns:
-            str: Der verwendete Playlist-Typ oder None bei Fehler
-        """
-        # Stelle sicher, dass MATHISPC als Gerät verwendet wird
         if self.device_name != "MATHISPC":
             self.device_name = "MATHISPC"
             self.set_device_id(self.device_name)
@@ -165,15 +135,35 @@ class SpotifyPlayer:
         self.play_playlist(playlist_url)
         
         return playlist_type
-
+    
+    def start_evening_phase(self, playlist_type=None):
+        if not self._ensure_device_connection():
+            print("❌ Gerät nicht verfügbar - Evening Mode kann nicht gestartet werden")
+            return None
+        
+        self.set_volume(50)  # Für Abend etwas höhere Lautstärke als Konzentrationsmodus
+        
+        if playlist_type is None:
+            playlist_type = random.choice(list(EVENING_PLAYLISTS.keys()))
+        
+        if playlist_type not in EVENING_PLAYLISTS:
+            print(f"❌ Unbekannter Playlist-Typ: {playlist_type}")
+            print(f"  Verfügbare Typen: {', '.join(EVENING_PLAYLISTS.keys())}")
+            return None
+        
+        playlist_url = EVENING_PLAYLISTS[playlist_type]
+        
+        print(f"🌙 Starte Evening Mode mit Playlist-Typ: {playlist_type}")
+        self.play_playlist(playlist_url)
+        
+        return playlist_type
+    
     def next_track(self):
-        """Wechselt zum nächsten Track in der Warteschlange."""
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return False
+        if not self._ensure_device_connection():
+            return False
+        
         try:
-            self.sp.next_track(device_id=self.device_id)
+            self.client.next_track(device_id=self.device_id)
             print("⏭️ Nächster Track")
             return True
         except spotipy.exceptions.SpotifyException as e:
@@ -181,13 +171,11 @@ class SpotifyPlayer:
             return False
     
     def previous_track(self):
-        """Wechselt zum vorherigen Track."""
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return False
+        if not self._ensure_device_connection():
+            return False
+        
         try:
-            self.sp.previous_track(device_id=self.device_id)
+            self.client.previous_track(device_id=self.device_id)
             print("⏮️ Vorheriger Track")
             return True
         except spotipy.exceptions.SpotifyException as e:
@@ -195,13 +183,11 @@ class SpotifyPlayer:
             return False
     
     def pause_playback(self):
-        """Pausiert die Wiedergabe."""
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return False
+        if not self._ensure_device_connection():
+            return False
+        
         try:
-            self.sp.pause_playback(device_id=self.device_id)
+            self.client.pause_playback(device_id=self.device_id)
             print("⏸️ Wiedergabe pausiert")
             return True
         except spotipy.exceptions.SpotifyException as e:
@@ -209,13 +195,11 @@ class SpotifyPlayer:
             return False
     
     def resume_playback(self):
-        """Setzt die Wiedergabe fort."""
-        if not self.device_id:
-            self.set_device_id(self.device_name)
-            if not self.device_id:
-                return False
+        if not self._ensure_device_connection():
+            return False
+        
         try:
-            self.sp.start_playback(device_id=self.device_id)
+            self.client.start_playback(device_id=self.device_id)
             print("▶️ Wiedergabe fortgesetzt")
             return True
         except spotipy.exceptions.SpotifyException as e:
@@ -223,9 +207,8 @@ class SpotifyPlayer:
             return False
     
     def get_current_track(self):
-        """Gibt Informationen zum aktuell spielenden Track zurück."""
         try:
-            current_playback = self.sp.current_playback()
+            current_playback = self.client.current_playback()
             
             if current_playback and current_playback.get('item'):
                 track = current_playback['item']

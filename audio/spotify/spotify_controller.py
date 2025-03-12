@@ -1,4 +1,4 @@
-from audio.spotify.spotify_commands import GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand
+from audio.spotify.spotify_commands import GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand, StartEveningPhaseCommand
 from audio.spotify.spotify_player import SpotifyPlayer
 
 class SpotifyController:
@@ -35,16 +35,18 @@ class SpotifyController:
     def current_track(self):
         return self.execute_command(GetCurrentTrackCommand(self.player))
     
-    def start_concentration(self, playlist_type=None):
+    def start_concentration_phase(self, playlist_type=None):
         return self.execute_command(StartConcentrationPhaseCommand(self.player, playlist_type))
-
+    
+    def start_evening_phase(self, playlist_type=None):
+        return self.execute_command(StartEveningPhaseCommand(self.player, playlist_type))
 
 if __name__ == "__main__":
     player = SpotifyPlayer()
     
     controller = SpotifyController(player)
     
-    controller.start_concentration()
+    controller.start_evening_phase()
     
     input("Drücke Enter für nächsten Track...")
     controller.next_track()
@@ -63,4 +65,4 @@ if __name__ == "__main__":
     
     # Konzentrationsmodus starten
     input("Drücke Enter für Konzentrationsmodus...")
-    controller.start_concentration("WHITE_NOISE")
+    controller.start_concentration_phase("WHITE_NOISE")
