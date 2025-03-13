@@ -30,7 +30,6 @@ class Bridge:
 
     @classmethod
     async def connect(cls) -> Bridge:
-        """Schnellverbindung mit Daten aus .env"""
         load_dotenv()
         user_id = os.getenv("HUE_USER_ID")
         
