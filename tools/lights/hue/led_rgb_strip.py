@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 import colorsys
 from tools.lights.hue.bridge import Bridge
 from tools.lights.hue.light_device import LightDevice
@@ -37,6 +37,76 @@ class LightStatus:
         }
 
 
+class ColorPresets:
+    # Grundfarben
+    ROT = (255, 0, 0)
+    GRÜN = (0, 255, 0)
+    BLAU = (0, 0, 255)
+    
+    # Mischfarben
+    GELB = (255, 255, 0)
+    MAGENTA = (255, 0, 255)
+    CYAN = (0, 255, 255)
+    
+    # Weitere Farbtöne
+    ORANGE = (255, 165, 0)
+    PINK = (255, 192, 203)
+    LILA = (128, 0, 128)
+    TÜRKIS = (64, 224, 208)
+    
+    # Weiß und Grautöne
+    WEISS = (255, 255, 255)
+    WARMWEISS = (255, 223, 179)
+    KALTWEISS = (240, 255, 255)
+    
+    # Stimmungen
+    ENTSPANNUNG = (70, 130, 180)  # Steel Blue
+    KONZENTRATION = (240, 248, 255)  # Alice Blue
+    PARTY = (138, 43, 226)  # Blueviolet
+    GEMÜTLICH = (210, 105, 30)  # Chocolate
+    
+    FARBEN = {
+        "rot": ROT,
+        "grün": GRÜN,
+        "blau": BLAU,
+        "gelb": GELB,
+        "magenta": MAGENTA,
+        "cyan": CYAN,
+        "orange": ORANGE,
+        "pink": PINK,
+        "lila": LILA,
+        "türkis": TÜRKIS,
+        "weiss": WEISS,
+        "weiß": WEISS,
+        "warmweiss": WARMWEISS,
+        "warmweiß": WARMWEISS,
+        "kaltweiss": KALTWEISS,
+        "kaltweiß": KALTWEISS,
+        "entspannung": ENTSPANNUNG,
+        "konzentration": KONZENTRATION,
+        "party": PARTY,
+        "gemütlich": GEMÜTLICH
+    }
+    
+    @classmethod
+    def get_color(cls, name: str) -> Optional[Tuple[int, int, int]]:
+        """
+        Gibt RGB-Werte für eine benannte Farbe zurück.
+        
+        Args:
+            name: Name der Farbe (z.B. "rot", "grün", etc.)
+            
+        Returns:
+            RGB-Tuple mit Werten von 0-255 oder None, wenn die Farbe nicht gefunden wurde
+        """
+        return cls.FARBEN.get(name.lower())
+    
+    @classmethod
+    def list_colors(cls) -> List[str]:
+        """Listet alle verfügbaren Farbnamen auf."""
+        return list(cls.FARBEN.keys())
+
+
 class RGBLightStrip(LightDevice):
     """Klasse für die Steuerung eines RGB LED-Strips über die Philips Hue Bridge."""
 
@@ -51,7 +121,7 @@ class RGBLightStrip(LightDevice):
         """
         super().__init__(device_id, name)
         self.bridge = bridge
-        self._color: Tuple[int, int, int] = (255, 255, 255)  # Standard: Weiß (RGB)
+        self._color: Tuple[int, int, int] = (255, 255, 255)
     
     @property
     def color(self) -> Tuple[int, int, int]:
@@ -138,6 +208,20 @@ class RGBLightStrip(LightDevice):
             raise ValueError("Helligkeit muss zwischen 0 und 100 liegen")
     
     async def set_color_rgb(self, red: int, green: int, blue: int) -> List[Dict[str, Any]]:
+        """
+        Setzt die Farbe des LED-Strips über RGB-Werte.
+        
+        Args:
+            red: Rotwert (0-255)
+            green: Grünwert (0-255)
+            blue: Blauwert (0-255)
+            
+        Returns:
+            Die Antwort der Bridge
+            
+        Raises:
+            ValueError: Wenn ein RGB-Wert außerhalb des gültigen Bereichs liegt
+        """
         if not all(0 <= c <= 255 for c in (red, green, blue)):
             raise ValueError("RGB-Werte müssen zwischen 0 und 255 liegen")
         
@@ -146,7 +230,34 @@ class RGBLightStrip(LightDevice):
         
         return await self.bridge.set_light_state(self.device_id, {"xy": xy})
     
+    async def set_color_preset(self, preset_name: str) -> List[Dict[str, Any]]:
+        """
+        Setzt die Farbe des LED-Strips über einen vordefinierten Farbnamen.
+        
+        Args:
+            preset_name: Name der Farbe (z.B. "rot", "blau", "entspannung")
+            
+        Returns:
+            Die Antwort der Bridge
+            
+        Raises:
+            ValueError: Wenn der Farbname nicht gefunden wurde
+        """
+        rgb = ColorPresets.get_color(preset_name)
+        if rgb is None:
+            available_colors = ", ".join(ColorPresets.list_colors())
+            raise ValueError(f"Unbekannte Farbe: '{preset_name}'. Verfügbare Farben: {available_colors}")
+        
+        r, g, b = rgb
+        return await self.set_color_rgb(r, g, b)
+    
     async def get_status(self) -> LightStatus:
+        """
+        Holt den aktuellen Status des LED-Strips von der Bridge.
+        
+        Returns:
+            LightStatus-Objekt mit den aktuellen Gerätedaten
+        """
         lights = await self.bridge.get_lights()
         if self.device_id in lights:
             light_data = lights[self.device_id]
@@ -167,6 +278,15 @@ class RGBLightStrip(LightDevice):
             color_rgb=self.color,
             reachable=True  # Annahme: Lokal ist immer erreichbar
         )
+    
+    def get_available_color_presets(self) -> List[str]:
+        """
+        Gibt eine Liste aller verfügbaren Farbpresets zurück.
+        
+        Returns:
+            Liste mit allen verfügbaren Farbnamen
+        """
+        return ColorPresets.list_colors()
     
     def _get_current_rgb_from_bridge(self, light_data: Dict[str, Any]) -> Tuple[int, int, int]:
         """
