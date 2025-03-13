@@ -6,7 +6,6 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from audio.spotify.playlist_config import CONCENTRATION_PLAYLISTS, EVENING_PLAYLISTS
 
-
 class SpotifyClient:
     def __init__(self):
         load_dotenv()
