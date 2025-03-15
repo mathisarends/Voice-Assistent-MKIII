@@ -4,8 +4,6 @@ from typing import Any
 from tools.lights.hue.bridge import HueBridge
 
 class GroupController:
-    """Verantwortlich für die Verwaltung von Gruppen/Räumen"""
-    
     def __init__(self, bridge: HueBridge) -> None:
         self.bridge = bridge
     
@@ -22,7 +20,7 @@ class GroupController:
     async def get_active_group(self) -> str:
         groups = await self.get_all_groups()
         
-        target_group = "0"  
+        target_group = "0"
         
         for group_id, group_data in groups.items():
             if group_data.get('state', {}).get('any_on', False):

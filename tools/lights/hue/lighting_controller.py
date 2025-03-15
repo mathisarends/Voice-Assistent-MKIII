@@ -43,20 +43,16 @@ import asyncio
 import time
 
 async def main():
-    # Verbinde mit der Bridge
     bridge = HueBridge.connect_by_ip()
     
-    # Erstelle einen Controller für höhere Lichtfunktionen
     lighting = LightingController(bridge)
     
-    # Sternenlicht aktivieren
-    await lighting.scenes.activate_scene_by_name("Sternenlicht")
-    
-    # Kurz warten
-    time.sleep(10)
-    
-    # Helligkeit anpassen
-    await lighting.adjust_brightness(25)
+    scene_names = await lighting.scenes.get_scene_names()
+
+    for scene_name in scene_names:
+        await lighting.scenes.activate_scene_by_name(scene_name)
+        print(f"Die Szene '{scene_name}' wurde aktiviert.")
+        time.sleep(2)
     
     print("Szene 'Sternenlicht' wurde aktiviert und um 25% heller gemacht.")
 
