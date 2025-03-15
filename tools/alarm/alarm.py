@@ -2,8 +2,8 @@ import time
 import threading
 import datetime
 from typing import Optional, List, Callable, Tuple
-from alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
-from alarm.alarm_item import AlarmItem
+from tools.alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
+from tools.alarm.alarm_item import AlarmItem
 from audio.audio_manager import stop, play_loop, fade_out, get_mapper
 
 class Alarm:
@@ -17,7 +17,7 @@ class Alarm:
         self.wake_up_duration: int = 30
         self.get_up_duration: int = 40
         
-        self.snooze_duration: int = 540  
+        self.snooze_duration: int = 540
         
         self.fade_out_duration: float = 2.0
     
@@ -223,15 +223,27 @@ class Alarm:
         print("⏰ Alarm-System heruntergefahren")
 
 
-if __name__ == "__main__":
+def demo():
+    # Erstelle eine Alarm-Instanz
     alarm_manager = Alarm()
     
-    # Beispiel: Setze einen Alarm für 6:30 Uhr (Get-Up-Phase)
-    # Das bedeutet, dass die Wake-Up-Phase um 6:21 Uhr beginnt (9 Minuten früher)
-    print("\n⏰ Demo: Setze Alarm für 6:30 Uhr (Get-Up-Phase)...")
+    print("\n⏰ Demo: Setze Alarm in der nächsten Minute...")
+    
+    # Hole die aktuelle Zeit
+    now = datetime.datetime.now()
+    
+    # Setze den Alarm für die nächste Minute
+    hour = now.hour
+    minute = now.minute + 1
+    
+    # Wenn es die letzte Minute der Stunde ist, gehe zur nächsten Stunde über
+    if minute == 60:
+        minute = 0
+        hour = (hour + 1) % 24
+    
     alarm_id = alarm_manager.set_alarm_for_time(
-        hour=7,
-        minute=20,
+        hour=hour,
+        minute=minute,
     )
     
     # Zeige Informationen zum nächsten Alarm an
@@ -241,7 +253,8 @@ if __name__ == "__main__":
         print(f"Nächster Alarm (#{alarm_id}):")
         print(f"  Wake-Up-Phase: {wake_time.strftime('%H:%M:%S')}")
         print(f"  Get-Up-Phase: {get_time.strftime('%H:%M:%S')}")
-    
 
+if __name__ == "__main__":
+    demo()
     
     time.sleep(1000)
