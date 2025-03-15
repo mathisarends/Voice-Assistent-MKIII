@@ -9,14 +9,9 @@ from tools.lights.hue.light_controller import LightController
 from tools.lights.hue.scene_controller import SceneController
 
 import asyncio
-import signal
-import sys
-import argparse
 from tools.lights.hue.bridge import HueBridge
 
 class SceneBasedSunriseController:
-    """Verantwortlich für Tageslichtwecker-Funktionalität basierend auf einer Szene"""
-    
     def __init__(self, bridge: HueBridge) -> None:
         self.bridge = bridge
         self.light_controller = LightController(bridge)
@@ -26,7 +21,6 @@ class SceneBasedSunriseController:
         self.should_stop = False
     
     async def store_light_state(self, light_ids: List[str]) -> Dict[str, Any]:
-        """Speichert den aktuellen Zustand mehrerer Lichter"""
         states = {}
         lights = await self.light_controller.get_all_lights()
         for light_id in light_ids:
@@ -35,7 +29,6 @@ class SceneBasedSunriseController:
         return states
     
     async def restore_light_state(self, light_states: Dict[str, Any]) -> None:
-        """Stellt den gespeicherten Zustand mehrerer Lichter wieder her"""
         for light_id, state in light_states.items():
             # Wir entfernen Statusfelder, die wir nicht setzen können
             restore_state = {k: v for k, v in state.items() 
@@ -43,7 +36,6 @@ class SceneBasedSunriseController:
             await self.light_controller.set_light_state(light_id, restore_state)
     
     def stop_sunrise(self) -> None:
-        """Stoppt den laufenden Sonnenaufgang"""
         self.should_stop = True
         if self.running_sunrise and not self.running_sunrise.done():
             self.running_sunrise.cancel()
@@ -70,10 +62,8 @@ class SceneBasedSunriseController:
         if not scene_id or not group_id:
             raise ValueError(f"Szene mit Namen '{scene_name}' nicht gefunden")
         
-        # Rufe die Szene direkt ab, um die Lampenzustände zu erhalten
         scene_details = await self.bridge.get_request(f"scenes/{scene_id}")
         
-        # Extrahiere die Zielzustände aller Lichter in der Szene
         target_states = {}
         if 'lightstates' in scene_details:
             target_states = scene_details['lightstates']
@@ -82,8 +72,8 @@ class SceneBasedSunriseController:
     
     async def start_scene_based_sunrise(self, 
                                         scene_name: str = "Majestätischer Morgen",
-                                        duration: int = 540,  # 9 Minuten in Sekunden
-                                        start_brightness_percent: float = 0.01,  # 1% der Szenen-Helligkeit
+                                        duration: int = 540,
+                                        start_brightness_percent: float = 0.01,
                                         restore_original: bool = False) -> None:
         """
         Startet eine Sonnenaufgang-Simulation basierend auf einer bestehenden Szene
@@ -98,18 +88,15 @@ class SceneBasedSunriseController:
             start_brightness_percent: Anfängliche Helligkeit als Prozentsatz der Ziel-Helligkeit
             restore_original: Ob der ursprüngliche Zustand nach dem Sonnenaufgang wiederhergestellt werden soll
         """
-        # Stoppe eventuell laufenden Sonnenaufgang
         self.stop_sunrise()
         self.should_stop = False
         
-        # Ermittle die Zielzustände der Lichter in der Szene
         try:
             group_id, target_states = await self.get_scene_light_states(scene_name)
             target_light_ids = list(target_states.keys())
             
             print(f"Szene '{scene_name}' gefunden mit Gruppe {group_id} und {len(target_light_ids)} Lichtern")
             
-            # Speichere ursprünglichen Zustand, falls gewünscht
             original_states = {}
             if restore_original:
                 original_states = await self.store_light_state(target_light_ids)
