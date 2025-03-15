@@ -1,3 +1,4 @@
+# aktiviere_sternenlicht.py
 from __future__ import annotations
 
 import asyncio
@@ -65,26 +66,124 @@ class Bridge:
             async with session.put(f"{self.url}/lights/{light_id}/state", json=state) as response:
                 return await response.json()
             
-    @staticmethod
-    async def find_hue_bridge() -> str:
-        bridges = await Bridge.discover()
+    async def get_scenes(self) -> dict[str, Any]:
+        """Alle Szenen abrufen"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{self.url}/scenes") as response:
+                return await response.json()
+            
+    async def activate_scene(self, group_id: str, scene_id: str) -> list:
+        """Eine Szene für eine Gruppe aktivieren"""
+        async with aiohttp.ClientSession() as session:
+            async with session.put(
+                f"{self.url}/groups/{group_id}/action", 
+                json={"scene": scene_id}
+            ) as response:
+                return await response.json()
+            
+    async def activate_scene_by_name(self, scene_name: str) -> list:
+        """Eine Szene anhand ihres Namens aktivieren"""
+        # Hole alle Szenen
+        scenes = await self.get_scenes()
         
-        if not bridges:
-            print("Keine Hue Bridge im Netzwerk gefunden!")
-            return
+        # Finde die Szene mit dem angegebenen Namen
+        scene_id = None
+        group_id = None
         
-        print(f"Gefundene Hue Bridges: {len(bridges)}")
+        for sid, scene_data in scenes.items():
+            if scene_data.get('name') == scene_name:
+                scene_id = sid
+                group_id = scene_data.get('group')
+                break
         
-        for i, bridge in enumerate(bridges, 1):
-            print(f"Bridge {i}:")
-            print(f"  IP-Adresse: {bridge['internalipaddress']}")
-            if 'id' in bridge:
-                print(f"  ID: {bridge['id']}")
+        if not scene_id or not group_id:
+            raise ValueError(f"Szene mit Namen '{scene_name}' nicht gefunden")
+        
+        # Aktiviere die Szene
+        return await self.activate_scene(group_id, scene_id)
+    
+    async def set_group_brightness(self, group_id: str, brightness: int) -> list:
+        """Helligkeit für eine Gruppe von Lichtern ändern (0-254)"""
+        # Stelle sicher, dass die Helligkeit im gültigen Bereich liegt
+        brightness = max(0, min(254, brightness))
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.put(
+                f"{self.url}/groups/{group_id}/action", 
+                json={"bri": brightness}
+            ) as response:
+                return await response.json()
+            
+            
+    async def get_groups(self) -> dict[str, Any]:
+        """Alle Gruppen/Räume abrufen"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{self.url}/groups") as response:
+                return await response.json()
+    
+    async def adjust_brightness(self, percent_change: int) -> list:
+        """Ändert die Helligkeit der aktuellen Szene/Lichter um den angegebenen Prozentsatz
+        
+        Args:
+            percent_change: Prozentuale Änderung (-100 bis +100)
+        """
+        # Hole alle Gruppen
+        groups = await self.get_groups()
+        
+        # Wir suchen die Gruppe 0 (alle Lichter) oder eine aktive Gruppe
+        target_group = "0"  # Standard: Gruppe 0 (alle Lichter)
+        
+        # Wenn es spezifische aktive Gruppen gibt, verwenden wir die erste
+        for group_id, group_data in groups.items():
+            if group_data.get('state', {}).get('any_on', False):
+                target_group = group_id
+                break
+        
+        # Helligkeit für die Zielgruppe ändern
+        result = await self.change_brightness_by_percent(target_group, percent_change)
+        
+        return result
+        
+    async def change_brightness_by_percent(self, group_id: str, percent_change: int) -> list:
+        """Helligkeit für eine Gruppe um einen Prozentsatz ändern
+        
+        Args:
+            group_id: Die ID der Lichtergruppe
+            percent_change: Prozentuale Änderung (-100 bis +100)
+        """
+        # Hole aktuellen Zustand der Gruppe
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{self.url}/groups/{group_id}") as response:
+                group_data = await response.json()
+        
+        # Hole aktuelle Helligkeit aus dem Zustand
+        current_brightness = group_data.get('action', {}).get('bri', 0)
+        
+        # Berechne neue Helligkeit (0-254 ist der Helligkeitsbereich bei Philips Hue)
+        max_brightness = 254
+        brightness_change = int(max_brightness * (percent_change / 100))
+        new_brightness = current_brightness + brightness_change
+        
+        # Begrenze auf gültigen Bereich
+        new_brightness = max(0, min(254, new_brightness))
+        
+        # Setze die neue Helligkeit
+        return await self.set_group_brightness(group_id, new_brightness)
 
 async def main():
     bridge = Bridge.connect_by_ip()
-    return await bridge.get_lights()
+    
+    # Sternenlicht aktivieren und 15% heller machen, alles in einem Aufruf
+    result = await bridge.activate_scene_by_name("Sternenlicht")
+    
+    import time
+    time.sleep(10)
+    
+    await bridge.adjust_brightness(25)
+    
+    print(f"Szene 'Sternenlicht' wurde aktiviert und um 15% heller gemacht.")
+    
+    return result
 
 if __name__ == "__main__":
-    lights = asyncio.run(main())
-    print(lights)
+    result = asyncio.run(main())
