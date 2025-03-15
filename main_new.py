@@ -9,7 +9,7 @@ import queue
 import threading
 
 # Import custom modules
-from real_time_assistant import RealtimeAssistant
+from assistant.real_time_assistant import RealtimeAssistant 
 from audio.audio_manager import play
 from speech.wake_word_listener import WakeWordListener
 
@@ -30,8 +30,8 @@ class VoiceAssistant:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("🚀 Initializing Voice Assistant with OpenAI Realtime API")
         
-        # Create the assistant that will handle real-time communication
-        self.realtime_assistant = RealtimeAssistant()
+        # Erstelle den verbesserten RealtimeAssistant mit angepasstem Timeout
+        self.realtime_assistant = RealtimeAssistant(inactivity_timeout=15)
         
         # State management
         self.running = False
@@ -151,10 +151,15 @@ class VoiceAssistant:
     async def _handle_conversation(self):
         """Handle a conversation with the OpenAI assistant"""
         try:
-            # Start conversation with OpenAI
+            # Play a sound to indicate start of listening
+            play("start-listening")
+            
+            # Start conversation with refaktoriertem OpenAI-Assistant
+            # Die Implementierungsdetails sind jetzt in der RealtimeAssistant-Klasse gekapselt
             await self.realtime_assistant.start_conversation()
             
             # Keep the task alive until conversation is done
+            # Der refaktorierte RealtimeAssistant verwaltet jetzt seine eigenen Timeouts intern
             while self.realtime_assistant.is_active and self.in_conversation:
                 await asyncio.sleep(0.1)
             
