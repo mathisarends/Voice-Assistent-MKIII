@@ -47,7 +47,7 @@ class VoiceAssistant:
         self.running = True
         
         # Initialize main wake word listener with our chosen wake word
-        self.main_wake_listener = WakeWordListener(wakeword="computer", sensitivity=0.7)
+        self.main_wake_listener = WakeWordListener(wakeword="computer", sensitivity=0.85)
         
         # Start wake word detection thread
         threading.Thread(

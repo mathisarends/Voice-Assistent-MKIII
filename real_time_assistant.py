@@ -44,7 +44,6 @@ class RealtimeAssistant:
         self.connected = asyncio.Event()
         self.last_audio_item_id = None
         
-        # Collected text responses
         self.transcript_items: Dict[str, str] = {}
     
     async def start_conversation(self):
@@ -75,7 +74,7 @@ class RealtimeAssistant:
             try:
                 await self.connection.close()
             except Exception as e:
-                self.logger.error(f"Error closing connection: {e}")
+                self.logger.error("Error closing connection: %s", e)
             
         self.connection = None
         self.session = None
@@ -98,7 +97,7 @@ class RealtimeAssistant:
             await self.connection.send({"type": "response.cancel"})
             self.logger.info("Sent cancellation signal")
         except Exception as e:
-            self.logger.error(f"Error sending cancellation: {e}")
+            self.logger.error("Error sending cancellation: %s", e)
     
     async def _handle_realtime_connection(self):
         """Establish and handle the connection with OpenAI Realtime API."""
@@ -107,12 +106,15 @@ class RealtimeAssistant:
         
         self.logger.info("Establishing connection to OpenAI Realtime API")
         
-        async with self.client.beta.realtime.connect(model="gpt-4o-realtime-preview") as conn:
+        async with self.client.beta.realtime.connect(model="gpt-4o-mini-realtime-preview") as conn:
             self.connection = conn
             self.connected.set()
             
-            # Configure the session with server-side voice activity detection
-            await conn.session.update(session={"turn_detection": {"type": "server_vad"}})
+            await conn.session.update(session={
+                "turn_detection": {"type": "server_vad"},
+                "voice": "echo",
+                "instructions": "Du bist ein hilfreicher Sprachassistent. Antworte primär auf Deutsch, es sei denn, der Benutzer stellt eine Frage in einer anderen Sprache. Gib kurze, präzise und informative Antworten. Sprich natürlich und freundlich, als ob du mit einem Menschen sprichst."
+            })
             
             # Start sending audio immediately
             self.should_send_audio.set()
@@ -124,7 +126,7 @@ class RealtimeAssistant:
                     
                 if event.type == "session.created":
                     self.session = event.session
-                    self.logger.info(f"Session created: {event.session.id}")
+                    self.logger.info("Session created: %s", event.session.id)
                     
                 elif event.type == "session.updated":
                     self.session = event.session
@@ -199,7 +201,7 @@ class RealtimeAssistant:
                     try:
                         await self.connection.send({"type": "response.cancel"})
                     except Exception as e:
-                        self.logger.error(f"Error canceling response: {e}")
+                        self.logger.error("Error canceling response: %s", e)
                     sent_audio = True
                 
                 # Send the audio data
@@ -208,12 +210,12 @@ class RealtimeAssistant:
                         audio=base64.b64encode(cast(np.ndarray, data)).decode("utf-8")
                     )
                 except Exception as e:
-                    self.logger.error(f"Error sending audio: {e}")
+                    self.logger.error("Error sending audio: %s", e)
                 
                 await asyncio.sleep(0)
         
         except Exception as e:
-            self.logger.error(f"Error in audio processing: {e}")
+            self.logger.error("Error in audio processing: %s", e)
         
         finally:
             # Clean up audio resources
