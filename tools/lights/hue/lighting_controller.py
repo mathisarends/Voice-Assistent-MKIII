@@ -1,4 +1,6 @@
 from __future__ import annotations
+import asyncio
+import time
 
 from tools.lights.hue.bridge import HueBridge
 from tools.lights.hue.group_controller import GroupController
@@ -39,8 +41,6 @@ class LightingController:
         # Setze die neue Helligkeit
         return await self.groups.set_group_brightness(group_id, new_brightness)
 
-import asyncio
-import time
 
 async def main():
     bridge = HueBridge.connect_by_ip()
