@@ -1,12 +1,10 @@
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry
+from graphs.workflows.lights_workflow import LightsWorkflow
 from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.document_workflow import DocumentWorkflow
 from graphs.workflows.volume_control_workflow import VolumeControlWorkflow
 from graphs.workflows.youtube_summary_workflow import YoutubeSummaryWorkflow
-
-# TODO: nehmen diesem Dispatcher auch noch einen Sub-Dispatcher machen | wir können auch in verschiedene Themen unterteilen z.B. wenn Notion dann Notion-Dispatcher und
-# dann weiter machen auf die einzelnen Notion-Tools könnte die Accuracy hier weiter verbessern
 
 def register_workflows():
     """Registriert alle verfügbaren Workflows in der Registry."""
@@ -37,6 +35,13 @@ def register_workflows():
         "Steuert die Systemlautstärke und ermöglicht Audio-Feedback",
         ["Audio", "Lautstärke"]
     )
+        
+    WorkflowRegistry.register(
+        "lights",
+        LightsWorkflow,
+        "Steuert Philips Hue Beleuchtung mit Szenen, Helligkeit und Ein-/Ausschalt-Funktionen",
+        ["Beleuchtung", "Philips Hue", "Szenen", "Helligkeit"]
+    )
     
 
 def demo_dispatcher():
@@ -52,7 +57,8 @@ def demo_dispatcher():
         # YouTube-bezogene Anfragen hinzufügen
         # "Fasse das Video von Ali Abdaal zum Thema Produktivität zusammen",
         # "Ich möchte eine Zusammenfassung des neuesten TED-Talk Videos zu künstlicher Intelligenz"
-        "Setze die Lautstärke auf 5"
+        # "Setze die Lautstärke auf 5",
+        "Wechsle zur besten geeigneten Szene für einen ruhigen Programmierabend.",
     ]
     
     for i, query in enumerate(queries):
@@ -61,8 +67,7 @@ def demo_dispatcher():
         selected_workflow = result["workflow"]
         print(f"Ausgewählter Workflow: {selected_workflow}")
         
-        # Workflow ausführen (bei Bedarf kann das auskommentiert werden)
-        # dispatcher.run_workflow(selected_workflow, query, f"demo_{i}")
+        dispatcher.run_workflow(selected_workflow, query, f"demo_{i}")
 
 def demo_direct_workflows():
     """Demonstriert den direkten Aufruf von Workflows (wie bisher)."""

@@ -7,7 +7,7 @@ from tools.alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
 from tools.alarm.alarm_item import AlarmItem
 from audio.audio_manager import stop, play_loop, fade_out, get_mapper
 
-from tools.lights.hue.bridge import HueBridge
+from tools.lights.bridge import HueBridge
 from tools.lights.hue.animation.sunrise_controller import SceneBasedSunriseController
 
 class Alarm:

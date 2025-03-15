@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
-from tools.lights.hue.bridge import HueBridge
+from tools.lights.bridge import HueBridge
 
 class GroupController:
     def __init__(self, bridge: HueBridge) -> None:

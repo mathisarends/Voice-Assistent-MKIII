@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any, Dict, List, Optional
-from tools.lights.hue.bridge import HueBridge
-from tools.lights.hue.group_controller import GroupController
-from tools.lights.hue.brightness_controller import BrightnessController
-from tools.lights.hue.scene_controller import SceneController
+from tools.lights.bridge import HueBridge
+from tools.lights.group_controller import GroupController
+from tools.lights.brightness_controller import BrightnessController
+from tools.lights.scene_controller import SceneController
 
 
 class HueController:
@@ -101,19 +101,21 @@ async def main():
     hue = HueController(bridge)
     
     scenes = await hue.get_scene_names()
+    
+    
     print(f"Verfügbare Szenen: {scenes}")
     
-    await hue.activate_scene("Nordlichter")
+    await hue.activate_scene("Sternenlicht")
     print("Szene aktiviert")
+    
+    import time
+    time.sleep(5)
     
     await hue.adjust_brightness(20)  # 20% heller
     print("Helligkeit angepasst")
     
     print("Schalte aus...")
     await hue.turn_off()
-    
-    import time
-    time.sleep(5)
     
     print("Schalte wieder ein...")
     await hue.turn_on()
@@ -122,4 +124,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    

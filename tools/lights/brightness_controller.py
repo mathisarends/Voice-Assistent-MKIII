@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Any
 
-from tools.lights.hue.bridge import HueBridge
-from tools.lights.hue.group_controller import GroupController
+from tools.lights.bridge import HueBridge
+from tools.lights.group_controller import GroupController
 
 class BrightnessController:
     """Höheres Abstraktionsniveau für typische Beleuchtungsaufgaben"""
