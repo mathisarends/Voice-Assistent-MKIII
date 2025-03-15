@@ -1,21 +1,21 @@
-import datetime
-from typing import Optional, Callable
+# tools/alarm/alarm_item.py
+from datetime import datetime
+from typing import Optional, Callable, Dict, Any
 
 class AlarmItem:
     def __init__(
         self,
         id: int,
-        time: datetime.datetime,
+        time: datetime,
         wake_sound_id: str,
         get_up_sound_id: str,
-        callback: Optional[Callable] = None
+        callback: Optional[Callable] = None,
+        extra: Optional[Dict[str, Any]] = None
     ):
-        self.id: int = id
-        self.time: datetime.datetime = time
-        self.wake_sound_id: str = wake_sound_id
-        self.get_up_sound_id: str = get_up_sound_id
-        self.callback: Optional[Callable] = callback
-        self.triggered: bool = False
-    
-    def __str__(self) -> str:
-        return f"Alarm #{self.id} at {self.time.strftime('%H:%M:%S')} (Wake: {self.wake_sound_id}, Get-up: {self.get_up_sound_id})"
+        self.id = id
+        self.time = time
+        self.wake_sound_id = wake_sound_id
+        self.get_up_sound_id = get_up_sound_id
+        self.callback = callback
+        self.extra = extra or {}  # Speichert zusätzliche Einstellungen wie Lichtwecker-Parameter
+        self.triggered = False

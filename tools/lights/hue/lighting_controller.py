@@ -47,12 +47,14 @@ async def main():
     
     lighting = LightingController(bridge)
     
-    scene_names = await lighting.scenes.get_scene_names()
+    await lighting.scenes.activate_scene_by_name("Majestätischer Morgen")
+    
+    # scene_names = await lighting.scenes.get_scene_names()
 
-    for scene_name in scene_names:
-        await lighting.scenes.activate_scene_by_name(scene_name)
-        print(f"Die Szene '{scene_name}' wurde aktiviert.")
-        time.sleep(2)
+    # for scene_name in scene_names:
+    #     await lighting.scenes.activate_scene_by_name(scene_name)
+    #     print(f"Die Szene '{scene_name}' wurde aktiviert.")
+    #     time.sleep(2)
     
     print("Szene 'Sternenlicht' wurde aktiviert und um 25% heller gemacht.")
 
