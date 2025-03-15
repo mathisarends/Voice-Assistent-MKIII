@@ -83,7 +83,7 @@ class VoiceAssistant:
         
         try:
             # Create a wake word listener for command words
-            self.command_wake_listener = WakeWordListener(wakeword="thanks", sensitivity=0.7)
+            self.command_wake_listener = WakeWordListener(wakeword="computer", sensitivity=0.8)
             
             while self.running and self.in_conversation:
                 # Listen for command words
