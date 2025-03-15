@@ -38,6 +38,8 @@ class LightStatus:
 
 
 class ColorPresets:
+    """Voreingestellte Farben für einfachen Zugriff."""
+    
     # Grundfarben
     ROT = (255, 0, 0)
     GRÜN = (0, 255, 0)
@@ -65,6 +67,7 @@ class ColorPresets:
     PARTY = (138, 43, 226)  # Blueviolet
     GEMÜTLICH = (210, 105, 30)  # Chocolate
     
+    # Dictionary für einfachen Zugriff mittels Strings
     FARBEN = {
         "rot": ROT,
         "grün": GRÜN,
@@ -207,7 +210,7 @@ class RGBLightStrip(LightDevice):
         else:
             raise ValueError("Helligkeit muss zwischen 0 und 100 liegen")
     
-    async def set_color_rgb(self, red: int, green: int, blue: int) -> List[Dict[str, Any]]:
+    async def set_color_rgb(self, red: int, green: int, blue: int, transition_time: float = 0.0) -> List[Dict[str, Any]]:
         """
         Setzt die Farbe des LED-Strips über RGB-Werte.
         
@@ -215,6 +218,7 @@ class RGBLightStrip(LightDevice):
             red: Rotwert (0-255)
             green: Grünwert (0-255)
             blue: Blauwert (0-255)
+            transition_time: Übergangszeit in Sekunden (0 = sofort)
             
         Returns:
             Die Antwort der Bridge
@@ -228,14 +232,22 @@ class RGBLightStrip(LightDevice):
         self.color = (red, green, blue)
         xy = self._rgb_to_xy(red, green, blue)
         
-        return await self.bridge.set_light_state(self.device_id, {"xy": xy})
+        state = {"xy": xy}
+        
+        # Füge Übergangszeit hinzu, wenn gewünscht
+        # Hue API verwendet Zeiteinheiten von 1/10 Sekunden
+        if transition_time > 0:
+            state["transitiontime"] = int(transition_time * 10)
+        
+        return await self.bridge.set_light_state(self.device_id, state)
     
-    async def set_color_preset(self, preset_name: str) -> List[Dict[str, Any]]:
+    async def set_color_preset(self, preset_name: str, transition_time: float = 0.0) -> List[Dict[str, Any]]:
         """
         Setzt die Farbe des LED-Strips über einen vordefinierten Farbnamen.
         
         Args:
             preset_name: Name der Farbe (z.B. "rot", "blau", "entspannung")
+            transition_time: Übergangszeit in Sekunden (0 = sofort)
             
         Returns:
             Die Antwort der Bridge
@@ -249,7 +261,7 @@ class RGBLightStrip(LightDevice):
             raise ValueError(f"Unbekannte Farbe: '{preset_name}'. Verfügbare Farben: {available_colors}")
         
         r, g, b = rgb
-        return await self.set_color_rgb(r, g, b)
+        return await self.set_color_rgb(r, g, b, transition_time)
     
     async def get_status(self) -> LightStatus:
         """
