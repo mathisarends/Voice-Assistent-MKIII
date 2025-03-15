@@ -1,4 +1,3 @@
-"""Timer management for conversation timeouts."""
 import asyncio
 import time
 from typing import Callable, Optional
@@ -93,7 +92,7 @@ class ConversationTimers:
         Args:
             duration: Estimated speaking duration in seconds
         """
-        self.logger.info(f"Waiting {duration:.2f} seconds for model to finish speaking")
+        self.logger.info("Waiting %.2f seconds for model to finish speaking", duration)
         try:
             # Wait for the calculated speaking duration
             await asyncio.sleep(duration)
@@ -108,13 +107,13 @@ class ConversationTimers:
     
     async def _inactivity_timeout_handler(self):
         """Handle inactivity timeout - end the conversation after specified time."""
-        self.logger.info(f"Starting inactivity timer ({self.inactivity_timeout} seconds)")
+        self.logger.info("Starting inactivity timer (%d seconds)", self.inactivity_timeout)
         try:
             # Wait for the timeout period
             await asyncio.sleep(self.inactivity_timeout)
             
             # If we get here, the timer wasn't cancelled, which means there was no activity
-            self.logger.info(f"No user activity for {self.inactivity_timeout} seconds after model response")
+            self.logger.info("No user activity for %d seconds after model response", self.inactivity_timeout)
             
             # Call the timeout callback if provided
             if self.on_timeout:
@@ -139,9 +138,8 @@ class ConversationTimers:
                         # Start the inactivity timer
                         await self.start_inactivity_timer()
                 
-                await asyncio.sleep(0.5)  # Check every 500ms
+                await asyncio.sleep(0.5)
         except asyncio.CancelledError:
-            # Task was cancelled, clean exit
             pass
         except Exception as e:
-            self.logger.error(f"Error in model response monitor: {e}")
+            self.logger.error("Error in model response monitor: %s", e)

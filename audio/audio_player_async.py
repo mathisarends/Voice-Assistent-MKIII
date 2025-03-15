@@ -64,7 +64,6 @@ class AudioPlayerAsync:
             if len(data) < frames:
                 data = np.concatenate((data, np.zeros(frames - len(data), dtype=np.int16)))
         
-        # Copy our data to the output buffer
         outdata[:] = data.reshape(-1, 1)
     
     def reset_frame_count(self):

@@ -4,9 +4,7 @@ With improved inactivity detection to end conversations after period of silence.
 """
 import asyncio
 from typing import Dict
-
 from openai import AsyncOpenAI
-
 from audio.audio_player_async import AudioPlayerAsync
 
 from assistant.openai.openai_connection import OpenAIConnection
@@ -86,11 +84,10 @@ class RealtimeAssistant(LoggingMixin):
     
     async def _start_connection(self):
         """Start the OpenAI connection."""
-        # Wait for connection to be established then signal connected
         await self.connection_handler.connect(
             model="gpt-4o-mini-realtime-preview",
             instructions="Du bist ein hilfreicher Sprachassistent. Antworte primär auf Deutsch, es sei denn, der Benutzer stellt eine Frage in einer anderen Sprache. Gib kurze, präzise und informative Antworten. Sprich natürlich und freundlich, als ob du mit einem Menschen sprichst.",
-            voice="echo"
+            voice="shimmer"
         )
         
         self.connected.set()
@@ -161,13 +158,13 @@ class RealtimeAssistant(LoggingMixin):
             
         # Print the full current transcript for this item
         current_text = self.transcript_items[event.item_id]
-        self.logger.info(f"Assistant: {current_text}")
+        self.logger.info("Assistant: %s", current_text)
     
     def _on_transcript_done(self, event):
         """Handle transcript done event."""
         # Transcript is complete, calculate duration and start timer
         current_text = self.transcript_items.get(event.item_id, "")
-        self.logger.info(f"Complete transcript received: {len(current_text)} characters")
+        self.logger.info("Complete transcript received: %d characters", len(current_text))
         
         # Calculate approximate speaking duration
         duration = self.speaking_calculator.calculate_duration(current_text)

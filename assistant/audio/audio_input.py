@@ -103,7 +103,7 @@ class AudioInputHandler:
                 await asyncio.sleep(0)
         
         except Exception as e:
-            self.logger.error(f"Error in audio processing: {e}")
+            self.logger.error("Error in audio processing: %s", e)
         
         finally:
             # Clean up audio resources
@@ -119,31 +119,24 @@ class AudioInputHandler:
         Args:
             data: Audio data chunk
         """
-        # Check for voice activity
         audio_level = np.abs(data).mean()
         
-        # Add current audio level to history (keep max 10 values)
         self.audio_levels.append(audio_level)
         if len(self.audio_levels) > 10:
             self.audio_levels.pop(0)
         
-        # Calculate average of recent audio levels
         avg_audio_level = sum(self.audio_levels) / len(self.audio_levels)
         
         # Detect voice if audio level is significantly above background
         if audio_level > 500 and avg_audio_level > 300:  # Higher threshold
-            # Increase counter
             self.voice_frame_counter += 1
             
             # Only activate if multiple consecutive frames contain voice (about 100-200ms)
-            if self.voice_frame_counter >= 5:  # With 20ms chunks this is ~100ms of speech
-                # Voice detected, call the callback
+            if self.voice_frame_counter >= 5:
                 if self.on_voice_detected:
                     self.on_voice_detected()
         else:
-            # Reset counter when quiet
             self.voice_frame_counter = 0
         
-        # Send the audio data to the callback
         if self.on_audio_data:
             await self.on_audio_data(data)

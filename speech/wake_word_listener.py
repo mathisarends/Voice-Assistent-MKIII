@@ -74,7 +74,6 @@ class WakeWordListener:
             keyword_index = self.handle.process(pcm)
             
             if keyword_index >= 0:
-                play("wakesound")
                 self.logger.info("🚀 Wake-Word erkannt!")
                 self._detection_event.set()
         except Exception as e:

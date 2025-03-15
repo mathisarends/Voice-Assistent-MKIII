@@ -12,25 +12,14 @@ import threading
 from assistant.real_time_assistant import RealtimeAssistant 
 from audio.audio_manager import play
 from speech.wake_word_listener import WakeWordListener
+from util.loggin_mixin import LoggingMixin
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("voice_assistant")
-
-# Command queue for communication between threads
 command_queue = queue.Queue()
 
-class VoiceAssistant:
+class VoiceAssistant(LoggingMixin):
     """Main voice assistant class that coordinates wake word detection and OpenAI API interaction"""
     
     def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info("🚀 Initializing Voice Assistant with OpenAI Realtime API")
-        
-        # Erstelle den verbesserten RealtimeAssistant mit angepasstem Timeout
         self.realtime_assistant = RealtimeAssistant(inactivity_timeout=15)
         
         # State management
@@ -73,7 +62,7 @@ class VoiceAssistant:
                     # When in conversation, just sleep briefly
                     time.sleep(0.1)
         except Exception as e:
-            self.logger.error(f"Error in main wake word detection thread: {e}")
+            self.logger.error("Error in main wake word detection thread: %s", e)
         finally:
             self.logger.info("Main wake word detection thread ended")
     
@@ -82,7 +71,6 @@ class VoiceAssistant:
         self.logger.info("🎤 Starting command word detection thread")
         
         try:
-            # Create a wake word listener for command words
             self.command_wake_listener = WakeWordListener(wakeword="computer", sensitivity=0.8)
             
             while self.running and self.in_conversation:
@@ -94,7 +82,7 @@ class VoiceAssistant:
                 # Small delay to check if we should exit
                 time.sleep(0.1)
         except Exception as e:
-            self.logger.error(f"Error in command word detection thread: {e}")
+            self.logger.error("Error in command word detection thread: %s", e)
         finally:
             self.logger.info("Command word detection thread ended")
             # Clean up the command listener
@@ -143,7 +131,7 @@ class VoiceAssistant:
         except KeyboardInterrupt:
             self.logger.info("🛑 Program manually terminated")
         except Exception as e:
-            self.logger.error(f"❌ Unexpected error in main loop: {e}")
+            self.logger.error("❌ Unexpected error in main loop: %s", e)
         finally:
             # Cleanup on exit
             await self.stop()
@@ -152,7 +140,7 @@ class VoiceAssistant:
         """Handle a conversation with the OpenAI assistant"""
         try:
             # Play a sound to indicate start of listening
-            play("start-listening")
+            play("wakesound")
             
             # Start conversation with refaktoriertem OpenAI-Assistant
             # Die Implementierungsdetails sind jetzt in der RealtimeAssistant-Klasse gekapselt
@@ -170,7 +158,7 @@ class VoiceAssistant:
             self.in_conversation = False
             
         except Exception as e:
-            self.logger.error(f"Error in conversation: {e}")
+            self.logger.error("Error in conversation: %s", e)
             self.in_conversation = False
     
     async def stop(self):

@@ -13,12 +13,6 @@ class OpenAIConnection:
     """Manages connection to OpenAI's Realtime API."""
     
     def __init__(self, client: AsyncOpenAI):
-        """
-        Initialize with an OpenAI client.
-        
-        Args:
-            client: The OpenAI AsyncClient to use for connection
-        """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.client = client
         self.connection: Optional[AsyncRealtimeConnection] = None
@@ -26,24 +20,10 @@ class OpenAIConnection:
         self.event_handlers: Dict[str, Callable] = {}
     
     def register_event_callbacks(self, handlers: Dict[str, Callable]):
-        """
-        Register event handler callbacks.
-        
-        Args:
-            handlers: Dict mapping event types to callback functions
-        """
         self.event_handlers = handlers
     
     async def connect(self, model: str, instructions: str, voice: str):
-        """
-        Establish connection to OpenAI Realtime API.
-        
-        Args:
-            model: The model to use
-            instructions: System instructions for the assistant
-            voice: Voice ID to use for assistant responses
-        """
-        self.logger.info(f"Establishing connection to OpenAI Realtime API with model {model}")
+        self.logger.info("Establishing connection to OpenAI Realtime API with model %s", model)
         
         try:
             # Hier verwenden wir async with, da client.beta.realtime.connect ein Context Manager ist
@@ -51,7 +31,7 @@ class OpenAIConnection:
             self.connection_task = asyncio.create_task(self._create_and_manage_connection(model, instructions, voice))
             return True
         except Exception as e:
-            self.logger.error(f"Error initiating connection to OpenAI: {e}")
+            self.logger.error("Error initiating connection to OpenAI: %s", e)
             raise
 
     async def _create_and_manage_connection(self, model, instructions, voice):
@@ -76,7 +56,7 @@ class OpenAIConnection:
                 # Verarbeite Events direkt hier im Context
                 await self._process_events(conn)
         except Exception as e:
-            self.logger.error(f"Error in connection management: {e}")
+            self.logger.error("Error in connection management: %s", e)
         finally:
             self.logger.info("Connection context closed")
             self.connection = None
@@ -88,7 +68,7 @@ class OpenAIConnection:
                 await self.connection.close()
                 self.logger.info("Connection closed")
             except Exception as e:
-                self.logger.error(f"Error closing connection: {e}")
+                self.logger.error("Error closing connection: %s", e)
             
             self.connection = None
             self.session = None
@@ -107,7 +87,7 @@ class OpenAIConnection:
             encoded_audio = base64.b64encode(audio_data).decode("utf-8")
             await self.connection.input_audio_buffer.append(audio=encoded_audio)
         except Exception as e:
-            self.logger.error(f"Error sending audio: {e}")
+            self.logger.error("Error sending audio: %s", e)
     
     async def cancel_response(self):
         """Cancel the current response."""
@@ -118,7 +98,7 @@ class OpenAIConnection:
             await self.connection.send({"type": "response.cancel"})
             self.logger.info("Sent cancellation signal")
         except Exception as e:
-            self.logger.error(f"Error sending cancellation: {e}")
+            self.logger.error("Error sending cancellation: %s", e)
     
     async def _process_events(self, conn):
         """

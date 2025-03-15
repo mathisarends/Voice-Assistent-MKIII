@@ -16,8 +16,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("assistant")
 
-
-
 class AudioAssistant:
     """Einfache Klasse für Sprachassistenten-Logik ohne externe APIs"""
     
