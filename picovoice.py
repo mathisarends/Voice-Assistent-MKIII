@@ -12,7 +12,7 @@ from graphs.workflow_registry import WorkflowRegistry
 from graphs.workflows.alarm_workflow import AlarmWorkflow
 from graphs.workflows.lights_workflow import LightsWorkflow
 from speech.wake_word_listener import WakeWordListener
-from speech.recognition.speech_recorder import WhuisperSpeechRecognition
+from speech.recognition.whisper_speech_recognition import WhisperSpeechRecognition
 from speech.recognition.audio_transcriber import AudioTranscriber
 from tools.time.time_tool import TimeTool
 from util.loggin_mixin import LoggingMixin
@@ -117,7 +117,7 @@ class ConversationLoop(LoggingMixin):
         self.wakeword = wakeword
         self.vocabulary = vocabulary
         self.assistant = assistant
-        self.speech_recorder = WhuisperSpeechRecognition()
+        self.speech_recorder = WhisperSpeechRecognition()
         self.audio_transcriber = AudioTranscriber()
         self.should_stop = False
     

@@ -14,7 +14,7 @@ load_dotenv()
 # TODO: Die Terminierung ist hier echt schnell aber möglicherweise zu schnell Informationen gehen verloren
 # Evevntuell kann man weiter aufnehmen und hier zwischen den Klassen kommunzieren, das hier noch informationen nachgeliefert werden.
 
-class WhuisperSpeechRecognition:
+class WhisperSpeechRecognition:
     def __init__(self, samplerate=16000):
         """Initialisiert die OpenAI Whisper API-Anbindung"""
         self.openai = OpenAI()
