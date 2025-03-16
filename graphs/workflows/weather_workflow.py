@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, override
 from graphs.base_graph import BaseGraph
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.graph import StateGraph
 
 from states.state_definitions import State
-from tools.weather.weather_tool import WeatherClient, WeatherTool
+from tools.weather.weather_tool import WeatherClient
 from util.loggin_mixin import LoggingMixin
 
 
@@ -21,38 +22,38 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
         self.weather_client = WeatherClient()
         
         super().__init__(model_name=model_name)
+        self.graph_builder = StateGraph(WeatherWorkflowState)
         
         
     @override
-    def build_graph(self) -> BaseGraph:
-        
-        self.graph_builder.add_node("chatbot", self._chatbot)
+    def build_graph(self):
+        # Wir machen es ganz einfach sequentiell
         self.graph_builder.add_node("get_current_time", self._get_current_time)
         self.graph_builder.add_node("get_weather_data", self._get_weather_data)
         self.graph_builder.add_node("format_for_speech", self._format_for_speech)
         
-        self.graph_builder.set_entry_point("chatbot")
+        # Einstiegspunkt ist get_current_time
+        self.graph_builder.set_entry_point("get_current_time")
         
-        self.graph_builder.add_edge("chatbot", "get_weather_data")
-        self.graph_builder.add_edge("chatbot", "get_current_time")
-        
-        self.graph_builder.add_edge("get_current_time", "format_for_speech")
+        # Sequentieller Fluss - ganz einfach
+        self.graph_builder.add_edge("get_current_time", "get_weather_data")
         self.graph_builder.add_edge("get_weather_data", "format_for_speech")
         
-        graph = self.graph_builder.compile()
-            
-        return graph
+        return self.graph_builder.compile()
     
     def _chatbot(self, state: WeatherWorkflowState) -> Dict[str, Any]:
         message = self.llm_with_tools.invoke(state["messages"])
         return {"messages": [message]}
     
     def _get_current_time(self, state: WeatherWorkflowState) -> str:
+        print("current_time")
         state["current_time"] = datetime.now().strftime("%H:%M")
         return state
     
     async def _get_weather_data(self, state: WeatherWorkflowState):
+        print("weather_data")
         state["weather_data"] = await self.weather_client.fetch_weather_data()
+        print("weather_data fetched", state["weather_data"])
         return state
     
     async def _format_for_speech(self, state: Dict[str, Any]) -> Dict[str, Any]:
@@ -119,11 +120,23 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
                 state["messages"] = [{"role": "user", "content": "Wie ist das Wetter?"}]
             state["messages"].append({"role": "assistant", "content": default_message})
             return state
+        
+    async def run_workflow(self, user_input: str):
+            """Führt den Workflow aus und gibt das Ergebnis zurück."""
+            initial_state = WeatherWorkflowState(messages=[{"role": "user", "content": user_input}])
+            
+            graph = self.build_graph()
+            
+            final_state = await graph.ainvoke(initial_state)
+            
+            return final_state
 
 async def main():
     workflow = WeatherWorkflow()
     
-    return await workflow.arun(input_message="Wie wird das Wetter heute?", thread_id="lights_1")
+    prompt = "Wie wird das Wetter heute?"
+    
+    return await workflow.run_workflow(prompt)
 
 if __name__ == "__main__":
     import asyncio
