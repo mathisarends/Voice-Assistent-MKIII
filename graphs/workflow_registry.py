@@ -1,7 +1,13 @@
 from typing import Dict, Any, List, Optional
 
 from graphs.base_graph import BaseGraph
-
+from graphs.workflows.alarm_workflow import AlarmWorkflow
+from graphs.workflows.lights_workflow import LightsWorkflow
+from graphs.workflows.notion_todo_workflow import NotionTodoWorkflow
+from graphs.workflows.research_workflow import ResearchWorkflow
+from graphs.workflows.spotify_workflow import SpotifyWorkflow
+from graphs.workflows.weather_workflow import WeatherWorkflow
+from tools.time.time_tool import TimeTool
 
 class WorkflowRegistry:
     """Registry für alle Workflows in der Anwendung."""
@@ -62,3 +68,54 @@ class WorkflowRegistry:
             capabilities = ", ".join(data["capabilities"]) if data["capabilities"] else "Keine spezifischen Fähigkeiten"
             formatted += f"- {name}: {data['description']} (Fähigkeiten: {capabilities})\n"
         return formatted
+
+def register_workflows():
+    """Registriert alle verfügbaren Workflows in der Registry."""
+    WorkflowRegistry.register(
+        "lights",
+        LightsWorkflow,
+        "Steuert Philips Hue Beleuchtung mit Szenen, Helligkeit und Ein-/Ausschalt-Funktionen",
+        ["Beleuchtung", "Philips Hue", "Szenen", "Helligkeit"]
+    )
+    
+    WorkflowRegistry.register(
+        "alarm",
+        AlarmWorkflow,
+        "Verwaltet Alarme mit Wake-Up und Get-Up Phasen sowie Lichtwecker-Integration",
+        ["Alarm", "Wecker", "Aufwachen", "Lichtwecker", "Timer"]
+    )
+    
+    WorkflowRegistry.register(
+        "weather",
+        WeatherWorkflow,
+        "Liefert aktuelle Wetterinformationen und bereitet sie für Sprachwiedergabe auf",
+        ["Wetter", "Vorhersage", "Sprachsteuerung", "Temperatur", "Regen"]
+    )
+    
+    WorkflowRegistry.register(
+        "time",
+        TimeTool,
+        "Gibt das aktuelle Datum und die Uhrzeit für Sprachsteuerung oder Automationen zurück",
+        ["Zeit", "Datum", "Uhrzeit"]
+    )
+    
+    WorkflowRegistry.register(
+        "spotify",
+        SpotifyWorkflow,
+        "Steuert Spotify-Wiedergabe, Lautstärke, Geräte und Playlists per Sprachbefehl",
+        ["Musik", "Spotify", "Wiedergabe", "Playlist", "Lautstärke", "Geräte"]
+    )
+    
+    WorkflowRegistry.register(
+        "notion_todo",
+        NotionTodoWorkflow,
+        "Verwaltet Notion-Tasks, Projekte und tägliche Top-Aufgaben für Produktivität",
+        ["Notion", "To-Do", "Projektmanagement", "Produktivität", "Tägliche Aufgaben"]
+    )
+    
+    WorkflowRegistry.register(
+        "notion_clipboard",
+        ResearchWorkflow,
+        "Durchsucht das Web nach relevanten Informationen und speichert sie in der Notion zwischenablage",
+        ["Recherche", "Websuche", "Notion", "Zwischenablage"]
+    )

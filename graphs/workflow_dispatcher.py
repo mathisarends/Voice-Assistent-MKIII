@@ -13,15 +13,6 @@ class WorkflowDispatcher:
         self.llm = ChatAnthropic(model=self.model_name)
     
     def dispatch(self, user_message: str) -> Dict[str, Any]:
-        """
-        Entscheidet basierend auf der Benutzeranfrage, welcher Workflow verwendet werden soll.
-        
-        Args:
-            user_message: Die Anfrage des Benutzers
-            
-        Returns:
-            Dictionary mit dem Namen des zu verwendenden Workflows
-        """
         prompt = f"""
         Du bist ein Workflow-Auswahlspezialist. Wähle genau einen der verfügbaren Workflows basierend auf der Benutzeranfrage.
 
@@ -49,17 +40,6 @@ class WorkflowDispatcher:
         return {"workflow": "default"}
     
     async def run_workflow(self, workflow_name: str, user_message: str, thread_id: str = None) -> Any:
-        """
-        Führt den angegebenen Workflow mit der Benutzeranfrage asynchron aus.
-        
-        Args:
-            workflow_name: Name des auszuführenden Workflows
-            user_message: Die Anfrage des Benutzers
-            thread_id: Optional. Eine eindeutige Thread-ID
-            
-        Returns:
-            Das Ergebnis der Workflow-Ausführung oder eine Standardantwort
-        """
         if workflow_name == "default":
             response = await self.llm.ainvoke([{"role": "user", "content": user_message}])
             print(f"[DEFAULT] Antwort: {response.content[:100]}...")
