@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Any, List, Optional
 
 from graphs.base_graph import BaseGraph
@@ -8,11 +9,13 @@ from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.spotify_workflow import SpotifyWorkflow
 from graphs.workflows.weather_workflow import WeatherWorkflow
 from tools.time.time_tool import TimeTool
+from util.loggin_mixin import LoggingMixin
 
-class WorkflowRegistry:
+class WorkflowRegistry():
     """Registry für alle Workflows in der Anwendung."""
     
     _workflows: Dict[str, Dict[str, Any]] = {}
+    _logger = logging.getLogger(__name__)
     
     @classmethod
     def register(cls, name: str, workflow_class, description: str, capabilities: Optional[List[str]] = None):
@@ -30,7 +33,8 @@ class WorkflowRegistry:
             "description": description,
             "capabilities": capabilities or []
         }
-        print(f"Workflow '{name}' registriert: {description}")
+        # print-Statement durch Logger-Aufruf ersetzen
+        cls._logger.info(f"Workflow '{name}' registriert: {description}")
     
     @classmethod
     def get_workflow(cls, name: str) -> BaseGraph:

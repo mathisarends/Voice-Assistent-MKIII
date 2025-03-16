@@ -10,7 +10,3 @@ class LightsWorkflow(BaseGraph):
         tools = get_hue_tools()
         
         super().__init__(tools, model_name)
-
-if __name__ == "__main__":
-    workflow = LightsWorkflow()
-    workflow.run(input_message="Wechsle zur besten geeigneten Szene für einen ruhigen Programmierabend.", thread_id="lights_1")

@@ -1,29 +1,45 @@
 import os
 import shutil
-from openai import OpenAI
-from io import BytesIO
-from pydub import AudioSegment
-import pygame
 import threading
 import queue
 import uuid
+from io import BytesIO
+from typing import Optional
 
-class VoiceGenerator:
-    def __init__(self, voice="nova", cache_dir="/tmp/tts_cache"):
-        """Initialisiert den TTS Generator mit OpenAI API und Vorausverarbeitung"""
+import pygame
+from openai import OpenAI
+from pydub import AudioSegment
+
+from util.loggin_mixin import LoggingMixin
+
+
+class SpeechService(LoggingMixin):
+    def __init__(self, voice: str = "nova", cache_dir: str = "/tmp/tts_cache"):
+        """
+        Initialisiert den SpeechService mit OpenAI API und Audio-Framework.
+        
+        Args:
+            voice: Die zu verwendende TTS-Stimme
+            cache_dir: Verzeichnis zum Zwischenspeichern von TTS-Audiodateien
+        """
+        super().__init__()
         self.openai = OpenAI()
         self.voice = voice
         self.cache_dir = cache_dir
         
+        # Sicherstellen, dass das Cache-Verzeichnis existiert
         os.makedirs(self.cache_dir, exist_ok=True)
         
+        # Initialisierung der benötigten Komponenten
         self._setup_ffmpeg()
         self._setup_pygame()
         self._audio_lock = threading.Lock()
         
+        # Queue-Mechanismen für die asynchrone Verarbeitung
         self.text_queue = queue.Queue()
         self.audio_queue = queue.Queue()  
         
+        # Worker-Threads für die TTS-Verarbeitung und Audiowiedergabe
         self.active = True
         self.tts_worker = threading.Thread(target=self._process_tts_queue, daemon=True)
         self.tts_worker.start()
@@ -31,24 +47,27 @@ class VoiceGenerator:
         self.playback_worker = threading.Thread(target=self._process_audio_queue, daemon=True)
         self.playback_worker.start()
         
-    def _setup_ffmpeg(self):
+        self.logger.info("SpeechService initialisiert mit Stimme '%s'", voice)
+    
+    def _setup_ffmpeg(self) -> None:
         """Überprüft und setzt den FFmpeg-Pfad, falls nötig"""
         ffmpeg_path = shutil.which("ffmpeg")
         if ffmpeg_path:
-            print(f"✅ FFmpeg gefunden: {ffmpeg_path}")
+            self.logger.debug("FFmpeg gefunden: %s", ffmpeg_path)
         else:
-            print("❌ FFmpeg nicht gefunden! Bitte installieren oder Pfad setzen.")
+            self.logger.warning("FFmpeg nicht gefunden! Versuche, Standard-Pfad zu setzen.")
             os.environ["PATH"] += os.pathsep + r"C:\ffmpeg-2025-02-17-git-b92577405b-essentials_build\bin"
             
-    def _setup_pygame(self):
+    def _setup_pygame(self) -> None:
         """Initialisiert den pygame Mixer für die Audiowiedergabe"""
         try:
             pygame.mixer.quit()  
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+            self.logger.debug("Pygame Mixer initialisiert")
         except Exception as e:
-            print(f"❌ Pygame Initialisierungsfehler: {e}")
+            self.logger.error("Pygame Initialisierungsfehler: %s", e)
     
-    def _process_tts_queue(self):
+    def _process_tts_queue(self) -> None:
         """Worker-Thread, der Texte in Audio umwandelt und zur Wiedergabe vorbereitet"""
         while self.active:
             try:
@@ -58,6 +77,7 @@ class VoiceGenerator:
                     self.text_queue.task_done()
                     continue
                 
+                self.logger.debug("Generiere Sprache für: %s", text[:50] + ("..." if len(text) > 50 else ""))
                 audio_data = self._generate_speech(text)
                 
                 if audio_data:
@@ -68,15 +88,16 @@ class VoiceGenerator:
             except queue.Empty:
                 pass
             except Exception as e:
-                print(f"❌ TTS-Verarbeitungsfehler: {e}")
+                self.logger.error("TTS-Verarbeitungsfehler: %s", e)
     
-    def _process_audio_queue(self):
+    def _process_audio_queue(self) -> None:
         """Worker-Thread, der vorbereitete Audiodateien abspielt"""
         while self.active:
             try:
                 # Hole die nächste Audio-Datei aus der Queue
                 text, audio_data = self.audio_queue.get(timeout=0.5)
                 
+                self.logger.debug("Spiele Audio ab für: %s", text[:50] + ("..." if len(text) > 50 else ""))
                 # Spiele die Audio-Datei ab
                 self._play_audio(audio_data)
                 
@@ -87,10 +108,9 @@ class VoiceGenerator:
                 # Queue Timeout, setze Schleife fort
                 pass
             except Exception as e:
-                print(f"❌ Audio-Wiedergabefehler: {e}")
+                self.logger.error("Audio-Wiedergabefehler: %s", e)
     
-    def _generate_speech(self, text):
-        """Generiert Sprache mit OpenAI TTS und gibt das Audio-Segment zurück"""
+    def _generate_speech(self, text: str) -> Optional[AudioSegment]:
         try:
             # Generiere eine eindeutige ID für diese Anfrage
             text_hash = str(uuid.uuid4())[:8]
@@ -114,11 +134,10 @@ class VoiceGenerator:
             return audio
             
         except Exception as e:
-            print(f"❌ Fehler bei der Sprachgenerierung: {e}")
+            self.logger.error("Fehler bei der Sprachgenerierung: %s", e)
             return None
     
-    def _play_audio(self, audio_data):
-        """Spielt die Audiodaten ab mit Sperrmechanismus zur Vermeidung überlappender Wiedergabe"""
+    def _play_audio(self, audio_data: AudioSegment) -> None:
         with self._audio_lock:
             try:
                 if not pygame.mixer.get_init():
@@ -135,23 +154,19 @@ class VoiceGenerator:
                     pygame.time.wait(100)
                     
             except Exception as e:
-                print(f"❌ Wiedergabefehler: {e}")
+                self.logger.error("Wiedergabefehler: %s", e)
             finally:
                 pygame.mixer.music.stop()
                 audio_io.close()
-
-    def speak(self, text):
-        """Fügt einen Text zur Sprachqueue für die Verarbeitung hinzu.
-        interrupt=True bewirkt, dass vorherige Aufträge abgebrochen werden."""
-        if not text.strip():
-            return
-
-        self.interrupt_and_reset()
-        self.text_queue.put(text)
             
-    def interrupt_and_reset(self):
-        """Unterbricht die aktuelle Sprachausgabe und leert die Queues mit Deadlock-Vermeidung."""
-        print("Unterbreche aktuelle Audioausgabe...")
+    def interrupt_and_reset(self) -> bool:
+        """
+        Unterbricht die aktuelle Sprachausgabe und leert die Queues mit Deadlock-Vermeidung.
+        
+        Returns:
+            bool: True, wenn erfolgreich zurückgesetzt
+        """
+        self.logger.debug("Unterbreche aktuelle Audioausgabe...")
         
         # Versuche Lock zu erwerben mit Timeout
         if self._audio_lock.acquire(timeout=1.0):
@@ -165,30 +180,49 @@ class VoiceGenerator:
                         pass
                 
                 # Leere Queues sicher
-                for queue, name in [(self.text_queue, "Text"), (self.audio_queue, "Audio")]:
-                    try:
-                        with queue.mutex:
-                            queue.queue.clear()
-                    except:
-                        print(f"Warnung: Konnte {name}-Queue nicht leeren")
+                self._clear_queues()
                 
-                print("🎤 Wake Word erkannt - System bereit für neue Eingabe")
+                self.logger.info("System bereit für neue Eingabe")
             finally:
                 self._audio_lock.release()
         else:
             # Notfall-Reset bei Lock-Timeout
-            print("⚠️ Konnte Audio-Lock nicht erwerben, versuche alternative Stopstrategie")
+            self.logger.warning("Konnte Audio-Lock nicht erwerben, versuche alternative Stopstrategie")
             try:
                 pygame.mixer.quit()
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
-                print("🔄 Mixer wurde neu gestartet")
+                self.logger.info("Mixer wurde neu gestartet")
             except Exception as e:
-                print(f"❌ Fehler beim Neustart des Mixers: {e}")
+                self.logger.error("Fehler beim Neustart des Mixers: %s", e)
         
         return True
 
-    def _clear_queues(self):
-        with self.text_queue.mutex:
-            self.text_queue.queue.clear()
-        with self.audio_queue.mutex:
-            self.audio_queue.queue.clear()
+    def _clear_queues(self) -> None:
+        try:
+            with self.text_queue.mutex:
+                self.text_queue.queue.clear()
+            with self.audio_queue.mutex:
+                self.audio_queue.queue.clear()
+        except Exception as e:
+            self.logger.error("Fehler beim Leeren der Queues: %s", e)
+    
+    async def speak_response(self, response_text: str) -> str:
+        """
+        Spricht eine Antwort aus und gibt sie zurück.
+        
+        Args:
+            response_text: Der auszusprechende Antworttext
+            
+        Returns:
+            Der ausgesprochene Text
+        """
+        self.logger.info("🤖 Assistenten-Antwort: %s", response_text)
+        
+        if not response_text():
+            return
+
+        self.interrupt_and_reset()
+        self.text_queue.put(response_text)
+        self.logger.info("Text zur Sprachausgabe hinzugefügt: %s", response_text[:50] + ("..." if len(response_text) > 50 else ""))
+        
+        return response_text

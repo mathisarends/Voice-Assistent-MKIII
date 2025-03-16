@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from assistant.speech_service import SpeechService
 from audio.audio_manager import play
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from speech.recognition.whisper_speech_recognition import WhisperSpeechRecognition
@@ -9,21 +10,13 @@ from util.loggin_mixin import LoggingMixin
 
 class ConversationLoop(LoggingMixin):
     def __init__(self, 
-                 assistant,
+                 speech_service: SpeechService,
                  wakeword="picovoice",
                  vocabulary="Wetterbericht, Abendroutine, Stopp"):
-        """
-        Initialisiert den Konversationsloop.
-        
-        Args:
-            assistant: Der zu verwendende Sprachassistent (muss speak_response implementieren)
-            wakeword (str): Das zu verwendende Wake-Word
-            vocabulary (str): Spezielle Vokabeln zur Verbesserung der Spracherkennung
-        """
         super().__init__()
         self.wakeword = wakeword
         self.vocabulary = vocabulary
-        self.assistant = assistant
+        self.speech_service = speech_service
         self.speech_recorder = WhisperSpeechRecognition()
         self.audio_transcriber = AudioTranscriber()
         self.workflow_dispatcher = WorkflowDispatcher()
@@ -44,15 +37,7 @@ class ConversationLoop(LoggingMixin):
             listener.cleanup()
     
     async def handle_user_input(self, audio_data):
-        """
-        Verarbeitet die Audio-Eingabe des Benutzers und gibt die Antwort aus.
-        
-        Args:
-            audio_data: Die aufgenommenen Audiodaten.
-            
-        Returns:
-            bool: True, wenn die Verarbeitung erfolgreich war, sonst False.
-        """
+        """Verarbeitet die Audio-Eingabe des Benutzers und gibt die Antwort aus."""
         user_prompt = await self.audio_transcriber.transcribe_audio(
             audio_data, 
             vocabulary=self.vocabulary
@@ -65,14 +50,15 @@ class ConversationLoop(LoggingMixin):
         
         play("process-sound-new")
         self.logger.info("🗣 Erkannt: %s", user_prompt)
-
-        result = self.workflow_dispatcher.dispatch(user_prompt)
+        
+        result = await self.workflow_dispatcher.dispatch(user_prompt)
         selected_workflow = result["workflow"]
-        print(f"Ausgewählter Workflow: {selected_workflow}")
+        self.logger.info("Ausgewählter Workflow '%s'", selected_workflow)
         
         result = await self.workflow_dispatcher.run_workflow(selected_workflow, user_prompt, "demo")
         
-        await self.assistant.speak_response(result)
+        # Hier wird der SpeechService verwendet
+        await self.speech_service.speak_response(result)
         return True
     
     async def run(self):
@@ -90,7 +76,7 @@ class ConversationLoop(LoggingMixin):
                         self.logger.info("🔔 Wake-Word erkannt, starte Sprachaufnahme")
                         
                         try:
-                            self.assistant.voice_generator.interrupt_and_reset()
+                            self.speech_service.interrupt_and_reset()
                             audio_data = self.speech_recorder.record_audio()
                             await self.handle_user_input(audio_data)
                                 

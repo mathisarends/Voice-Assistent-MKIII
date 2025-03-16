@@ -5,7 +5,7 @@ Haupteinstiegspunkt für den Sprachassistenten.
 import asyncio
 from dotenv import load_dotenv
 
-from assistant.audio_assistant import AudioAssistant
+from assistant.speech_service import SpeechService
 from assistant.conversation_loop import ConversationLoop
 from graphs.workflow_registry import register_workflows
 
@@ -17,13 +17,12 @@ register_workflows()
 
 async def main():
     """Hauptfunktion zum Starten des Sprachassistenten."""
-    assistant = AudioAssistant()
+    speech_service = SpeechService()
     conversation = ConversationLoop(
-        assistant=assistant,
+        speech_service=speech_service,  # Hier muss eine SpeechService-Instanz übergeben werden
         wakeword="picovoice",
-        vocabulary="Wetterbericht, Abendroutine, Stopp, Licht an, Licht aus, Licht dimmen, Licht heller"
+        vocabulary="Wetterbericht, Abendroutine, Stopp, Licht an, Licht aus"
     )
-    
     await conversation.run()
 
 if __name__ == "__main__":

@@ -10,12 +10,3 @@ class SpotifyWorkflow(BaseGraph):
         tools = get_spotify_tools()
         
         super().__init__(tools, model_name)
-        
-        
-async def main() -> None:
-    workflow = SpotifyWorkflow()
-    await workflow.arun(input_message="Gebe mir Informationen über den aktuellen Track", thread_id="lights_1")
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())

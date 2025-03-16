@@ -4,7 +4,6 @@ from langchain_anthropic import ChatAnthropic
 from config.settings import DEFAULT_LLM_MODEL
 from graphs.workflow_registry import WorkflowRegistry
 
-
 class WorkflowDispatcher:
     """Dispatcher für Anfragen an passende Workflows."""
     
@@ -12,7 +11,7 @@ class WorkflowDispatcher:
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.llm = ChatAnthropic(model=self.model_name)
     
-    def dispatch(self, user_message: str) -> Dict[str, Any]:
+    async def dispatch(self, user_message: str) -> Dict[str, Any]:
         prompt = f"""
         Du bist ein Workflow-Auswahlspezialist. Wähle genau einen der verfügbaren Workflows basierend auf der Benutzeranfrage.
 
@@ -20,19 +19,11 @@ class WorkflowDispatcher:
 
         Verfügbare Workflows:
         {WorkflowRegistry.format_for_prompt()}
-
-        WICHTIG: 
-        - Der "research"-Workflow sollte NUR gewählt werden, wenn EXTERNE Informationsquellen benötigt werden.
-        - Der "document"-Workflow sollte gewählt werden, wenn es um Dokumentenerstellung mit BEREITS BEKANNTEM Wissen geht.
-        - Wähle "default", wenn keiner der Workflows passend ist oder wenn die Anfrage mit allgemeinem Wissen beantwortet werden kann.
-
-        Antworte NUR mit einem der folgenden Wörter: "research", "document" oder "default".
+        Antworte NUR mit einem der folgenden Wörter: "weather", "alarm", "time" oder "default".
         """
         
-        # LLM nach dem passenden Workflow fragen
-        workflow_name = self.llm.invoke([{"role": "user", "content": prompt}]).content.strip()
-        
-        print("WorkflowRegistry.get_all_workflows()", WorkflowRegistry.get_all_workflows())
+        response = await self.llm.ainvoke([{"role": "user", "content": prompt}])
+        workflow_name = response.content.strip() if response and hasattr(response, "content") else "default"
         
         if workflow_name != "default" and workflow_name in WorkflowRegistry.get_all_workflows():
             return {"workflow": workflow_name}
