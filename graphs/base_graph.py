@@ -70,7 +70,7 @@ class BaseGraph:
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
         final_message = None
-        events = graph.astream(
+        events = await graph.ainvoke(
             {"messages": [{"role": "user", "content": input_message}]},
             config,
             stream_mode="values",

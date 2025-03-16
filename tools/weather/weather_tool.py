@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from langchain.tools import BaseTool
 import python_weather
 
+# TODO: Das hier sollte eigentlich nicht hartverdrahtet werden
 FALLBACK_CITY = "Münster"
 
     
