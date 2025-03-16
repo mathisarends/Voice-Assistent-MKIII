@@ -1,5 +1,6 @@
 from typing import Optional, Any
 from tools.spotify.spotify_command import SpotifyCommand
+from tools.spotify.spotify_device_manager import SpotifyDeviceManager
 from tools.spotify.spotify_player import SpotifyPlayer
 
 class PlayTrackCommand(SpotifyCommand):
@@ -83,3 +84,18 @@ class StartEveningPhaseCommand(SpotifyCommand):
     
     def execute(self) -> Optional[str]:
         return self.player.start_evening_phase(self.playlist_type)
+    
+class GetActiveDevicesCommand(SpotifyCommand):
+    def __init__(self, device_manager: SpotifyDeviceManager) -> None:
+        self.device_manager = device_manager
+    
+    def execute(self) -> Optional[str]:
+        return self.device_manager.get_available_devices()
+    
+class SwitchDeviceCommand(SpotifyCommand):
+    def __init__(self, device_manager: SpotifyDeviceManager, device_name: str) -> None:
+        self.device_manager = device_manager
+        self.device_name = device_name
+    
+    def execute(self) -> Optional[str]:
+        return self.device_manager.switch_device(device_name=self.device_name)

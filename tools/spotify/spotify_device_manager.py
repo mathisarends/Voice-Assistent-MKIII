@@ -26,10 +26,6 @@ class SpotifyDeviceManager:
             self.client.transfer_playback(device_id=device_id, force_play=False)
             self.active_device = self.devices[device_name]
 
-            # Warte kurz, um sicherzustellen, dass das Gerät bereit ist
-            import time
-            time.sleep(1)
-
             try:
                 self.client.start_playback(device_id=device_id)
                 print(f"▶️ Wiedergabe fortgesetzt auf: {device_name}")

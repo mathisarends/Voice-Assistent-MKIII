@@ -1,10 +1,12 @@
 from tools.spotify.spotify_command import SpotifyCommand
-from tools.spotify.spotify_commands import GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand, StartEveningPhaseCommand
+from tools.spotify.spotify_commands import GetActiveDevicesCommand, GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand, StartEveningPhaseCommand, SwitchDeviceCommand
+from tools.spotify.spotify_device_manager import SpotifyDeviceManager
 from tools.spotify.spotify_player import SpotifyPlayer
 
 class SpotifyController:
-    def __init__(self, player: SpotifyPlayer):
+    def __init__(self, player: SpotifyPlayer, device_manager: SpotifyDeviceManager):
         self.player = player
+        self.device_manager = device_manager
         self.history = [] 
     
     def execute_command(self, command: SpotifyCommand):
@@ -41,11 +43,18 @@ class SpotifyController:
     
     def start_evening_phase(self, playlist_type=None):
         return self.execute_command(StartEveningPhaseCommand(self.player, playlist_type))
+    
+    def get_active_devices(self):
+        return self.execute_command(GetActiveDevicesCommand(self.device_manager))
+
+    def switch_device(self, device_name):
+        return self.execute_command(SwitchDeviceCommand(self.device_manager, device_name))
 
 if __name__ == "__main__":
     player = SpotifyPlayer()
+    device_manager = SpotifyDeviceManager()
     
-    controller = SpotifyController(player)
+    controller = SpotifyController(player, device_manager)
     
     controller.start_evening_phase()
     

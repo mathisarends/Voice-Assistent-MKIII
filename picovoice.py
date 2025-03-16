@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
+from graphs.workflows.spotify_workflow import SpotifyWorkflow
 from graphs.workflows.weather_workflow import WeatherWorkflow
 from speech.voice_generator import VoiceGenerator
 from graphs.workflow_dispatcher import WorkflowDispatcher
@@ -49,6 +50,12 @@ def register_workflows():
         ["Zeit", "Datum", "Uhrzeit"]
     )
     
+    WorkflowRegistry.register(
+        "spotify",
+        SpotifyWorkflow,
+        "Steuert Spotify-Wiedergabe, Lautstärke, Geräte und Playlists per Sprachbefehl",
+        ["Musik", "Spotify", "Wiedergabe", "Playlist", "Lautstärke", "Geräte"]
+    )
     
 register_workflows()
     
