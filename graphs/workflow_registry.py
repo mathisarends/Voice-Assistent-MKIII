@@ -72,6 +72,16 @@ class WorkflowRegistry():
             capabilities = ", ".join(data["capabilities"]) if data["capabilities"] else "Keine spezifischen Fähigkeiten"
             formatted += f"- {name}: {data['description']} (Fähigkeiten: {capabilities})\n"
         return formatted
+    
+    @classmethod
+    def get_workflow_names(cls) -> List[str]:
+        """
+        Gibt eine Liste aller registrierten Workflow-Namen zurück.
+
+        Returns:
+            Liste mit allen Workflow-Namen
+        """
+        return list(cls._workflows.keys())
 
 def register_workflows():
     """Registriert alle verfügbaren Workflows in der Registry."""
@@ -79,7 +89,7 @@ def register_workflows():
         "lights",
         LightsWorkflow,
         "Steuert Philips Hue Beleuchtung mit Szenen, Helligkeit und Ein-/Ausschalt-Funktionen",
-        ["Beleuchtung", "Philips Hue", "Szenen", "Helligkeit"]
+        ["Beleuchtung", "Philips Hue", "Szenen", "Helligkeit", "Licht"]
     )
     
     WorkflowRegistry.register(
@@ -99,7 +109,7 @@ def register_workflows():
     WorkflowRegistry.register(
         "time",
         TimeTool,
-        "Gibt das aktuelle Datum und die Uhrzeit für Sprachsteuerung oder Automationen zurück",
+        "Gibt das aktuelle Datum und die Uhrzeit zurück",
         ["Zeit", "Datum", "Uhrzeit"]
     )
     
