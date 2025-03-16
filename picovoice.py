@@ -2,6 +2,8 @@ import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
+from graphs.workflows.notion_todo_workflow import NotionTodoWorkflow
+from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.spotify_workflow import SpotifyWorkflow
 from graphs.workflows.weather_workflow import WeatherWorkflow
 from speech.voice_generator import VoiceGenerator
@@ -56,6 +58,22 @@ def register_workflows():
         "Steuert Spotify-Wiedergabe, Lautstärke, Geräte und Playlists per Sprachbefehl",
         ["Musik", "Spotify", "Wiedergabe", "Playlist", "Lautstärke", "Geräte"]
     )
+    
+    WorkflowRegistry.register(
+        "notion_todo",
+        NotionTodoWorkflow,
+        "Verwaltet Notion-Tasks, Projekte und tägliche Top-Aufgaben für Produktivität",
+        ["Notion", "To-Do", "Projektmanagement", "Produktivität", "Tägliche Aufgaben"]
+    )
+    
+    WorkflowRegistry.register(
+        "notion_clipboard",
+        ResearchWorkflow,
+        "Durchsucht das Web nach relevanten Informationen und speichert sie in der Notion zwischenablage",
+        ["Recherche", "Websuche", "Notion", "Zwischenablage"]
+    )
+    
+    
     
 register_workflows()
     

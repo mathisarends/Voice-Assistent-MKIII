@@ -14,7 +14,3 @@ class NotionTodoWorkflow(BaseGraph):
         tools = [notion_add_todo_tool, notion_get_todos_by_project_tool, notion_get_daily_top_tasks_tool]
         
         super().__init__(tools, model_name)
-
-if __name__ == "__main__":
-    notion_todo_workflow = NotionTodoWorkflow()
-    notion_todo_workflow.run(input_message="Gebe mir bitte meine heutigen wichtigen Aufgaben", thread_id="todo_1")
