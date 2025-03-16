@@ -1,6 +1,6 @@
 from typing import Optional, Any
-from audio.spotify.spotify_command import SpotifyCommand
-from audio.spotify.spotify_player import SpotifyPlayer
+from tools.spotify.spotify_command import SpotifyCommand
+from tools.spotify.spotify_player import SpotifyPlayer
 
 class PlayTrackCommand(SpotifyCommand):
     def __init__(self, player: SpotifyPlayer, query: str) -> None:

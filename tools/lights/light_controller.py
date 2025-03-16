@@ -16,3 +16,14 @@ class LightController:
     async def set_light_state(self, light_id: str, state: dict) -> list:
         """Zustand einer Lampe ändern"""
         return await self.bridge.put_request(f"lights/{light_id}/state", state)
+    
+async def main() -> None:
+    bridge = HueBridge.connect_by_ip()
+    controller = LightController(bridge)
+    
+    lights = await controller.get_all_lights()
+    print(lights)
+    
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())

@@ -4,7 +4,7 @@ import random
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from audio.spotify.playlist_config import CONCENTRATION_PLAYLISTS, EVENING_PLAYLISTS
+from tools.spotify.playlist_config import CONCENTRATION_PLAYLISTS, EVENING_PLAYLISTS
 
 class SpotifyClient:
     def __init__(self):
@@ -33,6 +33,10 @@ class SpotifyPlayer:
                 return
         
         print("❌ Kein passendes Gerät gefunden!")
+        
+    def get_available_devices(self):
+        devices = self.client.devices()
+        return devices.get("devices", [])
     
     def _ensure_device_connection(self):
         if not self.device_id:
@@ -240,3 +244,8 @@ class SpotifyPlayer:
         except spotipy.exceptions.SpotifyException as e:
             print(f"❌ Fehler beim Abrufen des aktuellen Tracks: {e}")
             return None
+        
+if __name__ == "__main__":
+    spotify_player = SpotifyPlayer()
+    devices = spotify_player.get_available_devices()
+    print(devices)

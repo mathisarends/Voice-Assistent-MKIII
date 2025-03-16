@@ -11,6 +11,7 @@ from graphs.workflows.lights_workflow import LightsWorkflow
 from speech.wake_word_listener import WakeWordListener
 from speech.recognition.speech_recorder import SpeechRecorder
 from speech.recognition.audio_transcriber import AudioTranscriber
+from tools.time.time_tool import TimeTool
 from util.loggin_mixin import LoggingMixin
 from audio.audio_manager import play
 
@@ -41,6 +42,14 @@ def register_workflows():
         ["Wetter", "Vorhersage", "Sprachsteuerung", "Temperatur", "Regen"]
     )
     
+    WorkflowRegistry.register(
+        "time",
+        TimeTool,
+        "Gibt das aktuelle Datum und die Uhrzeit für Sprachsteuerung oder Automationen zurück",
+        ["Zeit", "Datum", "Uhrzeit"]
+    )
+    
+    
 register_workflows()
     
 workflow_dispatcher = WorkflowDispatcher()
@@ -68,7 +77,7 @@ class ConversationLoop(LoggingMixin):
     """Verwaltet den Haupt-Konversationsloop des Sprachassistenten"""
     
     def __init__(self, 
-                 assistant,
+                 assistant: VoiceGenerator,
                  wakeword: str = "picovoice",
                  vocabulary: str = "Wetterbericht, Abendroutine, Stopp"):
         """

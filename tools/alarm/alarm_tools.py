@@ -1,6 +1,6 @@
 import asyncio
 import datetime
-from typing import Type, Optional, List
+from typing import Type, List
 from pydantic import BaseModel, Field
 from langchain.tools import BaseTool
 

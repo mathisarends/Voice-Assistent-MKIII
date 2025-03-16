@@ -1,12 +1,13 @@
-from audio.spotify.spotify_commands import GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand, StartEveningPhaseCommand
-from audio.spotify.spotify_player import SpotifyPlayer
+from tools.spotify.spotify_command import SpotifyCommand
+from tools.spotify.spotify_commands import GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand, StartEveningPhaseCommand
+from tools.spotify.spotify_player import SpotifyPlayer
 
 class SpotifyController:
-    def __init__(self, player):
+    def __init__(self, player: SpotifyPlayer):
         self.player = player
         self.history = [] 
     
-    def execute_command(self, command):
+    def execute_command(self, command: SpotifyCommand):
         result = command.execute()
         self.history.append(command)
         return result

@@ -65,4 +65,4 @@ if __name__ == "__main__":
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
     
     for i in range(0, 105, 5):
-        print(i)
+        tts.generate_speech_file(f"Die aktuelle Zahl ist {i}.", category="lights")
