@@ -113,11 +113,11 @@ class LightToggleTool(HueBaseTool):
     async def _arun(self, action: str, fade_duration: float = 2.0) -> str:
         try:
             if action.lower() == "on":
-                await self.hue_controller.turn_on(fade_duration_sec=fade_duration)
-                return f"Alle Lichter wurden eingeschaltet (Fade-Dauer: {fade_duration} Sekunden)."
+                await self.hue_controller.turn_on()
+                return f"Alle Lichter wurden eingeschaltet."
             elif action.lower() == "off":
-                await self.hue_controller.turn_off(fade_duration_sec=fade_duration)
-                return f"Alle Lichter wurden ausgeschaltet (Fade-Dauer: {fade_duration} Sekunden)."
+                await self.hue_controller.turn_off()
+                return f"Alle Lichter wurden ausgeschaltet."
             else:
                 return f"Ungültige Aktion: '{action}'. Bitte 'on' oder 'off' verwenden."
         except Exception as e:
