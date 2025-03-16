@@ -7,6 +7,7 @@ from graphs.workflows.lights_workflow import LightsWorkflow
 from graphs.workflows.notion_todo_workflow import NotionTodoWorkflow
 from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.spotify_workflow import SpotifyWorkflow
+from graphs.workflows.volume_control_workflow import VolumeControlWorkflow
 from graphs.workflows.weather_workflow import WeatherWorkflow
 from tools.time.time_tool import TimeTool
 from util.loggin_mixin import LoggingMixin
@@ -132,4 +133,11 @@ def register_workflows():
         ResearchWorkflow,
         "Durchsucht das Web nach relevanten Informationen und speichert sie in der Notion zwischenablage",
         ["Recherche", "Websuche", "Notion", "Zwischenablage"]
+    )
+    
+    WorkflowRegistry.register(
+        "volume",
+        VolumeControlWorkflow,
+        "Steuert die Systemlautstärke des Geräts mit einfachen Sprachbefehlen",
+        ["Lautstärke", "Volume", "Audio", "Ton", "Sound"]
     )

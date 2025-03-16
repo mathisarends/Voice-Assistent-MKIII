@@ -6,8 +6,6 @@ import sounddevice as sd
 import numpy as np
 from openai import OpenAI
 from dotenv import load_dotenv
-import io
-from pydub import AudioSegment
 
 load_dotenv()
 
