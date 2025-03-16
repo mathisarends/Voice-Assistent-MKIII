@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Tuple
 
 from tools.lights.group_controller import GroupController
 from tools.lights.light_controller import LightController
-from tools.lights.hue.scene_controller import SceneController
+from tools.lights.scene_controller import SceneController
 
 import asyncio
 from tools.lights.bridge import HueBridge

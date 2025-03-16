@@ -151,51 +151,39 @@ class VoiceGenerator:
             
     def interrupt_and_reset(self):
         """Unterbricht die aktuelle Sprachausgabe und leert die Queues mit Deadlock-Vermeidung."""
-        
         print("Unterbreche aktuelle Audioausgabe...")
         
-        # Versuche, das Lock zu erwerben, aber mit Timeout
-        lock_acquired = self._audio_lock.acquire(timeout=1.0)  # 1 Sekunde Timeout
-        
-        try:
-            if lock_acquired:
-                # Lock erfolgreich erworben, führe normale Operationen aus
+        # Versuche Lock zu erwerben mit Timeout
+        if self._audio_lock.acquire(timeout=1.0):
+            try:
+                # Stoppe Audioausgabe
                 if pygame.mixer.get_init():
                     pygame.mixer.music.stop()
                     try:
                         pygame.mixer.music.unload()
                     except:
                         pass
-                        
-                # Queue-Clearing mit Timeout-Schutz
-                try:
-                    with self.text_queue.mutex:
-                        self.text_queue.queue.clear()
-                except:
-                    print("Warnung: Konnte Text-Queue nicht leeren")
-                    
-                try:
-                    with self.audio_queue.mutex:
-                        self.audio_queue.queue.clear()
-                except:
-                    print("Warnung: Konnte Audio-Queue nicht leeren")
-                    
-                print("🎤 Wake Word erkannt - System bereit für neue Eingabe")
-            else:
-                # Lock konnte nicht erworben werden, notfallmäßiges Anhalten
-                print("⚠️ Konnte Audio-Lock nicht erwerben, versuche alternative Stopstrategie")
                 
-                # Brutaler Ansatz: Mixer neu starten ohne Lock
-                try:
-                    pygame.mixer.quit()
-                    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
-                    print("🔄 Mixer wurde neu gestartet")
-                except Exception as e:
-                    print(f"❌ Fehler beim Neustart des Mixers: {e}")
-        finally:
-            # Stelle sicher, dass das Lock freigegeben wird
-            if lock_acquired:
+                # Leere Queues sicher
+                for queue, name in [(self.text_queue, "Text"), (self.audio_queue, "Audio")]:
+                    try:
+                        with queue.mutex:
+                            queue.queue.clear()
+                    except:
+                        print(f"Warnung: Konnte {name}-Queue nicht leeren")
+                
+                print("🎤 Wake Word erkannt - System bereit für neue Eingabe")
+            finally:
                 self._audio_lock.release()
+        else:
+            # Notfall-Reset bei Lock-Timeout
+            print("⚠️ Konnte Audio-Lock nicht erwerben, versuche alternative Stopstrategie")
+            try:
+                pygame.mixer.quit()
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+                print("🔄 Mixer wurde neu gestartet")
+            except Exception as e:
+                print(f"❌ Fehler beim Neustart des Mixers: {e}")
         
         return True
 
