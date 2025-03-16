@@ -13,6 +13,8 @@ from langchain.schema import AIMessage
 from util.loggin_mixin import LoggingMixin
 from audio.audio_manager import play
 
+voice_generator = VoiceGenerator()
+
 load_dotenv()
 
 def register_workflows():
@@ -31,15 +33,11 @@ workflow_dispatcher = WorkflowDispatcher()
 class AudioAssistant(LoggingMixin):
     """Einfache Klasse für Sprachassistenten-Logik ohne externe APIs"""
     
-    def __init__(self):
-        self.voice_generator = VoiceGenerator()
-        
-
     async def process_and_respond(self, user_text):
         """Verarbeitet Benutzereingabe und gibt eine Antwort zurück"""
         self.logger.info("Verarbeite Anfrage: %s", user_text)
         
-        self.voice_generator.speak(user_text)
+        voice_generator.speak(user_text)
         self.logger.info("Antwort: %s", user_text)
         return user_text
 
@@ -103,7 +101,7 @@ class ConversationLoop(LoggingMixin):
         selected_workflow = result["workflow"]
         print(f"Ausgewählter Workflow: {selected_workflow}")
         
-        result = workflow_dispatcher.run_workflow(selected_workflow, user_prompt, f"demo")
+        result = await workflow_dispatcher.run_workflow(selected_workflow, user_prompt, f"demo")
         
         await self.assistant.speak_response(result)
         return True
@@ -123,6 +121,7 @@ class ConversationLoop(LoggingMixin):
                         self.logger.info("🔔 Wake-Word erkannt, starte Sprachaufnahme")
                         
                         try:
+                            voice_generator.interrupt_and_reset()
                             audio_data = self.speech_recorder.record_audio()
                             await self.handle_user_input(audio_data)
                                 

@@ -48,9 +48,9 @@ class WorkflowDispatcher:
         
         return {"workflow": "default"}
     
-    def run_workflow(self, workflow_name: str, user_message: str, thread_id: str = None) -> Any:
+    async def run_workflow(self, workflow_name: str, user_message: str, thread_id: str = None) -> Any:
         """
-        Führt den angegebenen Workflow mit der Benutzeranfrage aus.
+        Führt den angegebenen Workflow mit der Benutzeranfrage asynchron aus.
         
         Args:
             workflow_name: Name des auszuführenden Workflows
@@ -61,7 +61,7 @@ class WorkflowDispatcher:
             Das Ergebnis der Workflow-Ausführung oder eine Standardantwort
         """
         if workflow_name == "default":
-            response = self.llm.invoke([{"role": "user", "content": user_message}])
+            response = await self.llm.ainvoke([{"role": "user", "content": user_message}])
             print(f"[DEFAULT] Antwort: {response.content[:100]}...")
             return response.content
         
@@ -69,6 +69,6 @@ class WorkflowDispatcher:
         if workflow_class:
             print(f"[DISPATCHER] Starte Workflow: {workflow_name}")
             workflow = workflow_class()
-            return workflow.run(user_message, thread_id or workflow_name)
+            return await workflow.arun(user_message, thread_id or workflow_name)
 
-        return self.llm.invoke([{"role": "user", "content": user_message}]).content
+        return (await self.llm.ainvoke([{"role": "user", "content": user_message}])).content

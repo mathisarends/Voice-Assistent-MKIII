@@ -1,5 +1,7 @@
 from typing import Dict, Any, List, Optional
 
+from graphs.base_graph import BaseGraph
+
 
 class WorkflowRegistry:
     """Registry für alle Workflows in der Anwendung."""
@@ -25,7 +27,7 @@ class WorkflowRegistry:
         print(f"Workflow '{name}' registriert: {description}")
     
     @classmethod
-    def get_workflow(cls, name: str):
+    def get_workflow(cls, name: str) -> BaseGraph:
         """
         Gibt eine Workflow-Klasse zurück.
         
