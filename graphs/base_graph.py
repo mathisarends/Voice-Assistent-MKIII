@@ -47,11 +47,11 @@ class BaseGraph:
         
         return self.graph_builder.compile(checkpointer=self.memory)
     
-    def run(self, input_message: str, thread_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def run(self, input_message: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
-        results = []
+        final_message = None
         events = graph.stream(
             {"messages": [{"role": "user", "content": input_message}]},
             config,
@@ -60,16 +60,16 @@ class BaseGraph:
         
         for event in events:
             if "messages" in event:
-                event["messages"][-1].pretty_print()
-                results.append(event)
-                
-        return results
-    
-    async def arun(self, input_message: str, thread_id: Optional[str] = None) -> List[Dict[str, Any]]:
+                final_message = event["messages"][-1]
+                final_message.pretty_print()
+        
+        return final_message.content
+
+    async def arun(self, input_message: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
-        results = []
+        final_message = None
         events = graph.astream(
             {"messages": [{"role": "user", "content": input_message}]},
             config,
@@ -78,7 +78,7 @@ class BaseGraph:
         
         async for event in events:
             if "messages" in event:
-                event["messages"][-1].pretty_print()
-                results.append(event)
-                
-        return results
+                final_message = event["messages"][-1]
+                final_message.pretty_print()
+        
+        return final_message.content

@@ -54,6 +54,11 @@ class HueController:
     async def adjust_brightness(self, percent_change: int) -> None:
         """Helligkeit der aktuellen Gruppe/Szene anpassen"""
         await self._lighting_controller.adjust_brightness(percent_change)
+        
+    async def get_current_brightness(self) -> int:
+        """Aktuelle Helligkeit der aktiven Gruppe abrufen"""
+        group_id = await self._group_controller.get_active_group()
+        return await self._lighting_controller.get_current_brightness(group_id)
     
     async def set_brightness(self, percent: int) -> None:
         """Helligkeit auf einen bestimmten Prozentwert setzen (0-100%)"""
@@ -105,22 +110,8 @@ async def main():
     
     print(f"Verfügbare Szenen: {scenes}")
     
-    await hue.activate_scene("Sternenlicht")
-    print("Szene aktiviert")
-    
-    import time
-    time.sleep(5)
-    
-    await hue.adjust_brightness(20)  # 20% heller
-    print("Helligkeit angepasst")
-    
-    print("Schalte aus...")
-    await hue.turn_off()
-    
-    print("Schalte wieder ein...")
-    await hue.turn_on()
-    
-    print("Test abgeschlossen")
+    current_brightness = await hue.get_current_brightness()
+    print(f"Aktuelle Helligkeit: {current_brightness}")
 
 if __name__ == "__main__":
     asyncio.run(main())

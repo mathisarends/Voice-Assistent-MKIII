@@ -64,24 +64,5 @@ if __name__ == "__main__":
     # PhraseGenerator mit dem korrekten Pfad initialisieren
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
     
-    # Research-Meldungen
-    tts.generate_speech_file("Recherche gestartet.", category="research")
-    tts.generate_speech_file("Suche nach Informationen läuft.", category="research")
-    
-    # Clipboard-Meldungen
-    tts.generate_speech_file("In Zwischenablage kopiert.", category="clipboard")
-    tts.generate_speech_file("Text wurde übertragen.", category="clipboard")
-    
-    # TODO-Meldungen
-    tts.generate_speech_file("Die Aufgabe wurde gespeichert.", category="todo")
-    tts.generate_speech_file("TODO erstellt.", category="todo")
-    tts.generate_speech_file("Neue Aufgabe wurde hinzugefügt.", category="todo")
-    
-    # Second Brain-Meldungen
-    tts.generate_speech_file("Deine Notiz ist gespeichert.", category="second_brain")
-    tts.generate_speech_file("Das Wissen wurde gesichert.", category="second_brain")
-    tts.generate_speech_file("Neuer Eintrag wurde erstellt.", category="second_brain")
-    
-    # Ideen-Meldungen
-    tts.generate_speech_file("Deine Idee wurde gespeichert.", category="ideen")
-    tts.generate_speech_file("Deine Idee wurde notiert.", category="ideen")
+    for i in range(0, 105, 5):
+        print(i)

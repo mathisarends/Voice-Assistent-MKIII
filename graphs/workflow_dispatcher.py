@@ -41,6 +41,8 @@ class WorkflowDispatcher:
         # LLM nach dem passenden Workflow fragen
         workflow_name = self.llm.invoke([{"role": "user", "content": prompt}]).content.strip()
         
+        print("WorkflowRegistry.get_all_workflows()", WorkflowRegistry.get_all_workflows())
+        
         if workflow_name != "default" and workflow_name in WorkflowRegistry.get_all_workflows():
             return {"workflow": workflow_name}
         

@@ -2,12 +2,14 @@ import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
+from assistant.voice_assistant import VoiceGenerator
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry
 from graphs.workflows.lights_workflow import LightsWorkflow
 from speech.wake_word_listener import WakeWordListener
 from speech.recognition.speech_recorder import SpeechRecorder
 from speech.recognition.audio_transcriber import AudioTranscriber
+from langchain.schema import AIMessage
 from util.loggin_mixin import LoggingMixin
 from audio.audio_manager import play
 
@@ -22,21 +24,24 @@ def register_workflows():
         ["Beleuchtung", "Philips Hue", "Szenen", "Helligkeit"]
     )
     
+register_workflows()
+    
 workflow_dispatcher = WorkflowDispatcher()
 
 class AudioAssistant(LoggingMixin):
     """Einfache Klasse für Sprachassistenten-Logik ohne externe APIs"""
+    
+    def __init__(self):
+        self.voice_generator = VoiceGenerator()
+        
 
     async def process_and_respond(self, user_text):
         """Verarbeitet Benutzereingabe und gibt eine Antwort zurück"""
         self.logger.info("Verarbeite Anfrage: %s", user_text)
-
-        # Hier könnte später die Integration mit einem echten Chat-Assistenten erfolgen
-        # Aktuell einfache Echo-Antwort
-        response = f"Sie sagten: {user_text}"
-
-        self.logger.info("Antwort: %s", response)
-        return response
+        
+        self.voice_generator.speak(user_text)
+        self.logger.info("Antwort: %s", user_text)
+        return user_text
 
     async def speak_response(self, user_text):
         """Generiert eine Antwort und würde sie aussprechen"""
@@ -44,7 +49,7 @@ class AudioAssistant(LoggingMixin):
 
         print(f"🤖 Assistenten-Antwort: {response}")
         return response
-
+    
 
 class ConversationLoop(LoggingMixin):
     """Verwaltet den Haupt-Konversationsloop des Sprachassistenten"""
@@ -144,7 +149,7 @@ async def main():
     conversation = ConversationLoop(
         assistant=assistant,
         wakeword="picovoice",
-        vocabulary="Wetterbericht, Abendroutine, Stopp"
+        vocabulary="Wetterbericht, Abendroutine, Stopp, Licht an, Licht aus, Licht dimmen, Licht heller"
     )
     
     await conversation.run()
