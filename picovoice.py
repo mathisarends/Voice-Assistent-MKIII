@@ -2,7 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-from assistant.voice_assistant import VoiceGenerator
+from speech.voice_generator import VoiceGenerator
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry
 from graphs.workflows.alarm_workflow import AlarmWorkflow
@@ -10,7 +10,6 @@ from graphs.workflows.lights_workflow import LightsWorkflow
 from speech.wake_word_listener import WakeWordListener
 from speech.recognition.speech_recorder import SpeechRecorder
 from speech.recognition.audio_transcriber import AudioTranscriber
-from langchain.schema import AIMessage
 from util.loggin_mixin import LoggingMixin
 from audio.audio_manager import play
 
