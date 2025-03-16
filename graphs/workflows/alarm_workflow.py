@@ -10,13 +10,3 @@ class AlarmWorkflow(BaseGraph):
         tools = get_alarm_tools()
         
         super().__init__(tools, model_name)
-
-if __name__ == "__main__":
-    workflow = AlarmWorkflow()
-    workflow.run(input_message="Stelle einen Alarm für 7:30 Uhr morgens ein.", thread_id="lights_1")
-    
-    workflow_2 = AlarmWorkflow()
-    workflow_2.run(input_message="Welche Alarme sind aktuell eingestellt?", thread_id="lights_1")
-    
-    workflow_3 = AlarmWorkflow()
-    workflow_3.run(input_message="Deaktiviere bitte den aktuellen Alarm", thread_id="lights_1")

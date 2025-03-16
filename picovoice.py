@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from assistant.voice_assistant import VoiceGenerator
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry
+from graphs.workflows.alarm_workflow import AlarmWorkflow
 from graphs.workflows.lights_workflow import LightsWorkflow
 from speech.wake_word_listener import WakeWordListener
 from speech.recognition.speech_recorder import SpeechRecorder
@@ -24,6 +25,13 @@ def register_workflows():
         LightsWorkflow,
         "Steuert Philips Hue Beleuchtung mit Szenen, Helligkeit und Ein-/Ausschalt-Funktionen",
         ["Beleuchtung", "Philips Hue", "Szenen", "Helligkeit"]
+    )
+    
+    WorkflowRegistry.register(
+        "alarm",
+        AlarmWorkflow,
+        "Verwaltet Alarme mit Wake-Up und Get-Up Phasen sowie Lichtwecker-Integration",
+        ["Alarm", "Wecker", "Aufwachen", "Lichtwecker", "Timer"]
     )
     
 register_workflows()

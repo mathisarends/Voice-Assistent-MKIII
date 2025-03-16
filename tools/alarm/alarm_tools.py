@@ -18,11 +18,11 @@ class SetAlarmInput(BaseModel):
     minute: int = Field(..., description="Minute (0-59) für den Alarm")
 
 class SetAlarmTool(BaseTool):
-    """Tool zum Setzen eines neuen Alarms."""
+    """Tool zum Setzen eines neuen Alarms, wobei vorherige Alarme gelöscht werden."""
     
     name: str = "set_alarm"
     description: str = """
-    Setzt einen neuen Alarm für eine bestimmte Uhrzeit.
+    Setzt einen neuen Alarm für eine bestimmte Uhrzeit und löscht alle vorherigen Alarme.
     
     Benötigte Parameter:
     - hour: Stunde (0-23) für den Alarm
@@ -32,20 +32,23 @@ class SetAlarmTool(BaseTool):
     """
     args_schema: Type[BaseModel] = SetAlarmInput
 
-    # Alarm-Manager-Instanz (mit exclude=True damit Pydantic dieses Feld ignoriert)
+    # Alarm-Manager-Instanz
     alarm_manager: Alarm = Field(default_factory=lambda: _shared_alarm_manager, exclude=True)
     
     def _run(self, hour: int, minute: int) -> str:
         return asyncio.run(self._arun(hour=hour, minute=minute))
 
     async def _arun(self, hour: int, minute: int) -> str:
-        """Setzt einen Alarm für die angegebene Uhrzeit."""
+        """Setzt einen neuen Alarm und löscht alle vorherigen Alarme."""
         try:
             # Validiere die Eingabewerte
             if not (0 <= hour <= 23):
                 return f"Fehler: Die Stunde muss zwischen 0 und 23 liegen, erhalten: {hour}"
             if not (0 <= minute <= 59):
                 return f"Fehler: Die Minute muss zwischen 0 und 59 liegen, erhalten: {minute}"
+            
+            # Lösche alle vorhandenen Alarme
+            self._delete_all_alarms()
             
             # Alarm setzen
             alarm_id = self.alarm_manager.set_alarm_for_time(hour=hour, minute=minute)
@@ -60,9 +63,20 @@ class SetAlarmTool(BaseTool):
             hours, remainder = divmod(time_diff.seconds, 3600)
             minutes, _ = divmod(remainder, 60)
             
-            return f"Alarm #{alarm_id} gesetzt für {hour:02d}:{minute:02d} (in {hours} Stunden und {minutes} Minuten)."
+            return f"Neuer Alarm #{alarm_id} gesetzt für {hour:02d}:{minute:02d} (in {hours} Stunden und {minutes} Minuten)."
         except Exception as e:
             return f"Fehler beim Setzen des Alarms: {str(e)}"
+    
+    def _delete_all_alarms(self) -> None:
+        """Löscht alle vorhandenen Alarme."""
+        # Hole Informationen zu allen Alarmen
+        next_alarm_info = self.alarm_manager.get_next_alarm_info()
+        
+        # Solange es noch Alarme gibt, lösche sie
+        while next_alarm_info:
+            alarm_id, _, _ = next_alarm_info
+            self.alarm_manager.cancel_alarm(alarm_id)
+            next_alarm_info = self.alarm_manager.get_next_alarm_info()
 
 # ------ CancelAlarmTool ------
 
