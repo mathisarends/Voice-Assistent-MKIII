@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph
 
 from states.state_definitions import State
-from tools.weather.weather_tool import WeatherClient
+from tools.weather.weather_client import WeatherClient
 from util.loggin_mixin import LoggingMixin
 
 
@@ -130,15 +130,3 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
             final_state = await graph.ainvoke(initial_state)
             
             return final_state
-
-async def main():
-    workflow = WeatherWorkflow()
-    
-    prompt = "Wie wird das Wetter heute?"
-    
-    return await workflow.run_workflow(prompt)
-
-if __name__ == "__main__":
-    import asyncio
-    result = asyncio.run(main())
-    print(result)

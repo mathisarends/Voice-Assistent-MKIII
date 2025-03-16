@@ -24,7 +24,7 @@ class BaseGraph:
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         self.memory = MemorySaver()
         
-    def build_graph(self) -> StateGraph:
+    def build_graph(self):
         """
         Baut den Graphen mit Standardknoten auf.
         """
@@ -70,7 +70,7 @@ class BaseGraph:
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
         final_message = None
-        events = await graph.ainvoke(
+        events = graph.astream(
             {"messages": [{"role": "user", "content": input_message}]},
             config,
             stream_mode="values",
@@ -80,5 +80,7 @@ class BaseGraph:
             if "messages" in event:
                 final_message = event["messages"][-1]
                 final_message.pretty_print()
+                
+        print("final_message", final_message)
         
         return final_message.content

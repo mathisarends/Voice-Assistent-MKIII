@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
+from graphs.workflows.weather_workflow import WeatherWorkflow
 from speech.voice_generator import VoiceGenerator
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry
@@ -31,6 +32,13 @@ def register_workflows():
         AlarmWorkflow,
         "Verwaltet Alarme mit Wake-Up und Get-Up Phasen sowie Lichtwecker-Integration",
         ["Alarm", "Wecker", "Aufwachen", "Lichtwecker", "Timer"]
+    )
+    
+    WorkflowRegistry.register(
+        "weather",
+        WeatherWorkflow,
+        "Liefert aktuelle Wetterinformationen und bereitet sie für Sprachwiedergabe auf",
+        ["Wetter", "Vorhersage", "Sprachsteuerung", "Temperatur", "Regen"]
     )
     
 register_workflows()
