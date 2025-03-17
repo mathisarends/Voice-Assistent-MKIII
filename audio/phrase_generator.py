@@ -2,6 +2,8 @@ import os
 import random
 from openai import OpenAI
 
+from audio.audio_manager import play
+
 class PhraseGenerator:
     def __init__(self, voice="nova", output_dir="audio/sounds/standard_phrases"):
         """Initialisiert den TTS-Dateigenerator mit OpenAI API und definiert das Ausgabe-Verzeichnis."""
@@ -45,8 +47,8 @@ class PhraseGenerator:
             print(f"❌ Fehler bei der Sprachgenerierung: {e}")
             return None
 
-    def get_random_speech_file(self, category="general"):
-        """Wählt zufällig eine gespeicherte Sprachdatei aus einer Kategorie aus."""
+    def play_random_speech_file_from_category(self, category="general"):
+        """Wählt zufällig eine gespeicherte Sprachdatei aus einer Kategorie aus und gibt nur den Dateinamen ohne Endung zurück."""
         category_dir = os.path.join(self.output_dir, category)
         if not os.path.exists(category_dir):
             print(f"❌ Keine Dateien in der Kategorie '{category}' gefunden.")
@@ -57,12 +59,59 @@ class PhraseGenerator:
             print(f"❌ Keine gespeicherten Dateien in '{category}'.")
             return None
 
-        return os.path.join(category_dir, random.choice(files))
-
+        # Wähle eine zufällige Datei
+        random_file = random.choice(files)
+        
+        # Entferne die Dateiendung (.mp3)
+        file_without_extension = os.path.splitext(random_file)[0]
+        
+        play(file_without_extension)
 
 if __name__ == "__main__":
     # PhraseGenerator mit dem korrekten Pfad initialisieren
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
     
-    for i in range(0, 105, 5):
-        tts.generate_speech_file(f"Die aktuelle Zahl ist {i}.", category="lights")
+    # Workflow related
+    # tts.generate_speech_file("Licht-Workflow aktiviert.", category="lights")
+    # tts.generate_speech_file("Schalte auf Lichtsteuerung.", category="lights")
+    # tts.generate_speech_file("Philips Hue wird angesprochen.", category="lights")
+    
+    # # Alarm Workflow
+    # tts.generate_speech_file("Wecker-Workflow steht bereit.", category="alarm")
+    # tts.generate_speech_file("Alarm-Modus aktiviert.", category="alarm")
+    # tts.generate_speech_file("Weckzeit wird eingestellt.", category="alarm")
+    # tts.generate_speech_file("Alarm-System ist online.", category="alarm")
+    # tts.generate_speech_file("Lichtwecker wird konfiguriert.", category="alarm")
+    
+    # # Weather Workflow
+    # tts.generate_speech_file("Wetter-Informationen werden abgerufen.", category="weather")
+    # tts.generate_speech_file("Wettervorhersage wird geladen.", category="weather")
+    # tts.generate_speech_file("Wetterdaten werden vorbereitet.", category="weather")
+    
+    # # Time Tool
+    # tts.generate_speech_file("Zeitangabe wird vorbereitet.", category="time")
+    # tts.generate_speech_file("Datum und Uhrzeit werden abgerufen.", category="time")
+    
+    # # Spotify Workflow
+    # tts.generate_speech_file("Spotify-Steuerung aktiviert.", category="spotify")
+    # tts.generate_speech_file("Spotify-Workflow bereit.", category="spotify")
+    # tts.generate_speech_file("Audio-Stream wird konfiguriert.", category="spotify")
+    
+    # # Notion Todo Workflow
+    # tts.generate_speech_file("Todo-Workflow aktiviert.", category="notion_todo")
+    # tts.generate_speech_file("Aufgabenmanagement läuft.", category="notion_todo")
+    # tts.generate_speech_file("Notion-Tasks werden geladen.", category="notion_todo")
+    
+    # # Notion Clipboard Workflow
+    # tts.generate_speech_file("Recherche-Modus aktiviert.", category="notion_clipboard")
+    # tts.generate_speech_file("Clipboard-Workflow bereit.", category="notion_clipboard")
+    # tts.generate_speech_file("Recherche-Tool gestartet.", category="notion_clipboard")
+    # tts.generate_speech_file("Datensammlung aktiviert.", category="notion_clipboard")
+    
+    # # Volume Control Workflow
+    # tts.generate_speech_file("Lautstärke-Modul aktiviert.", category="volume")
+    # tts.generate_speech_file("Audio-Level wird angepasst.", category="volume")
+    # tts.generate_speech_file("Sound-Steuerung bereit.", category="volume")
+    # tts.generate_speech_file("Volume-Control aktiv.", category="volume")
+    # tts.generate_speech_file("Lautstärkeregelung übernommen.", category="volume")
+    

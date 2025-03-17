@@ -5,6 +5,7 @@ import datetime
 from typing import Optional, List, Callable, Tuple, Dict, Any
 from dataclasses import dataclass
 
+from audio.phrase_generator import PhraseGenerator
 from tools.alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
 from tools.alarm.alarm_item import AlarmItem
 from audio.audio_manager import stop, play_loop, fade_out, get_mapper
@@ -308,6 +309,11 @@ class Alarm(LoggingMixin):
             
             # Phase 2: Get-Up Sound
             self._play_get_up_phase(alarm.get_up_sound_id)
+            
+            phrase_generator = PhraseGenerator()
+            phrase_generator.play_random_speech_file_from_category("alarm")
+            
+            time.sleep(10)
             
             self.logger.info(f"⏰ Alarm #{alarm_id} abgeschlossen")
             
