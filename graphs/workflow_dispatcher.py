@@ -21,10 +21,6 @@ class WorkflowDispatcher(LoggingMixin):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or GPT_MINI
         self.speech_service = SpeechService(voice="nova")
-                
-        self.observers: List[WorkflowObserver] = []
-        
-        self.observers.append(WorkflowAudioFeedbackObserver())
         
         # Graph definieren
         workflow_graph = StateGraph(WorkflowState)
@@ -77,8 +73,6 @@ class WorkflowDispatcher(LoggingMixin):
         else:
             state["workflow"] = "default"
             
-        # self._notify_workflow_selected(state["workflow"], {"message": state["user_message"]})
-        
         return state
     
     async def _run_default_workflow(self, state: WorkflowState) -> WorkflowState:
@@ -142,14 +136,3 @@ class WorkflowDispatcher(LoggingMixin):
             result = await self._run_specific_workflow(state)
             
         return result["response"]
-    
-    def add_observer(self, observer: WorkflowObserver) -> None:
-        self.observers.append(observer)
-    
-    def remove_observer(self, observer: WorkflowObserver) -> None:
-        if observer in self.observers:
-            self.observers.remove(observer)
-    
-    def _notify_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
-        for observer in self.observers:
-            observer.on_workflow_selected(workflow_name, context)

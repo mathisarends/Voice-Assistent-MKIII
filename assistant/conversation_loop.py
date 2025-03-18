@@ -75,7 +75,7 @@ class ConversationLoop(LoggingMixin):
                         try:
                             self.speech_service.interrupt_and_reset()
                             audio_data = self.speech_recorder.record_audio()
-                            play("process-sound-new")
+                            play("wakesound")
                             
                             await self.handle_user_input(audio_data)
                                 

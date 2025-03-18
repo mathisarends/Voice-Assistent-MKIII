@@ -8,10 +8,8 @@ from tools.lights.group_controller import GroupController
 class BrightnessController:
     """Höheres Abstraktionsniveau für typische Beleuchtungsaufgaben"""
     
-    # Name der temporären Szene zur Zustandsspeicherung
     TEMP_SCENE_NAME = "_saved_state_scene"
     
-    # Konstanten für Helligkeitswerte
     MAX_BRIGHTNESS = 254
     
     def __init__(self, bridge: HueBridge, group_controller: GroupController) -> None:

@@ -76,7 +76,8 @@ if __name__ == "__main__":
     # tts.generate_speech_file("Wetter-Informationen werden abgerufen. Präzisionsanalyse läuft.", category="weather")
     # tts.generate_speech_file("Atmosphärische Datenstruktur wird kompiliert. Fortschritt: 25 Prozent", category="weather")
     
-    tts.generate_speech_file("Benutze Licht Workflow.", category="test")
+    tts.generate_speech_file("Verwende Beleuchtungssteuerung", category="test")
+    tts.generate_speech_file("Setze Lichtsteuerung ein", category="test")
     
     # spotify_phrases = [
     #     "Musikdatenbanken werden abgerufen. Präzisionsanalyse läuft.",
