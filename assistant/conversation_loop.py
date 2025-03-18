@@ -51,13 +51,7 @@ class ConversationLoop(LoggingMixin):
         self.logger.info("🗣 Erkannt: %s", user_prompt)
         
         result = await self.workflow_dispatcher.dispatch(user_prompt)
-        selected_workflow = result["workflow"]
-        self.logger.info("Ausgewählter Workflow '%s'", selected_workflow)
-        
-        
-        final_repsonse = await self.workflow_dispatcher.run_workflow(selected_workflow, user_prompt, "thread-1")
-        
-        self.logger.info("🤖 AI-Antwort: %s", final_repsonse)
+        self.logger.info("🤖 AI-Antwort: %s", result)
         
         return True
     

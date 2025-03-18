@@ -118,18 +118,3 @@ class WorkflowDispatcher(LoggingMixin):
             "workflow": result["workflow"],
             "response": result["response"]
         }
-    
-    async def run_workflow(self, workflow_name: str, user_message: str, thread_id: str = None) -> Any:
-        state = {
-            "user_message": user_message,
-            "workflow": workflow_name,
-            "response": "",
-            "thread_id": thread_id or workflow_name
-        }
-        
-        if workflow_name == "default":
-            result = await self._run_default_workflow(state)
-        else:
-            result = await self._run_specific_workflow(state)
-            
-        return result["response"]
