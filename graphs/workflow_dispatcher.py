@@ -33,7 +33,6 @@ class WorkflowDispatcher(LoggingMixin):
         # Den Startpunkt setzen
         workflow_graph.set_entry_point("select_workflow")
         
-        # Router als Conditional Edge definieren
         workflow_graph.add_conditional_edges(
             "select_workflow",
             self._router,
@@ -43,7 +42,6 @@ class WorkflowDispatcher(LoggingMixin):
             }
         )
         
-        # Ende definieren
         workflow_graph.add_edge("default_workflow", END)
         workflow_graph.add_edge("specific_workflow", END)
         

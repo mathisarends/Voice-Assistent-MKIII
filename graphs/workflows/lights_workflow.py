@@ -7,4 +7,4 @@ from tools.time.time_tool import TimeTool
 class LightsWorkflow(BaseGraph):
     def __init__(self, model_name: Optional[str] = None):
         tools = get_hue_tools() + [TimeTool()]
-        super().__init__(tools, model_name)
+        super().__init__(speak_responses=False, tools=tools, model_name=model_name)

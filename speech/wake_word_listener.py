@@ -64,10 +64,10 @@ class WakeWordListener:
             keyword_index = self.handle.process(pcm)
             
             if keyword_index >= 0:
+                threading.Thread(target=play, args=("wakesound",), daemon=True).start()
                 self.logger.info("🚀 Wake-Word erkannt!")
-                play("wakesound")
                 self._detection_event.set()
-        
+
         return (in_data, pyaudio.paContinue)
 
     def listen_for_wakeword(self):

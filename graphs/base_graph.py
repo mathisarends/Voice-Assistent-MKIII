@@ -56,10 +56,12 @@ class BaseGraph(LoggingMixin):
     
     def __init__(
         self,
+        speak_responses = True,
         tools: Optional[List[BaseTool]] = None,
         model_name: Optional[str] = None,
         system_prompt: Optional[str] = None
     ):
+        self.speak_responses = speak_responses
         self.tools = tools or []
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.graph_builder = StateGraph(State)
@@ -128,17 +130,6 @@ class BaseGraph(LoggingMixin):
         return final_message.content
 
     async def arun(self, input_message: str, thread_id: Optional[str] = None) -> str:
-        """
-        Führt den Graph-Workflow aus, loggt alle AI-Nachrichten und gibt den finalen Inhalt zurück.
-        Sendet zudem die Nachrichten an den SpeechService.
-        
-        Args:
-            input_message: Die Benutzereingabe.
-            thread_id: Optional, eine ID für den Gesprächsthread.
-            
-        Returns:
-            Der Inhalt der letzten AI-Nachricht.
-        """
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
@@ -151,9 +142,14 @@ class BaseGraph(LoggingMixin):
         
         async for event in events:
             if "messages" in event and isinstance(event["messages"], list):
-                # Nur die neueste Nachricht betrachten
+                
+                message = event["messages"][-1]
+                message.pretty_print()
+                
                 if event["messages"] and isinstance(event["messages"][-1], AIMessage):
-                    message = event["messages"][-1]
+
+                    
+                    # Textinhalt extrahieren
                     content = None
                     
                     if isinstance(message.content, list):
@@ -169,7 +165,9 @@ class BaseGraph(LoggingMixin):
                         self.logger.info(f"AI-Nachricht: {content}")
                         
                         # SpeechService mit der neuen Nachricht füttern
-                        self.speech_service.enqueue_text(content, False)
+                        
+                        if self.speak_responses:
+                            self.speech_service.enqueue_text(content, False)
         
         if last_message:
             return last_message
