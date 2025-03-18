@@ -1,64 +1,95 @@
 import asyncio
-from langchain.tools import BaseTool
-from typing import Type, Optional
-from pydantic import BaseModel, Field
-from tools.volume.volume_control import VolumeControl  
+from langchain.tools import tool
+from tools.volume.volume_control import VolumeControl
+from audio.workflow_audio_response_manager import WorkflowAudioResponseManager
 
-class VolumeControlInput(BaseModel):
-    """Eingabemodell für das VolumeControl Tool."""
-    action: str = Field(
-        description="Die auszuführende Aktion: 'set', 'increase', 'decrease', 'mute', 'get'"
-    )
-    value: Optional[int] = Field(
-        default=None,
-        description="Der Wert für die Aktion 'set' (1-10) oder die Schrittgröße für 'increase'/'decrease'"
-    )
+# Kurze, prägnante Antworttexte
+VOLUME_SET_SUCCESS = "Lautstärke auf {percent} Prozent gesetzt."
+VOLUME_INCREASE_SUCCESS = "Lautstärke auf {percent} Prozent erhöht."
+VOLUME_DECREASE_SUCCESS = "Lautstärke auf {percent} Prozent verringert."
+VOLUME_GET_CURRENT = "Lautstärke beträgt {percent} Prozent."
+VOLUME_ERROR_RANGE = "Lautstärke muss zwischen 10 und 100 Prozent liegen."
+VOLUME_ERROR_MISSING = "Bitte gib einen Lautstärkewert an."
 
-class VolumeControlTool(BaseTool):
-    """Steuert die Systemlautstärke mit PulseAudio."""
+audio_manager = WorkflowAudioResponseManager(
+    category="volume_responses",
+)
+
+# Fix these two parameters please
+
+def run_async(coro):
+    return asyncio.run(coro)
+
+@tool("set_volume", return_direct=True)
+def set_volume(level: int):
+    """Setzt die Systemlautstärke auf einen bestimmten Prozentwert.
     
-    name: str = "volume_control"
-    description: str = """Steuert die Systemlautstärke über PulseAudio (Linux).
-    Aktionen:
-    - 'set': Setzt die Lautstärke auf eine Stufe (1-10)
-    - 'increase': Erhöht die Lautstärke (Standardschritt: 15%)
-    - 'decrease': Verringert die Lautstärke (Standardschritt: 15%)
-    - 'get': Gibt die aktuelle Lautstärke zurück"""
+    Args:
+        level: Lautstärkelevel zwischen 10 und 100 (Prozent)
+    """
+    try:
+        if not 10 <= level <= 100:
+            return audio_manager.respond_with_audio(VOLUME_ERROR_RANGE)
+            
+        # Konvertiere von Level (10-100) zu VolumeControl-Level (1-10)
+        volume_level = max(1, min(10, round(level / 10)))
+        VolumeControl.set_volume_level(volume_level)
+        
+        current_volume = VolumeControl.get_volume()
+        response = VOLUME_SET_SUCCESS.format(percent=current_volume)
+        return audio_manager.respond_with_audio(response)
+    except Exception as e:
+        error_msg = f"Fehler bei Lautstärke: {str(e)}"
+        return audio_manager.respond_with_audio(error_msg)
+
+@tool("increase_volume", return_direct=True)
+def increase_volume(step: int = 15):
+    """Erhöht die Systemlautstärke um einen bestimmten Prozentsatz.
     
-    args_schema: Type[BaseModel] = VolumeControlInput
+    Args:
+        step: Erhöhungsschrittweite in Prozent (Standard: 15%)
+    """
+    try:
+        VolumeControl.increase_volume(step)
+        current_volume = VolumeControl.get_volume()
+        response = VOLUME_INCREASE_SUCCESS.format(percent=current_volume)
+        return audio_manager.respond_with_audio(response)
+    except Exception as e:
+        error_msg = f"Fehler bei Lautstärke: {str(e)}"
+        return audio_manager.respond_with_audio(error_msg)
+
+@tool("decrease_volume", return_direct=True)
+def decrease_volume(step: int = 15):
+    """Verringert die Systemlautstärke um einen bestimmten Prozentsatz.
     
-    def _run(self, action: str, value: Optional[int] = None) -> str:
-        return asyncio.run(self._arun(action, value))
+    Args:
+        step: Verringerungsschrittweite in Prozent (Standard: 15%)
+    """
+    try:
+        VolumeControl.decrease_volume(step)
+        current_volume = VolumeControl.get_volume()
+        response = VOLUME_DECREASE_SUCCESS.format(percent=current_volume)
+        return audio_manager.respond_with_audio(response)
+    except Exception as e:
+        error_msg = f"Fehler bei Lautstärke: {str(e)}"
+        return audio_manager.respond_with_audio(error_msg)
 
-    async def _arun(self, action: str, value: Optional[int] = None) -> str:
-        try:
-            if action == "set":
-                if value is None:
-                    return "Fehler: Für die Aktion 'set' wird ein Wert (1-10) benötigt."
-                
-                if not 1 <= value <= 10:
-                    return "Fehler: Lautstärkelevel muss zwischen 1 und 10 liegen."
-                    
-                VolumeControl.set_volume_level(value)
-            
-            elif action == "increase":
-                step = value if value is not None else 15
-                VolumeControl.increase_volume(step)
-            
-            elif action == "decrease":
-                step = value if value is not None else 15
-                VolumeControl.decrease_volume(step)
-                
-            elif action == "get":
-                current_volume = VolumeControl.get_volume()
-                return f"Aktuelle Lautstärke: {current_volume}%"
-            
-            else:
-                return f"Fehler: Unbekannte Aktion '{action}'"
+@tool("get_volume", return_direct=True)
+def get_volume():
+    """Gibt die aktuelle Systemlautstärke zurück."""
+    try:
+        current_volume = VolumeControl.get_volume()
+        response = VOLUME_GET_CURRENT.format(percent=current_volume)
+        return audio_manager.respond_with_audio(response)
+    except Exception as e:
+        error_msg = f"Fehler bei Lautstärke: {str(e)}"
+        return audio_manager.respond_with_audio(error_msg)
 
-            current_volume = VolumeControl.get_volume()
-            
-            return f"Lautstärkeaktion '{action}' erfolgreich ausgeführt. Aktuelle Lautstärke: {current_volume}%."
-
-        except Exception as e:
-            return f"Fehler bei der Ausführung des VolumeControlTools: {str(e)}"
+# Funktion zum Abrufen aller Tools
+def get_volume_tools():
+    return [
+        set_volume,
+        increase_volume,
+        decrease_volume,
+        get_volume
+    ]
