@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 
+from assistant.speech_service import SpeechService
 from config.settings import GPT_MINI
 from graphs.workflow_registry import WorkflowRegistry, register_workflows
 from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
@@ -14,10 +15,13 @@ class WorkflowState(TypedDict):
     workflow: str
     response: str
     thread_id: str
+    task_done: bool
 
 class WorkflowDispatcher(LoggingMixin):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or GPT_MINI
+        
+        self.speech_service = SpeechService()
                 
         self.observers: List[WorkflowObserver] = []
         
@@ -105,9 +109,9 @@ class WorkflowDispatcher(LoggingMixin):
             messages = []
             async for message in workflow.arun_generator(state["user_message"], thread_id):
                 self.logger.info("Message from assistatn: %s", message)
-                messages.append(message)
-
-            # Take the last message
+                messages.append(message)   
+                self.speech_service.speak_response(message, is_interrupting=False)
+            
             if messages:
                 state["response"] = messages[-1]
                 self.logger.info(f"[DISPATCHER] Finale AI-Antwort: {state['response']}")
@@ -136,7 +140,6 @@ class WorkflowDispatcher(LoggingMixin):
         }
     
     async def run_workflow(self, workflow_name: str, user_message: str, thread_id: str = None) -> Any:
-        """Führt einen spezifischen Workflow aus (für Kompatibilität mit bestehendem Code)."""
         state = {
             "user_message": user_message,
             "workflow": workflow_name,

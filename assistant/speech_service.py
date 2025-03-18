@@ -206,14 +206,16 @@ class SpeechService(LoggingMixin):
         except Exception as e:
             self.logger.error("Fehler beim Leeren der Queues: %s", e)
     
-    async def speak_response(self, response_text: str) -> str:
+    def speak_response(self, response_text: str, is_interrupting = True) -> str:
         self.logger.info("🤖 Assistenten-Antwort: %s", response_text)
         
         if not response_text or response_text.strip() == "":
             self.logger.warning("Leere Antwort erhalten, keine Sprachausgabe")
             return ""
+        
+        if is_interrupting:
+            self.interrupt_and_reset()
 
-        self.interrupt_and_reset()
         self.text_queue.put(response_text)
         self.logger.info("Text zur Sprachausgabe hinzugefügt: %s", response_text[:50] + ("..." if len(response_text) > 50 else ""))
         

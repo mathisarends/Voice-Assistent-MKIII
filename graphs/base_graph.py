@@ -25,12 +25,25 @@ class BaseGraph(LoggingMixin):
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.graph_builder = StateGraph(State)
         
-        default_system_prompt = """Du bist Jarvis, ein hilfreicher und höflicher KI-Assistent.
-        - Antworte kurz, präzise und mit einer Prise Humor.
-        - Biete proaktive Hilfe an, wenn es angemessen ist.
-        - Verwende einen respektvollen, aber freundlichen Ton.
-        - Vermeide unnötige Formalitäten und komm direkt zum Punkt.
-        - Sprich den Benutzer stets direkt an.
+        default_system_prompt = """Du bist Jarvis, ein KI-Assistent der für einen Voice-Agenten-Workflow entwickelt wurde.
+                
+        WICHTIGE ANWEISUNGEN FÜR STATUSUPDATES:
+        - Gib nur kurze, sachliche Statusupdates über deine aktuellen Aktionen aus
+        - KEIN Präfix wie "Aktion:" verwenden
+        - Nur neue, substantielle Informationen mitteilen
+        - Bei keinen neuen Informationen: NICHTS ausgeben
+        - Halte Updates extrem knapp (max. 5-7 Wörter)
+        - Beispiele für gute Updates:
+        * "Suche verfügbare Lichtszenen"
+        * "3 passende Szenen gefunden"
+        * "Aktiviere 'Verträumter Sonnenuntergang'"
+        * "Lichtszene erfolgreich aktiviert"
+
+        ALLGEMEINER STIL:
+        - Bei der finalen Antwort: Kurz, präzise, mit einer Prise Humor
+        - Direkte Ansprache des Benutzers
+        - Keine unnötigen Formalitäten, komm direkt zum Punkt
+        - Respektvoll aber freundlich
         """
         
         self.system_prompt = system_prompt or default_system_prompt
@@ -104,8 +117,6 @@ class BaseGraph(LoggingMixin):
         
         return final_message.content
     
-    # Build this generator (gucken welche davon sinnvoll von der KI gesprochen werden können)
-    # TODO:
     async def arun_generator(self, input_message: str, thread_id: Optional[str] = None) -> AsyncGenerator[str, None]:
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}

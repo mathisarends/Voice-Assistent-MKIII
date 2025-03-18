@@ -37,7 +37,6 @@ class ConversationLoop(LoggingMixin):
             listener.cleanup()
     
     async def handle_user_input(self, audio_data):
-        """Verarbeitet die Audio-Eingabe des Benutzers und gibt die Antwort aus."""
         user_prompt = await self.audio_transcriber.transcribe_audio(
             audio_data, 
             vocabulary=self.vocabulary
@@ -52,10 +51,10 @@ class ConversationLoop(LoggingMixin):
         
         result = await self.workflow_dispatcher.dispatch(user_prompt)
         selected_workflow = result["workflow"]
-        self.logger.info("Ausgewählter Workflow '%s'", selected_workflow)
+        response = result["response"]
         
-        result = await self.workflow_dispatcher.run_workflow(selected_workflow, user_prompt, "demo")
-        await self.speech_service.speak_response(result)
+        self.logger.info("Ausgewählter Workflow '%s'", selected_workflow)
+        self.logger.info("🤖 AI-Antwort: %s", response)
         
         return True
     
