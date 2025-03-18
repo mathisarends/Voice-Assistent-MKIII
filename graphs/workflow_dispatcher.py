@@ -48,3 +48,6 @@ class WorkflowDispatcher:
             return await workflow.arun(user_message, thread_id or workflow_name)
 
         return (await self.llm.ainvoke([{"role": "user", "content": user_message}])).content
+    
+
+            

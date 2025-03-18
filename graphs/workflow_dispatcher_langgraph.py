@@ -7,6 +7,7 @@ from langchain_core.runnables import RunnablePassthrough
 
 from config.settings import GPT_MINI
 from graphs.workflow_registry import WorkflowRegistry, register_workflows
+from graphs.workflow_selected_observer import AudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowState(TypedDict):
@@ -20,6 +21,8 @@ class WorkflowDispatcher(LoggingMixin):
     
     def __init__(self, model_name: str = None):
         self.model_name = model_name or GPT_MINI
+                
+        self.observers: List[WorkflowObserver] = []
         
         # Graph definieren
         workflow_graph = StateGraph(WorkflowState)
@@ -50,7 +53,6 @@ class WorkflowDispatcher(LoggingMixin):
         self.graph = workflow_graph.compile()
     
     def _select_workflow(self, state: WorkflowState) -> WorkflowState:
-        """Wählt einen passenden Workflow basierend auf der Benutzeranfrage aus."""
         llm = ChatOpenAI(model=self.model_name)
         workflow_names = WorkflowRegistry.get_workflow_names()
         workflow_names_str = ", ".join(workflow_names) + ", default"
@@ -72,11 +74,12 @@ class WorkflowDispatcher(LoggingMixin):
             state["workflow"] = workflow_name
         else:
             state["workflow"] = "default"
+            
+        self._notify_workflow_selected(state["workflow"], {"message": state["user_message"]})
         
         return state
     
     async def _run_default_workflow(self, state: WorkflowState) -> WorkflowState:
-        """Führt den Standard-Workflow aus."""
         llm = ChatOpenAI(model=self.model_name)
         response = await llm.ainvoke([HumanMessage(content=state["user_message"])])
         state["response"] = response.content
@@ -84,7 +87,6 @@ class WorkflowDispatcher(LoggingMixin):
         return state
     
     async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
-        """Führt einen spezifischen Workflow aus."""
         workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
         if workflow_class:
             self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
@@ -94,11 +96,10 @@ class WorkflowDispatcher(LoggingMixin):
         return state
     
     def _router(self, state: WorkflowState) -> str:
-        """Routing-Funktion basierend auf dem ausgewählten Workflow."""
         if state["workflow"] == "default":
             return "default_workflow"
-        else:
-            return "specific_workflow"
+        
+        return "specific_workflow"
     
     async def dispatch(self, user_message: str, thread_id: str = None) -> Dict[str, Any]:
         """Dispatcht eine Anfrage an den passenden Workflow."""
@@ -131,9 +132,24 @@ class WorkflowDispatcher(LoggingMixin):
             
         return result["response"]
     
+    def add_observer(self, observer: WorkflowObserver) -> None:
+        self.observers.append(observer)
+    
+    def remove_observer(self, observer: WorkflowObserver) -> None:
+        if observer in self.observers:
+            self.observers.remove(observer)
+    
+    def _notify_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
+        for observer in self.observers:
+            observer.on_workflow_selected(workflow_name, context)
+    
 async def demo():
     workflow_dispatcher = WorkflowDispatcher()
-    result = await workflow_dispatcher.dispatch("?")
+    
+    audio_observer = AudioFeedbackObserver()
+    workflow_dispatcher.add_observer(audio_observer)
+    
+    result = await workflow_dispatcher.dispatch("Wie wird das Wetter heute?")
     print(result)
     
 if __name__ == "__main__":
