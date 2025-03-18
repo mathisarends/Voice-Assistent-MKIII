@@ -16,10 +16,10 @@ load_dotenv()
 register_workflows()
 
 async def main():
-    """Hauptfunktion zum Starten des Sprachassistenten."""
-    speech_service = SpeechService()
+    speech_service = SpeechService(voice="nova")
+    
     conversation = ConversationLoop(
-        speech_service=speech_service,  # Hier muss eine SpeechService-Instanz übergeben werden
+        speech_service=speech_service,
         wakeword="picovoice",
         vocabulary="Wetterbericht, Abendroutine, Stopp, Licht an, Licht aus, Lautstärke"
     )

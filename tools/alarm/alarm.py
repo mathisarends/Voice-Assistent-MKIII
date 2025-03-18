@@ -11,7 +11,7 @@ from tools.alarm.alarm_item import AlarmItem
 from audio.audio_manager import stop, play_loop, fade_out, get_mapper
 
 from tools.lights.animation.sunrise_controller import SceneBasedSunriseController
-from tools.lights.bridge import HueBridge
+from tools.lights.bridge.bridge import HueBridge
 from util.loggin_mixin import LoggingMixin
 
 @dataclass

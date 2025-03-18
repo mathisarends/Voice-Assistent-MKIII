@@ -2,7 +2,7 @@ from __future__ import annotations
 import aiohttp
 from typing import Any, Optional
 
-from tools.lights.bridge_discovery import BridgeDiscovery
+from tools.lights.bridge.bridge_discovery import BridgeDiscovery
 
 class HueBridge:
     """Basisklasse für die Kommunikation mit der Hue Bridge"""

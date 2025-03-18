@@ -1,4 +1,5 @@
-from typing import AsyncGenerator, List, Dict, Any, Optional
+from typing import AsyncGenerator, List, Dict, Any, Optional, ClassVar
+import textwrap
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
@@ -9,11 +10,48 @@ from config.settings import DEFAULT_LLM_MODEL
 from util.loggin_mixin import LoggingMixin
 
 
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
-# TODO: Was hier auch cool wäre wenn das hier yielden würde, Performance
+from langchain.schema import AIMessage
 
 class BaseGraph(LoggingMixin):
     """Basisklasse für alle Graph-Workflows in der Anwendung."""
+    
+    # Basis-Systemprompt als Klassenvariable
+    BASE_SYSTEM_PROMPT: ClassVar[str] = textwrap.dedent("""
+    Du bist ein KI-Assistent der für einen Voice-Agenten-Workflow entwickelt wurde.
+    WICHTIGE ANWEISUNGEN FÜR STATUSUPDATES:
+    - Gib nur kurze, sachliche Statusupdates über deine aktuellen Aktionen aus
+    - KEIN Präfix wie "Aktion:" verwenden
+    - Nur neue, substantielle Informationen mitteilen
+    - Bei keinen neuen Informationen: NICHTS ausgeben
+    - Halte Updates extrem knapp (max. 5-7 Wörter)
+    - Beispiele für gute Updates:
+    * "Suche verfügbare Lichtszenen"
+    * "3 passende Szenen gefunden"
+    * "Aktiviere 'Verträumter Sonnenuntergang'"
+    * "Lichtszene erfolgreich aktiviert"
+
+    ANWEISUNGEN FÜR FINALE ANTWORTEN (SPRACHOPTIMIERT):
+    - Deine Antworten werden LAUT VORGELESEN, optimiere sie für Sprachausgabe
+    - Vermeide Symbole, Sonderzeichen und Emojis (werden nicht richtig ausgesprochen)
+    - Verwende einfache Satzstrukturen und klare Aussprache
+    - Beginne mit einer kurzen Bestätigung der Aktion (1-2 Sätze)
+    - Für Lichtszenen: "Die Lichtszene X ist jetzt aktiv."
+    - Für Musikwiedergabe: "Ich spiele jetzt X ab."
+    - Für Informationen: "Hier sind die Informationen zu X:"
+    - Keine unnötigen Details oder Beschreibungen 
+    - Sprich knapp und direkt, max. 15-20 Wörter
+    - Vermeide Abkürzungen, Zahlen als Ziffern, komplexe Satzzeichen
+
+    ALLGEMEINER STIL:
+    - Direkte Ansprache des Benutzers
+    - Keine unnötigen Formalitäten, komm direkt zum Punkt
+    - Respektvoll aber freundlich
+    - Eine Prise Humor ist erlaubt, aber nicht übertreiben
+    - Optimiere für GEHÖRTES Verständnis, nicht für Lesekomfort
+    """)
+    
+    
+    WORKFLOW_SPECIFIC_PROMPT: ClassVar[str] = ""
     
     def __init__(
         self,
@@ -25,28 +63,10 @@ class BaseGraph(LoggingMixin):
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.graph_builder = StateGraph(State)
         
-        default_system_prompt = """Du bist Jarvis, ein KI-Assistent der für einen Voice-Agenten-Workflow entwickelt wurde.
-                
-        WICHTIGE ANWEISUNGEN FÜR STATUSUPDATES:
-        - Gib nur kurze, sachliche Statusupdates über deine aktuellen Aktionen aus
-        - KEIN Präfix wie "Aktion:" verwenden
-        - Nur neue, substantielle Informationen mitteilen
-        - Bei keinen neuen Informationen: NICHTS ausgeben
-        - Halte Updates extrem knapp (max. 5-7 Wörter)
-        - Beispiele für gute Updates:
-        * "Suche verfügbare Lichtszenen"
-        * "3 passende Szenen gefunden"
-        * "Aktiviere 'Verträumter Sonnenuntergang'"
-        * "Lichtszene erfolgreich aktiviert"
-
-        ALLGEMEINER STIL:
-        - Bei der finalen Antwort: Kurz, präzise, mit einer Prise Humor
-        - Direkte Ansprache des Benutzers
-        - Keine unnötigen Formalitäten, komm direkt zum Punkt
-        - Respektvoll aber freundlich
-        """
-        
-        self.system_prompt = system_prompt or default_system_prompt
+        if system_prompt:
+            self.system_prompt = system_prompt
+        else:
+            self.system_prompt = self._build_system_prompt()
         
         self.llm = ChatAnthropic(
             model=self.model_name,
@@ -55,6 +75,12 @@ class BaseGraph(LoggingMixin):
         
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         self.memory = MemorySaver()
+    
+    def _build_system_prompt(self) -> str:
+        """Baut den vollständigen Systemprompt aus den Komponenten zusammen."""
+        if self.WORKFLOW_SPECIFIC_PROMPT:
+            return f"{self.BASE_SYSTEM_PROMPT}\n\nWORKFLOW-SPEZIFISCHE ANWEISUNGEN:\n{self.WORKFLOW_SPECIFIC_PROMPT}"
+        return self.BASE_SYSTEM_PROMPT
         
     def build_graph(self):
         """
@@ -79,6 +105,7 @@ class BaseGraph(LoggingMixin):
         
         return self.graph_builder.compile(checkpointer=self.memory)
     
+    # TODO: Die arun und run methoden können wir langfristig loswerden:
     def run(self, input_message: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}

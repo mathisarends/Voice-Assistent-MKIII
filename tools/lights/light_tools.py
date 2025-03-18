@@ -3,7 +3,7 @@ from langchain.tools import BaseTool
 from typing import Type, List
 from pydantic import BaseModel, Field
 
-from tools.lights.bridge import HueBridge
+from tools.lights.bridge.bridge import HueBridge
 from tools.lights.hue_controller import HueController
 
 # ---- Gemeinsame Basis-Klasse für alle Hue Tools ----

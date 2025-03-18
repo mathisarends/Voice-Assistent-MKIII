@@ -1,6 +1,6 @@
 import asyncio
 from typing import Any, Dict, List, Optional
-from tools.lights.bridge import HueBridge
+from tools.lights.bridge.bridge import HueBridge
 from tools.lights.group_controller import GroupController
 from tools.lights.brightness_controller import BrightnessController
 from tools.lights.scene_controller import SceneController

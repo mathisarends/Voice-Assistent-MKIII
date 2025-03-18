@@ -11,8 +11,9 @@ from openai import OpenAI
 from pydub import AudioSegment
 
 from util.loggin_mixin import LoggingMixin
+from singleton_decorator import singleton
 
-
+@singleton
 class SpeechService(LoggingMixin):
     def __init__(self, voice: str = "nova", cache_dir: str = "/tmp/tts_cache"):
         """
@@ -206,7 +207,7 @@ class SpeechService(LoggingMixin):
         except Exception as e:
             self.logger.error("Fehler beim Leeren der Queues: %s", e)
     
-    def speak_response(self, response_text: str, is_interrupting = True) -> str:
+    def enqueue_text(self, response_text: str, is_interrupting = True) -> str:
         self.logger.info("🤖 Assistenten-Antwort: %s", response_text)
         
         if not response_text or response_text.strip() == "":

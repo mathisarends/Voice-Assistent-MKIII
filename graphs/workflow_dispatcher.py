@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, END
 
 from assistant.speech_service import SpeechService
 from config.settings import GPT_MINI
-from graphs.workflow_registry import WorkflowRegistry, register_workflows
+from graphs.workflow_registry import WorkflowRegistry
 from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
 
@@ -20,8 +20,7 @@ class WorkflowState(TypedDict):
 class WorkflowDispatcher(LoggingMixin):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or GPT_MINI
-        
-        self.speech_service = SpeechService()
+        self.speech_service = SpeechService(voice="nova")
                 
         self.observers: List[WorkflowObserver] = []
         
@@ -89,15 +88,6 @@ class WorkflowDispatcher(LoggingMixin):
         self.logger.info(f"[DEFAULT] Antwort: {response.content[:100]}...")
         return state
     
-    # async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
-    #     workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
-    #     if workflow_class:
-    #         self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
-    #         workflow = workflow_class()
-    #         thread_id = state.get("thread_id") or state["workflow"]
-    #         state["response"] = await workflow.arun(state["user_message"], thread_id)
-    #     return state
-    
     async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
         workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
         if workflow_class:
@@ -105,12 +95,11 @@ class WorkflowDispatcher(LoggingMixin):
             workflow = workflow_class()
             thread_id = state.get("thread_id") or state["workflow"]
 
-            # Collect all messages in a list
             messages = []
             async for message in workflow.arun_generator(state["user_message"], thread_id):
                 self.logger.info("Message from assistatn: %s", message)
                 messages.append(message)   
-                self.speech_service.speak_response(message, is_interrupting=False)
+                self.speech_service.enqueue_text(message, is_interrupting=False)
             
             if messages:
                 state["response"] = messages[-1]
