@@ -1,0 +1,143 @@
+from typing import Dict, Any, TypedDict, List, Annotated
+import textwrap
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from langgraph.graph import StateGraph, END
+from langchain_core.runnables import RunnablePassthrough
+
+from config.settings import GPT_MINI
+from graphs.workflow_registry import WorkflowRegistry, register_workflows
+from util.loggin_mixin import LoggingMixin
+
+class WorkflowState(TypedDict):
+    user_message: str
+    workflow: str
+    response: str
+    thread_id: str
+
+class WorkflowDispatcher(LoggingMixin):
+    """Dispatcher für Anfragen an passende Workflows mit LangGraph."""
+    
+    def __init__(self, model_name: str = None):
+        self.model_name = model_name or GPT_MINI
+        
+        # Graph definieren
+        workflow_graph = StateGraph(WorkflowState)
+        
+        # Knoten hinzufügen
+        workflow_graph.add_node("select_workflow", self._select_workflow)
+        workflow_graph.add_node("default_workflow", self._run_default_workflow)
+        workflow_graph.add_node("specific_workflow", self._run_specific_workflow)
+        
+        # Den Startpunkt setzen
+        workflow_graph.set_entry_point("select_workflow")
+        
+        # Router als Conditional Edge definieren
+        workflow_graph.add_conditional_edges(
+            "select_workflow",
+            self._router,
+            {
+                "default_workflow": "default_workflow",
+                "specific_workflow": "specific_workflow"
+            }
+        )
+        
+        # Ende definieren
+        workflow_graph.add_edge("default_workflow", END)
+        workflow_graph.add_edge("specific_workflow", END)
+        
+        # Compiler
+        self.graph = workflow_graph.compile()
+    
+    def _select_workflow(self, state: WorkflowState) -> WorkflowState:
+        """Wählt einen passenden Workflow basierend auf der Benutzeranfrage aus."""
+        llm = ChatOpenAI(model=self.model_name)
+        workflow_names = WorkflowRegistry.get_workflow_names()
+        workflow_names_str = ", ".join(workflow_names) + ", default"
+
+        prompt = textwrap.dedent(f"""
+            Du bist ein Workflow-Auswahlspezialist. Wähle genau einen der verfügbaren Workflows basierend auf der Benutzeranfrage.
+
+            Benutzeranfrage: {state["user_message"]}
+
+            Verfügbare Workflows:
+            {WorkflowRegistry.format_for_prompt()}
+            Antworte NUR mit einem der folgenden Wörter: {workflow_names_str}.
+            """)
+        
+        response = llm.invoke([HumanMessage(content=prompt)])
+        workflow_name = response.content.strip() if response and hasattr(response, "content") else "default"
+        
+        if workflow_name != "default" and workflow_name in WorkflowRegistry.get_all_workflows():
+            state["workflow"] = workflow_name
+        else:
+            state["workflow"] = "default"
+        
+        return state
+    
+    async def _run_default_workflow(self, state: WorkflowState) -> WorkflowState:
+        """Führt den Standard-Workflow aus."""
+        llm = ChatOpenAI(model=self.model_name)
+        response = await llm.ainvoke([HumanMessage(content=state["user_message"])])
+        state["response"] = response.content
+        self.logger.info(f"[DEFAULT] Antwort: {response.content[:100]}...")
+        return state
+    
+    async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
+        """Führt einen spezifischen Workflow aus."""
+        workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
+        if workflow_class:
+            self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
+            workflow = workflow_class()
+            thread_id = state.get("thread_id") or state["workflow"]
+            state["response"] = await workflow.arun(state["user_message"], thread_id)
+        return state
+    
+    def _router(self, state: WorkflowState) -> str:
+        """Routing-Funktion basierend auf dem ausgewählten Workflow."""
+        if state["workflow"] == "default":
+            return "default_workflow"
+        else:
+            return "specific_workflow"
+    
+    async def dispatch(self, user_message: str, thread_id: str = None) -> Dict[str, Any]:
+        """Dispatcht eine Anfrage an den passenden Workflow."""
+        state = {
+            "user_message": user_message,
+            "workflow": "",
+            "response": "",
+            "thread_id": thread_id or ""
+        }
+        
+        result = await self.graph.ainvoke(state)
+        return {
+            "workflow": result["workflow"],
+            "response": result["response"]
+        }
+    
+    async def run_workflow(self, workflow_name: str, user_message: str, thread_id: str = None) -> Any:
+        """Führt einen spezifischen Workflow aus (für Kompatibilität mit bestehendem Code)."""
+        state = {
+            "user_message": user_message,
+            "workflow": workflow_name,
+            "response": "",
+            "thread_id": thread_id or workflow_name
+        }
+        
+        if workflow_name == "default":
+            result = await self._run_default_workflow(state)
+        else:
+            result = await self._run_specific_workflow(state)
+            
+        return result["response"]
+    
+async def demo():
+    workflow_dispatcher = WorkflowDispatcher()
+    result = await workflow_dispatcher.dispatch("?")
+    print(result)
+    
+if __name__ == "__main__":
+    register_workflows()
+    
+    import asyncio
+    asyncio.run(demo())
