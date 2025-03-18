@@ -6,7 +6,6 @@ from audio.audio_manager import play
 
 class PhraseGenerator:
     def __init__(self, voice="nova", output_dir="audio/sounds/standard_phrases"):
-        """Initialisiert den TTS-Dateigenerator mit OpenAI API und definiert das Ausgabe-Verzeichnis."""
         self.openai = OpenAI()
         self.voice = voice
         self.output_dir = output_dir
@@ -14,7 +13,6 @@ class PhraseGenerator:
         # Verzeichnis existiert bereits, also müssen wir es nicht erstellen
     
     def generate_speech_file(self, text, category="general", file_format="mp3"):
-        """Erstellt eine Sprachdatei aus dem gegebenen Text und speichert sie im entsprechenden Unterordner."""
         if not text.strip():
             raise ValueError("Der eingegebene Text ist leer.")
         
@@ -48,7 +46,6 @@ class PhraseGenerator:
             return None
 
     def play_random_speech_file_from_category(self, category="general"):
-        """Wählt zufällig eine gespeicherte Sprachdatei aus einer Kategorie aus und gibt nur den Dateinamen ohne Endung zurück."""
         category_dir = os.path.join(self.output_dir, category)
         if not os.path.exists(category_dir):
             print(f"❌ Keine Dateien in der Kategorie '{category}' gefunden.")

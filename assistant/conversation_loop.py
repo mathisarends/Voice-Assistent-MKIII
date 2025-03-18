@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from assistant.speech_service import SpeechService
 from audio.audio_manager import play
 from graphs.workflow_dispatcher import WorkflowDispatcher
+from graphs.workflow_dispatcher_langgraph import WorkflowDispatcherLanggraph
 from speech.recognition.whisper_speech_recognition import WhisperSpeechRecognition
 from speech.recognition.audio_transcriber import AudioTranscriber
 from speech.wake_word_listener import WakeWordListener
@@ -19,7 +20,7 @@ class ConversationLoop(LoggingMixin):
         self.speech_service = speech_service
         self.speech_recorder = WhisperSpeechRecognition()
         self.audio_transcriber = AudioTranscriber()
-        self.workflow_dispatcher = WorkflowDispatcher()
+        self.workflow_dispatcher = WorkflowDispatcherLanggraph()
         self.should_stop = False
     
     @asynccontextmanager

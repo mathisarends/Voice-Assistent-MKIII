@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 
 from config.settings import GPT_MINI
+from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry, register_workflows
 from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
@@ -15,13 +16,13 @@ class WorkflowState(TypedDict):
     response: str
     thread_id: str
 
-class WorkflowDispatcher(LoggingMixin):
-    """Dispatcher für Anfragen an passende Workflows mit LangGraph."""
-    
+class WorkflowDispatcherLanggraph(LoggingMixin):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or GPT_MINI
                 
         self.observers: List[WorkflowObserver] = []
+        
+        self.observers.append(WorkflowAudioFeedbackObserver())
         
         # Graph definieren
         workflow_graph = StateGraph(WorkflowState)
@@ -141,18 +142,3 @@ class WorkflowDispatcher(LoggingMixin):
     def _notify_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
         for observer in self.observers:
             observer.on_workflow_selected(workflow_name, context)
-    
-async def demo():
-    workflow_dispatcher = WorkflowDispatcher()
-    
-    audio_observer = WorkflowAudioFeedbackObserver()
-    workflow_dispatcher.add_observer(audio_observer)
-    
-    result = await workflow_dispatcher.dispatch("Stelle eine geeignete Lichtszene zum arbeiten ein.")
-    print(result)
-    
-if __name__ == "__main__":
-    register_workflows()
-    
-    import asyncio
-    asyncio.run(demo())
