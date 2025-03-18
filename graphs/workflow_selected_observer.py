@@ -1,45 +1,52 @@
 import random
-from typing import Dict, Any, Optional, Protocol
+from typing import Dict, Any, Optional, Protocol, List, ClassVar, Final
+from dataclasses import dataclass
+from enum import Enum, auto
 
 from audio.audio_manager import play
+from util.loggin_mixin import LoggingMixin
 
 class WorkflowObserver(Protocol):
     def on_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
         pass
 
-class WorkflowAudioFeedbackObserver:
-    def __init__(self):
-        self.workflow_sound_mapping = {
-            "weather": {"category": "weather", "count": 6},
-            "alarm": {"category": "alarm", "count": 4},
-            "todo": {"category": "todo", "count": 3},
-            
-            "spotify": {"category": "spotify_loading", "count": 4},
-            "notion_todo": {"category": "notion_todo_loading", "count": 5},
-            "notion_clipboard": {"category": "notion_clipboard_loading", "count": 5},
-            
-            "lights": {"category": "lights_loading", "count": 8},
-            "alarm_loading": {"category": "alarm_loading", "count": 6}
-        }
+@dataclass
+class SoundCategory:
+    """Repräsentiert eine Kategorie von Sounds mit einem Namen und der Anzahl der verfügbaren Dateien."""
+    name: str
+    count: int
+    
+    def get_random_filename(self) -> str:
+        """Generiert einen zufälligen Dateinamen für diese Kategorie."""
+        random_index = random.randint(1, self.count)
+        return f"tts_{self.name}_{random_index}"
+
+@dataclass
+class WorkflowAudioFeedbackObserver(LoggingMixin):
+    CATEGORIES: ClassVar[Dict[str, SoundCategory]] = {
+        "weather": SoundCategory(name="weather", count=6),
+        
+        "alarm": SoundCategory(name="alarm", count=4),
+        "alarm_loading": SoundCategory(name="alarm_loading", count=6),
+        
+        "todo": SoundCategory(name="todo", count=3),
+        "notion_todo": SoundCategory(name="notion_todo_loading", count=5),
+        "notion_clipboard": SoundCategory(name="notion_clipboard_loading", count=5),
+        
+        "spotify": SoundCategory(name="spotify_loading", count=4),
+        
+        "lights": SoundCategory(name="lights_loading", count=8),
+    }
     
     def on_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
-        """Spielt einen Sound basierend auf dem ausgewählten Workflow ab."""
         print(f"[AUDIO] Feedback für Workflow: {workflow_name}")
         
-        if workflow_name in self.workflow_sound_mapping:
-            config = self.workflow_sound_mapping[workflow_name]
-            file_name = self._get_random_file_name_from_category(config["category"], config["count"])
-            if file_name:
-                play(file_name)
-        else:
-            print(f"[AUDIO] Kein Sound-Mapping für Workflow '{workflow_name}' gefunden")
-    
-    def _get_random_file_name_from_category(self, category: str, count: int) -> Optional[str]:
-        if count <= 0:
-            return None
-        
-        random_index = random.randint(1, count)
-        
-        filename = f"tts_{category}_{random_index}"
-        print(f"[AUDIO] Zufälliger Sound ausgewählt: {filename}")
-        return filename
+        category = self.CATEGORIES.get(workflow_name)
+        if not category:
+            self.logger.warning(f"[AUDIO] Keine Sound-Kategorie für Workflow '{workflow_name}' gefunden")
+            return
+            
+        # Zufälligen Dateinamen generieren und abspielen
+        filename = category.get_random_filename()
+        self.logger.info(f"[AUDIO] Zufälliger Sound ausgewählt: {filename}")
+        play(filename)
