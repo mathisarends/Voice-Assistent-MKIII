@@ -5,7 +5,6 @@ from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 
 from config.settings import GPT_MINI
-from graphs.workflow_dispatcher import WorkflowDispatcher
 from graphs.workflow_registry import WorkflowRegistry, register_workflows
 from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
@@ -86,13 +85,33 @@ class WorkflowDispatcher(LoggingMixin):
         self.logger.info(f"[DEFAULT] Antwort: {response.content[:100]}...")
         return state
     
+    # async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
+    #     workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
+    #     if workflow_class:
+    #         self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
+    #         workflow = workflow_class()
+    #         thread_id = state.get("thread_id") or state["workflow"]
+    #         state["response"] = await workflow.arun(state["user_message"], thread_id)
+    #     return state
+    
     async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
         workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
         if workflow_class:
             self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
             workflow = workflow_class()
             thread_id = state.get("thread_id") or state["workflow"]
-            state["response"] = await workflow.arun(state["user_message"], thread_id)
+
+            # Collect all messages in a list
+            messages = []
+            async for message in workflow.arun_generator(state["user_message"], thread_id):
+                self.logger.info("Message from assistatn: %s", message)
+                messages.append(message)
+
+            # Take the last message
+            if messages:
+                state["response"] = messages[-1]
+                self.logger.info(f"[DISPATCHER] Finale AI-Antwort: {state['response']}")
+
         return state
     
     def _router(self, state: WorkflowState) -> str:
