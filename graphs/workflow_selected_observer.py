@@ -64,9 +64,4 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         filename = category.get_random_filename()
         self.logger.info(f"[AUDIO] Zufälliger Sound ausgewählt: {filename}")
         
-        self._wait_appropriately_before_audio_feedback()
-        
         play(filename)
-        
-    def _wait_appropriately_before_audio_feedback(self):
-        time.sleep(1.5)
