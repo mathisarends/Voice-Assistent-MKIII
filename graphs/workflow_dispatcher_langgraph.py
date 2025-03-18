@@ -1,13 +1,12 @@
-from typing import Dict, Any, TypedDict, List, Annotated
+from typing import Dict, Any, TypedDict, List
 import textwrap
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
-from langchain_core.runnables import RunnablePassthrough
 
 from config.settings import GPT_MINI
 from graphs.workflow_registry import WorkflowRegistry, register_workflows
-from graphs.workflow_selected_observer import AudioFeedbackObserver, WorkflowObserver
+from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowState(TypedDict):
@@ -146,7 +145,7 @@ class WorkflowDispatcher(LoggingMixin):
 async def demo():
     workflow_dispatcher = WorkflowDispatcher()
     
-    audio_observer = AudioFeedbackObserver()
+    audio_observer = WorkflowAudioFeedbackObserver()
     workflow_dispatcher.add_observer(audio_observer)
     
     result = await workflow_dispatcher.dispatch("Wie wird das Wetter heute?")

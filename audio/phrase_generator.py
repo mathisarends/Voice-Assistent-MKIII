@@ -71,6 +71,13 @@ if __name__ == "__main__":
     # PhraseGenerator mit dem korrekten Pfad initialisieren
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
     
+    # tts.generate_speech_file("Analysiere Wetterdaten. Initiiere Wetterprotokoll.", category="weather")
+    # tts.generate_speech_file("Scanning meteorologische Datenbanken. Wetter-Update wird vorbereitet.", category="weather")
+    # tts.generate_speech_file("Umgebungsparameter werden überprüft. Atmosphärische Bedingungen werden berechnet.", category="weather")
+    # tts.generate_speech_file("Standort-Tracking aktiviert. Meteorologische Systeme online.", category="weather")
+    # tts.generate_speech_file("Wetter-Informationen werden abgerufen. Präzisionsanalyse läuft.", category="weather")
+    # tts.generate_speech_file("Atmosphärische Datenstruktur wird kompiliert. Fortschritt: 25 Prozent", category="weather")
+    
     # Workflow related
     # tts.generate_speech_file("Licht-Workflow aktiviert.", category="lights")
     # tts.generate_speech_file("Schalte auf Lichtsteuerung.", category="lights")
@@ -84,9 +91,7 @@ if __name__ == "__main__":
     # tts.generate_speech_file("Lichtwecker wird konfiguriert.", category="alarm")
     
     # # Weather Workflow
-    # tts.generate_speech_file("Wetter-Informationen werden abgerufen.", category="weather")
-    # tts.generate_speech_file("Wettervorhersage wird geladen.", category="weather")
-    # tts.generate_speech_file("Wetterdaten werden vorbereitet.", category="weather")
+
     
     # # Time Tool
     # tts.generate_speech_file("Zeitangabe wird vorbereitet.", category="time")
