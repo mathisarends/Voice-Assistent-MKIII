@@ -71,6 +71,7 @@ if __name__ == "__main__":
     # PhraseGenerator mit dem korrekten Pfad initialisieren
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
     
+    # Wetter
     # tts.generate_speech_file("Analysiere Wetterdaten. Initiiere Wetterprotokoll.", category="weather")
     # tts.generate_speech_file("Scanning meteorologische Datenbanken. Wetter-Update wird vorbereitet.", category="weather")
     # tts.generate_speech_file("Umgebungsparameter werden überprüft. Atmosphärische Bedingungen werden berechnet.", category="weather")
@@ -78,45 +79,65 @@ if __name__ == "__main__":
     # tts.generate_speech_file("Wetter-Informationen werden abgerufen. Präzisionsanalyse läuft.", category="weather")
     # tts.generate_speech_file("Atmosphärische Datenstruktur wird kompiliert. Fortschritt: 25 Prozent", category="weather")
     
-    # Workflow related
-    # tts.generate_speech_file("Licht-Workflow aktiviert.", category="lights")
-    # tts.generate_speech_file("Schalte auf Lichtsteuerung.", category="lights")
-    # tts.generate_speech_file("Philips Hue wird angesprochen.", category="lights")
+    # spotify_phrases = [
+    #     "Musikdatenbanken werden abgerufen. Präzisionsanalyse läuft.",
+    #     "Audiowiedergabesystem synchronisiert. Musikstreaming-Protokolle initiiert.",
+    #     "Soundmanagement wird vorbereitet. Audioressourcen werden gescannt.",
+    #     "Musikwiedergabesystem online. Erweiterte Audiosteuerung initiiert."
+    # ]
     
-    # # Alarm Workflow
-    # tts.generate_speech_file("Wecker-Workflow steht bereit.", category="alarm")
-    # tts.generate_speech_file("Alarm-Modus aktiviert.", category="alarm")
-    # tts.generate_speech_file("Weckzeit wird eingestellt.", category="alarm")
-    # tts.generate_speech_file("Alarm-System ist online.", category="alarm")
-    # tts.generate_speech_file("Lichtwecker wird konfiguriert.", category="alarm")
+    # for phrase in spotify_phrases:
+    #     tts.generate_speech_file(phrase, category="spotify_loading")
     
-    # # Weather Workflow
+    
+    # notion_todo_phrases = [
+    #     "Aufgabenstruktur wird kompiliert. Fortschritt: 25 Prozent",
+    #     "Produktivitäts-Managementsystem geladen. Aufgabenoptimierung startet.",
+    #     "Intelligente Taskverwaltung initiiert. Projektstruktur wird analysiert.",
+    #     "To-Do-Algorithmus aktiviert. Aufgabenprioritäten werden berechnet.",
+    #     "Projektmanagement-Systeme online. Aufgabenintegritätscheck läuft."
+    # ]
+    
+    # for phrase in notion_todo_phrases:
+    #     tts.generate_speech_file(phrase, category="notion_todo_loading")
 
+
+    # notion_clipboard_phrases = [
+    #     "Recherche-Tracking aktiviert. Informationssysteme online.",
+    #     "Globale Datenrecherche wird vorbereitet. Wissensakkumulation startet.",
+    #     "Informationsretrievalsystem initiiert. Webdatenbank wird gescannt.",
+    #     "Intelligente Suchalgorithmen aktiviert. Informationsfilterung läuft.",
+    #     "Zwischenablage-Recherchemodul online. Datensammlung wird gestartet."
+    # ]   
     
-    # # Time Tool
-    # tts.generate_speech_file("Zeitangabe wird vorbereitet.", category="time")
-    # tts.generate_speech_file("Datum und Uhrzeit werden abgerufen.", category="time")
+    # for phrase in notion_clipboard_phrases:
+    #     tts.generate_speech_file(phrase, category="notion_clipboard_loading")
     
-    # # Spotify Workflow
-    # tts.generate_speech_file("Spotify-Steuerung aktiviert.", category="spotify")
-    # tts.generate_speech_file("Spotify-Workflow bereit.", category="spotify")
-    # tts.generate_speech_file("Audio-Stream wird konfiguriert.", category="spotify")
+    # lights_phrases = [
+    #     "Scanning Beleuchtungssysteme. Philips Hue Konfiguration wird vorbereitet.",
+    #     "Illuminationsprotokolle werden initialisiert. Lichtmanagement aktiviert.",
+    #     "Dynamische Beleuchtungsszenarien werden analysiert. Farbspektrum wird kalibriert.",
+    #     "Lichtsteuerungssystem online. Ambientemodus wird vorbereitet.",
+    #     "Beleuchtungsparameter werden überprüft. Adaptive Lichtanpassung startet.",
+    #     "Philips Hue Netzwerk wird gescannt. Beleuchtungsszenen werden synchronisiert.",
+    #     "Intelligente Lichtsteuerung aktiviert. Farbtemperatur und Intensität werden optimiert.",
+    #     "Beleuchtungssystem initialisiert. Dynamische Lichtanpassung wird vorbereitet.",
+    # ]
     
-    # # Notion Todo Workflow
-    # tts.generate_speech_file("Todo-Workflow aktiviert.", category="notion_todo")
-    # tts.generate_speech_file("Aufgabenmanagement läuft.", category="notion_todo")
-    # tts.generate_speech_file("Notion-Tasks werden geladen.", category="notion_todo")
+    # for phrase in lights_phrases:
+    #     tts.generate_speech_file(phrase, category="lights_loading")
     
-    # # Notion Clipboard Workflow
-    # tts.generate_speech_file("Recherche-Modus aktiviert.", category="notion_clipboard")
-    # tts.generate_speech_file("Clipboard-Workflow bereit.", category="notion_clipboard")
-    # tts.generate_speech_file("Recherche-Tool gestartet.", category="notion_clipboard")
-    # tts.generate_speech_file("Datensammlung aktiviert.", category="notion_clipboard")
     
-    # # Volume Control Workflow
-    # tts.generate_speech_file("Lautstärke-Modul aktiviert.", category="volume")
-    # tts.generate_speech_file("Audio-Level wird angepasst.", category="volume")
-    # tts.generate_speech_file("Sound-Steuerung bereit.", category="volume")
-    # tts.generate_speech_file("Volume-Control aktiv.", category="volume")
-    # tts.generate_speech_file("Lautstärkeregelung übernommen.", category="volume")
+    # alarm_phrases = [
+    #     "Weckprotokoll-Parameter werden überprüft. Alarm-Synchronisation wird berechnet.",
+    #     "Temporales Weckmodul aktiviert. Aufwachsequenz wird initiiert.",
+    #     "Wecker-Systemintegration startet. Intelligente Weckfunktionen werden geladen.",
+    #     "Alarm-Präzisionsprotokoll wird vorbereitet. Zeitliche Synchronisation aktiviert.",
+    #     "Alarm-Systemintegration online. Adaptive Weckstrategien werden aktiviert.",
+    #     "Lichtwecker-Protokoll initiiert. Dynamische Aufwachsteuerung wird vorbereitet."
+    # ]
     
+    # for phrase in alarm_phrases:
+    #     tts.generate_speech_file(phrase, category="alarm_loading")
+    
+

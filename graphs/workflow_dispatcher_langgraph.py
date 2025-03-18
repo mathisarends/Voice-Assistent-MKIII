@@ -148,7 +148,7 @@ async def demo():
     audio_observer = WorkflowAudioFeedbackObserver()
     workflow_dispatcher.add_observer(audio_observer)
     
-    result = await workflow_dispatcher.dispatch("Wie wird das Wetter heute?")
+    result = await workflow_dispatcher.dispatch("Stelle eine geeignete Lichtszene zum arbeiten ein.")
     print(result)
     
 if __name__ == "__main__":
