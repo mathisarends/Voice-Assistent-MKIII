@@ -55,8 +55,8 @@ class ConversationLoop(LoggingMixin):
         self.logger.info("Ausgewählter Workflow '%s'", selected_workflow)
         
         result = await self.workflow_dispatcher.run_workflow(selected_workflow, user_prompt, "demo")
-        
         await self.speech_service.speak_response(result)
+        
         return True
     
     async def run(self):

@@ -74,7 +74,7 @@ class WorkflowDispatcher(LoggingMixin):
         else:
             state["workflow"] = "default"
             
-        self._notify_workflow_selected(state["workflow"], {"message": state["user_message"]})
+        # self._notify_workflow_selected(state["workflow"], {"message": state["user_message"]})
         
         return state
     

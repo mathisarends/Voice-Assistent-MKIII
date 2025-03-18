@@ -18,13 +18,27 @@ class BaseGraph(LoggingMixin):
     def __init__(
         self,
         tools: Optional[List[BaseTool]] = None,
-        model_name: Optional[str] = None
+        model_name: Optional[str] = None,
+        system_prompt: Optional[str] = None
     ):
         self.tools = tools or []
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.graph_builder = StateGraph(State)
         
-        self.llm = ChatAnthropic(model=self.model_name) # TODO: Diesem LLM hier einen SystemPrompt gebena
+        default_system_prompt = """Du bist Jarvis, ein hilfreicher und höflicher KI-Assistent.
+        - Antworte kurz, präzise und mit einer Prise Humor.
+        - Biete proaktive Hilfe an, wenn es angemessen ist.
+        - Verwende einen respektvollen, aber freundlichen Ton.
+        - Vermeide unnötige Formalitäten und komm direkt zum Punkt.
+        - Sprich den Benutzer stets direkt an.
+        """
+        
+        self.system_prompt = system_prompt or default_system_prompt
+        
+        self.llm = ChatAnthropic(
+            model=self.model_name,
+            model_kwargs={"system": self.system_prompt}
+        )
         
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         self.memory = MemorySaver()
@@ -90,6 +104,8 @@ class BaseGraph(LoggingMixin):
         
         return final_message.content
     
+    # Build this generator (gucken welche davon sinnvoll von der KI gesprochen werden können)
+    # TODO:
     async def arun_generator(self, input_message: str, thread_id: Optional[str] = None) -> AsyncGenerator[str, None]:
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}
@@ -99,20 +115,26 @@ class BaseGraph(LoggingMixin):
             config,
             stream_mode="values",
         )
-
+        
+        # Um Duplikate zu vermeiden, speichern wir die letzte gesehene Nachricht
+        last_message = None
+        
         async for event in events:
             if "messages" in event and isinstance(event["messages"], list):
-                for message in event["messages"]:
-                    if isinstance(message, AIMessage):
-                        # Extract text content, prioritizing text fields
-                        if isinstance(message.content, list):
-                            # For complex messages, extract text from first text-type entry
-                            text_content = next(
-                                (item['text'] for item in message.content if item.get('type') == 'text'), 
-                                None
-                            )
-                            if text_content:
-                                yield text_content
-                        elif isinstance(message.content, str):
-                            # For simple string messages
-                            yield message.content
+                # Nur die neueste Nachricht betrachten 
+                # (die letzte in der Liste, da die Nachrichten chronologisch angeordnet sind)
+                if event["messages"] and isinstance(event["messages"][-1], AIMessage):
+                    message = event["messages"][-1]
+                    content = None
+                    
+                    if isinstance(message.content, list):
+                        content = next(
+                            (item['text'] for item in message.content if item.get('type') == 'text'), 
+                            None
+                        )
+                    elif isinstance(message.content, str):
+                        content = message.content
+                    
+                    if content and content != last_message:
+                        last_message = content
+                        yield content
