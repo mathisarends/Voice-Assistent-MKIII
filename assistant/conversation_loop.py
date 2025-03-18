@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import traceback
 
 from assistant.speech_service import SpeechService
 from audio.audio_manager import play
@@ -51,10 +52,12 @@ class ConversationLoop(LoggingMixin):
         
         result = await self.workflow_dispatcher.dispatch(user_prompt)
         selected_workflow = result["workflow"]
-        response = result["response"]
-        
         self.logger.info("Ausgewählter Workflow '%s'", selected_workflow)
-        self.logger.info("🤖 AI-Antwort: %s", response)
+        
+        
+        final_repsonse = await self.workflow_dispatcher.run_workflow(selected_workflow, user_prompt, "thread-1")
+        
+        self.logger.info("🤖 AI-Antwort: %s", final_repsonse)
         
         return True
     
@@ -75,12 +78,12 @@ class ConversationLoop(LoggingMixin):
                         try:
                             self.speech_service.interrupt_and_reset()
                             audio_data = self.speech_recorder.record_audio()
-                            play("wakesound")
                             
                             await self.handle_user_input(audio_data)
                                 
                         except Exception as e:
                             self.logger.error("Fehler bei der Sprachverarbeitung: %s", e)
+                            self.logger.error("Traceback: %s", traceback.format_exc()) 
                             
                 except KeyboardInterrupt:
                     self.logger.info("🛑 Programm manuell beendet.")

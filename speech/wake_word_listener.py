@@ -65,7 +65,7 @@ class WakeWordListener:
             
             if keyword_index >= 0:
                 self.logger.info("🚀 Wake-Word erkannt!")
-                play("wake-sound-new")
+                play("wakesound")
                 self._detection_event.set()
         
         return (in_data, pyaudio.paContinue)

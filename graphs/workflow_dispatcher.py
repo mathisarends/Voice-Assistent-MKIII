@@ -6,8 +6,8 @@ from langgraph.graph import StateGraph, END
 
 from assistant.speech_service import SpeechService
 from config.settings import GPT_MINI
+from graphs.base_graph import BaseGraph
 from graphs.workflow_registry import WorkflowRegistry
-from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowState(TypedDict):
@@ -84,20 +84,17 @@ class WorkflowDispatcher(LoggingMixin):
     
     async def _run_specific_workflow(self, state: WorkflowState) -> WorkflowState:
         workflow_class = WorkflowRegistry.get_workflow(state["workflow"])
-        if workflow_class:
-            self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
-            workflow = workflow_class()
-            thread_id = state.get("thread_id") or state["workflow"]
+        
+        if workflow_class is None:
+            return state
+        
+        
+        self.logger.info(f"[DISPATCHER] Starte Workflow: {state['workflow']}")
+        workflow: BaseGraph = workflow_class()
+        thread_id = state.get("thread_id") or state["workflow"]
 
-            messages = []
-            async for message in workflow.arun_generator(state["user_message"], thread_id):
-                self.logger.info("Message from assistatn: %s", message)
-                messages.append(message)   
-                self.speech_service.enqueue_text(message, is_interrupting=False)
-            
-            if messages:
-                state["response"] = messages[-1]
-                self.logger.info(f"[DISPATCHER] Finale AI-Antwort: {state['response']}")
+        response = await workflow.arun(state["user_message"], thread_id)
+        state["response"] = response
 
         return state
     

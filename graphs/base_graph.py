@@ -4,6 +4,7 @@ from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode, tools_condition
+from assistant.speech_service import SpeechService
 from states.state_definitions import State
 from tools.base import BaseTool
 from config.settings import DEFAULT_LLM_MODEL
@@ -62,6 +63,8 @@ class BaseGraph(LoggingMixin):
         self.tools = tools or []
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.graph_builder = StateGraph(State)
+        
+        self.speech_service = SpeechService(voice="nova")
         
         if system_prompt:
             self.system_prompt = system_prompt
@@ -124,43 +127,31 @@ class BaseGraph(LoggingMixin):
         
         return final_message.content
 
-    async def arun(self, input_message: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
+    async def arun(self, input_message: str, thread_id: Optional[str] = None) -> str:
+        """
+        Führt den Graph-Workflow aus, loggt alle AI-Nachrichten und gibt den finalen Inhalt zurück.
+        Sendet zudem die Nachrichten an den SpeechService.
+        
+        Args:
+            input_message: Die Benutzereingabe.
+            thread_id: Optional, eine ID für den Gesprächsthread.
+            
+        Returns:
+            Der Inhalt der letzten AI-Nachricht.
+        """
         graph = self.build_graph()
         config = {"configurable": {"thread_id": thread_id or "1"}}
         
-        final_message = None
-        events = graph.astream(
-            {"messages": [{"role": "user", "content": input_message}]},
-            config,
-            stream_mode="values",
-        )
-        
-        async for event in events:
-            if "messages" in event:
-                final_message = event["messages"][-1]
-                final_message.pretty_print()
-                
-        print("final_message", final_message)
-        
-        return final_message.content
-    
-    async def arun_generator(self, input_message: str, thread_id: Optional[str] = None) -> AsyncGenerator[str, None]:
-        graph = self.build_graph()
-        config = {"configurable": {"thread_id": thread_id or "1"}}
-
-        events = graph.astream(
-            {"messages": [{"role": "user", "content": input_message}]},
-            config,
-            stream_mode="values",
-        )
-        
-        # Um Duplikate zu vermeiden, speichern wir die letzte gesehene Nachricht
         last_message = None
+        events = graph.astream(
+            {"messages": [{"role": "user", "content": input_message}]},
+            config,
+            stream_mode="values",
+        )
         
         async for event in events:
             if "messages" in event and isinstance(event["messages"], list):
-                # Nur die neueste Nachricht betrachten 
-                # (die letzte in der Liste, da die Nachrichten chronologisch angeordnet sind)
+                # Nur die neueste Nachricht betrachten
                 if event["messages"] and isinstance(event["messages"][-1], AIMessage):
                     message = event["messages"][-1]
                     content = None
@@ -175,4 +166,13 @@ class BaseGraph(LoggingMixin):
                     
                     if content and content != last_message:
                         last_message = content
-                        yield content
+                        self.logger.info(f"AI-Nachricht: {content}")
+                        
+                        # SpeechService mit der neuen Nachricht füttern
+                        self.speech_service.enqueue_text(content, False)
+        
+        if last_message:
+            return last_message
+        else:
+            self.logger.warning("Keine AI-Nachricht erhalten")
+            return ""
