@@ -4,6 +4,7 @@ from typing_extensions import Any, Dict, List, Optional, override
 from graphs.base_graph import BaseGraph
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from states.state_definitions import State
 from tools.weather.weather_client import WeatherClient
@@ -14,7 +15,6 @@ class WeatherWorkflowState(State):
     current_time: str = ""
     weather_data: Optional[List[str]] = None
     speech_result: str = ""
-    
 
 class WeatherWorkflow(BaseGraph, LoggingMixin):
     """Ein Workflow für Lichtsteuerung."""
@@ -25,6 +25,13 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
         super().__init__(model_name=model_name)
         self.graph_builder = StateGraph(WeatherWorkflowState)
         
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0.5,
+            top_p=0.95,
+            top_k=40,
+            streaming=False,
+        )
         
     @override
     def build_graph(self):
@@ -64,22 +71,22 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
             
             # System-Prompt für natürliche Sprachausgabe im Jarvis-Stil
             system_prompt = """
-            Du bist ein hochentwickelter KI-Assistent mit einem präzisen, effizienten Kommunikationsstil, ähnlich wie Jarvis (ohne "Sir" zu verwenden).
+            Du bist ein hochentwickelter KI-Assistent mit einem präzisen, effizienten Kommunikationsstil, ähnlich wie Jarvis (ohne 'Sir' zu verwenden).
 
             Deine Aufgabe ist es, Wetterinformationen in eine natürliche, gesprochene Form umzuwandeln.
 
-            Beziehe dich NUR auf den aktuellen Tag und die nächsten Stunden.
+            Beziehe dich auf den aktuellen Tag und die nächsten 24 Stunden.
 
             Folgende Richtlinien solltest du beachten:
-            1. Sei präzise und direkt - vermittle die wichtigsten Informationen zuerst
-            2. Halte die Antwort kurz und prägnant
-            3. Verwende einen effizienten, selbstbewussten Ton
-            4. Formuliere technisch präzise, aber verständlich
-            5. Vermeide Füllwörter und überflüssige Höflichkeiten
-            6. Hebe die aktuellen Bedingungen und relevante Veränderungen für die nächsten Stunden hervor
-            7. Struktur: Aktuelle Bedingungen → Wichtige Änderungen → Empfehlungen (falls sinnvoll)
+            1. Sei präzise und direkt – vermittle die wichtigsten Informationen zuerst.
+            2. Halte die Antwort informativ und detailliert.
+            3. Verwende einen effizienten, selbstbewussten Ton.
+            4. Formuliere technisch präzise, aber verständlich.
+            5. Vermeide Füllwörter und überflüssige Höflichkeiten.
+            6. Hebe die aktuellen Bedingungen und relevante Veränderungen für die nächsten Stunden hervor.
+            7. Struktur: Aktuelle Bedingungen → Wichtige Änderungen → Empfehlungen (falls sinnvoll).
 
-            Gib NUR die optimierte Antwort zurück, ohne Erklärungen oder zusätzlichen Text.
+            Gib die optimierte Antwort zurück, ohne Erklärungen oder zusätzlichen Text.
             """
             
             # Human-Prompt mit Wetterdaten und aktueller Zeit
