@@ -112,18 +112,32 @@ if __name__ == "__main__":
     # for phrase in notion_clipboard_phrases:
     #     tts.generate_speech_file(phrase, category="notion_clipboard_loading")
     
-    lights_phrases = [
-        "Beleuchtungssysteme werden gescannt.",
-        "Lichtmanagement wird aktiviert.",
-        "Farbspektrum wird kalibriert.",
-        "Lichtsteuerung wird gestartet.",
-        "Adaptive Lichtanpassung beginnt.",
-        "Philips Hue wird synchronisiert.",
-        "Dynamische Lichtanpassung bereit."
+    # lights_phrases = [
+    #     "Beleuchtungssysteme werden gescannt.",
+    #     "Lichtmanagement wird aktiviert.",
+    #     "Farbspektrum wird kalibriert.",
+    #     "Lichtsteuerung wird gestartet.",
+    #     "Adaptive Lichtanpassung beginnt.",
+    #     "Philips Hue wird synchronisiert.",
+    #     "Dynamische Lichtanpassung bereit."
+    # ]
+    
+    # for phrase in lights_phrases:
+    #     tts.generate_speech_file(phrase, category="lights_loading")
+    
+    volume_phrases = [
+        "Lautstärkesteuerung wird aktiviert.",
+        "Audiosystem wird angepasst.",
+        "Lautstärkeregler wird initialisiert.",
+        "Audioparameter werden konfiguriert.",
+        "Klangeinstellungen werden geladen.",
+        "Lautstärkeprofile werden aktualisiert.",
+        "Audiosystem wird kalibriert.",
+        "Volumenkontrolle wird vorbereitet."
     ]
     
-    for phrase in lights_phrases:
-        tts.generate_speech_file(phrase, category="lights_loading")
+    for phrase in volume_phrases:
+        tts.generate_speech_file(phrase, category="volume_loading")
     
     
     # alarm_phrases = [

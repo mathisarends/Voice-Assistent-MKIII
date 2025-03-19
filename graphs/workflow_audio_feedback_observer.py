@@ -34,7 +34,8 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         "notion_todo_loading": SoundCategory(name="notion_todo_loading", count=5),
         "notion_clipboard_loading": SoundCategory(name="notion_clipboard_loading", count=5),
         "spotify_loading": SoundCategory(name="spotify_loading", count=3),
-        "lights_loading": SoundCategory(name="lights_loading", count=8),
+        "lights_loading": SoundCategory(name="lights_loading", count=7),
+        "volume_loading": SoundCategory(name="volume_loading", count=5),
     }
     
     WORKFLOW_TO_SOUND_CATEGORY: ClassVar[Dict[str, str]] = {
@@ -45,6 +46,7 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         "notion_clipboard": "notion_clipboard_loading",
         "spotify": "spotify_loading",
         "lights": "lights_loading",
+        "volume": "volume_loading",
     }
     
     def on_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:

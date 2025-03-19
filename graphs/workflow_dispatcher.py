@@ -8,7 +8,7 @@ from assistant.speech_service import SpeechService
 from config.settings import GPT_MINI
 from graphs.base_graph import BaseGraph
 from graphs.workflow_registry import WorkflowRegistry
-from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
+from graphs.workflow_audio_feedback_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowState(TypedDict):

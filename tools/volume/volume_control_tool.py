@@ -25,15 +25,15 @@ def set_volume(level: int):
     """Setzt die Systemlautstärke auf einen bestimmten Prozentwert.
     
     Args:
-        level: Lautstärkelevel zwischen 10 und 100 (Prozent)
+        level: Lautstärkelevel zwischen 1 und 10 (wobei 10 = 100%)
     """
     try:
-        if not 10 <= level <= 100:
-            return audio_manager.respond_with_audio(VOLUME_ERROR_RANGE)
-            
-        # Konvertiere von Level (10-100) zu VolumeControl-Level (1-10)
-        volume_level = max(1, min(10, round(level / 10)))
-        VolumeControl.set_volume_level(volume_level)
+        if not 1 <= level <= 10:
+            return audio_manager.respond_with_audio("Lautstärke muss zwischen 1 und 10 liegen.")
+        
+        # Umrechnung von 1-10 Skala zu 0-100% Skala
+        percent = level * 10
+        VolumeControl.set_volume(percent)
         
         current_volume = VolumeControl.get_volume()
         response = VOLUME_SET_SUCCESS.format(percent=current_volume)
@@ -85,7 +85,6 @@ def get_volume():
         error_msg = f"Fehler bei Lautstärke: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
-# Funktion zum Abrufen aller Tools
 def get_volume_tools():
     return [
         set_volume,

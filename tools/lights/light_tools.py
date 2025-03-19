@@ -25,7 +25,7 @@ audio_manager = WorkflowAudioResponseManager(
 def run_async(coro):
     return asyncio.run(coro)
 
-@tool("list_hue_scenes", return_direct=True)
+@tool("list_hue_scenes", return_direct=False)
 def list_hue_scenes():
     """Listet alle verfügbaren Philips Hue Lichtszenen auf."""
     try:
