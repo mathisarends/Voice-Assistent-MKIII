@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # tts.generate_speech_file("Wetter-Informationen werden abgerufen. Präzisionsanalyse läuft.", category="weather")
     # tts.generate_speech_file("Atmosphärische Datenstruktur wird kompiliert. Fortschritt: 25 Prozent", category="weather")
     
-    tts.generate_speech_file("Benutze Licht Workflow.", category="test")
+    # tts.generate_speech_file("Benutze Licht Workflow.", category="test")
     
     # spotify_phrases = [
     #     "Musikdatenbanken werden abgerufen. Präzisionsanalyse läuft.",
@@ -112,19 +112,18 @@ if __name__ == "__main__":
     # for phrase in notion_clipboard_phrases:
     #     tts.generate_speech_file(phrase, category="notion_clipboard_loading")
     
-    # lights_phrases = [
-    #     "Scanning Beleuchtungssysteme. Philips Hue Konfiguration wird vorbereitet.",
-    #     "Illuminationsprotokolle werden initialisiert. Lichtmanagement aktiviert.",
-    #     "Dynamische Beleuchtungsszenarien werden analysiert. Farbspektrum wird kalibriert.",
-    #     "Lichtsteuerungssystem online. Ambientemodus wird vorbereitet.",
-    #     "Beleuchtungsparameter werden überprüft. Adaptive Lichtanpassung startet.",
-    #     "Philips Hue Netzwerk wird gescannt. Beleuchtungsszenen werden synchronisiert.",
-    #     "Intelligente Lichtsteuerung aktiviert. Farbtemperatur und Intensität werden optimiert.",
-    #     "Beleuchtungssystem initialisiert. Dynamische Lichtanpassung wird vorbereitet.",
-    # ]
+    lights_phrases = [
+        "Beleuchtungssysteme werden gescannt.",
+        "Lichtmanagement wird aktiviert.",
+        "Farbspektrum wird kalibriert.",
+        "Lichtsteuerung wird gestartet.",
+        "Adaptive Lichtanpassung beginnt.",
+        "Philips Hue wird synchronisiert.",
+        "Dynamische Lichtanpassung bereit."
+    ]
     
-    # for phrase in lights_phrases:
-    #     tts.generate_speech_file(phrase, category="lights_loading")
+    for phrase in lights_phrases:
+        tts.generate_speech_file(phrase, category="lights_loading")
     
     
     # alarm_phrases = [

@@ -8,6 +8,7 @@ from assistant.speech_service import SpeechService
 from config.settings import GPT_MINI
 from graphs.base_graph import BaseGraph
 from graphs.workflow_registry import WorkflowRegistry
+from graphs.workflow_selected_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowState(TypedDict):
@@ -21,6 +22,8 @@ class WorkflowDispatcher(LoggingMixin):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or GPT_MINI
         self.speech_service = SpeechService(voice="nova")
+        
+        self.observers = [WorkflowAudioFeedbackObserver()]
         
         # Graph definieren
         workflow_graph = StateGraph(WorkflowState)
@@ -71,6 +74,8 @@ class WorkflowDispatcher(LoggingMixin):
         else:
             state["workflow"] = "default"
             
+        self._notify_workflow_selected(state["workflow"], state)
+            
         return state
     
     async def _run_default_workflow(self, state: WorkflowState) -> WorkflowState:
@@ -116,3 +121,14 @@ class WorkflowDispatcher(LoggingMixin):
             "workflow": result["workflow"],
             "response": result["response"]
         }
+        
+    def add_observer(self, observer: WorkflowObserver) -> None:
+         self.observers.append(observer)
+     
+    def remove_observer(self, observer: WorkflowObserver) -> None:
+         if observer in self.observers:
+             self.observers.remove(observer)
+     
+    def _notify_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
+         for observer in self.observers:
+             observer.on_workflow_selected(workflow_name, context)
