@@ -2,7 +2,7 @@ import time
 import threading
 import asyncio
 import datetime
-from typing import Optional, List, Callable, Tuple, Dict, Any
+from typing import Optional, Callable, Tuple
 from dataclasses import dataclass
 
 from audio.phrase_generator import PhraseGenerator
@@ -13,6 +13,8 @@ from audio.audio_manager import stop, play_loop, fade_out, get_mapper
 from tools.lights.animation.sunrise_controller import SceneBasedSunriseController
 from tools.lights.bridge.bridge import HueBridge
 from util.loggin_mixin import LoggingMixin
+
+from singleton_decorator import singleton
 
 @dataclass
 class AlarmConfig:
@@ -26,22 +28,19 @@ class AlarmConfig:
     default_wake_up_sound = "wake-up-focus"
     default_get_up_sound = "get-up-blossom"
 
-
+@singleton
 class Alarm(LoggingMixin):
     def __init__(self, config: Optional[AlarmConfig] = None):
-        self.alarms: List[AlarmItem] = []
+        self.current_alarm: Optional[AlarmItem] = None
         self.running: bool = False
         self.alarm_thread: Optional[threading.Thread] = None
         self.audio_manager = get_mapper()
         
-        # Konfiguration
         self.config = config or AlarmConfig()
         
-        # Lichtwecker-Komponenten
         self.light_controller: Optional[SceneBasedSunriseController] = None
         self.bridge: Optional[HueBridge] = None
         
-        # Initialisiere den Lichtwecker, wenn gewünscht
         if self.config.use_light_alarm:
             self._init_light_controller()
     
@@ -72,24 +71,8 @@ class Alarm(LoggingMixin):
         light_scene: Optional[str] = None,
         callback: Optional[Callable] = None
     ) -> int:
-        """
-        Setzt einen Alarm für eine bestimmte Uhrzeit.
-        
-        Args:
-            hour: Stunde (0-23)
-            minute: Minute (0-59)
-            wake_sound_id: ID des Wake-Up-Sounds
-            get_up_sound_id: ID des Get-Up-Sounds
-            use_light: Ob der Lichtwecker verwendet werden soll
-            light_scene: Name der zu verwendenden Lichtszene
-            callback: Funktion, die nach dem Alarm aufgerufen wird
-            
-        Returns:
-            int: ID des Alarms
-        """
-        
-        wake_sound_id = self.config.default_wake_up_sound
-        get_up_sound_id = self.config.default_get_up_sound
+        wake_sound_id = wake_sound_id or self.config.default_wake_up_sound
+        get_up_sound_id = get_up_sound_id or self.config.default_get_up_sound
         
         now = datetime.datetime.now()
         get_up_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -105,54 +88,33 @@ class Alarm(LoggingMixin):
             "light_scene": light_scene or self.config.light_scene_name
         }
         
-        return self.set_alarm(wake_up_time, wake_sound_id, get_up_sound_id, callback, extra_settings)
-    
-    def set_alarm(
-        self, 
-        alarm_time: datetime.datetime, 
-        wake_sound_id: str, 
-        get_up_sound_id: str,
-        callback: Optional[Callable] = None,
-        extra_settings: Optional[Dict[str, Any]] = None
-    ) -> int:
-        """
-        Setzt einen Alarm für einen bestimmten Zeitpunkt.
-        
-        Args:
-            alarm_time: Zeitpunkt für den Alarm
-            wake_sound_id: ID des Wake-Up-Sounds
-            get_up_sound_id: ID des Get-Up-Sounds
-            callback: Funktion, die nach dem Alarm aufgerufen wird
-            extra_settings: Zusätzliche Einstellungen
-            
-        Returns:
-            int: ID des Alarms
-        """
-        alarm_id = len(self.alarms)
-        
+        # Setze den Alarm
         alarm = AlarmItem(
-            id=alarm_id,
-            time=alarm_time,
+            id=0,  # Immer ID 0, da nur ein Alarm
+            time=wake_up_time,
             wake_sound_id=wake_sound_id,
             get_up_sound_id=get_up_sound_id,
             callback=callback,
-            extra=extra_settings or {}
+            extra=extra_settings
         )
         
-        self.alarms.append(alarm)
+        # Speichere den Alarm
+        self.current_alarm = alarm
         
-        get_up_time = alarm_time + datetime.timedelta(seconds=self.config.snooze_duration)
+        get_up_time = wake_up_time + datetime.timedelta(seconds=self.config.snooze_duration)
         
+        # Protokolliere Details
         self._log_alarm_details(alarm, get_up_time)
         
+        # Starte die Überwachung, falls noch nicht aktiv
         if not self.running:
             self._start_monitoring()
             
-        return alarm_id
+        return 0  # Immer ID 0 zurückgeben
     
     def _log_alarm_details(self, alarm: AlarmItem, get_up_time: datetime.datetime) -> None:
         """Protokolliert Details zu einem gesetzten Alarm."""
-        self.logger.info(f"⏰ Alarm #{alarm.id} gesetzt:")
+        self.logger.info(f"⏰ Alarm gesetzt:")
         self.logger.info("   Wake-Up: %s (Sound: %s)", 
                         alarm.time.strftime('%H:%M:%S'), 
                         alarm.wake_sound_id)
@@ -182,91 +144,101 @@ class Alarm(LoggingMixin):
             light_scene: Name der zu verwendenden Lichtszene
             
         Returns:
-            ID des Alarms
+            int: ID des Alarms (immer 0)
         """
-        alarm_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
+        # Berechne die Alarmzeit
+        now = datetime.datetime.now()
+        wake_time = now + datetime.timedelta(seconds=seconds)
         
-        extra_settings = {
-            "use_light": use_light and self.config.use_light_alarm,
-            "light_scene": light_scene or self.config.light_scene_name
-        }
+        # Setze den Alarm (mit Standard-Sounds, falls nicht angegeben)
+        alarm = AlarmItem(
+            id=0,  # Immer ID 0
+            time=wake_time,
+            wake_sound_id=wake_sound_id,
+            get_up_sound_id=get_up_sound_id,
+            callback=callback,
+            extra={
+                "use_light": use_light and self.config.use_light_alarm,
+                "light_scene": light_scene or self.config.light_scene_name
+            }
+        )
         
-        return self.set_alarm(alarm_time, wake_sound_id, get_up_sound_id, callback, extra_settings)
+        # Speichere den Alarm
+        self.current_alarm = alarm
+        
+        get_up_time = wake_time + datetime.timedelta(seconds=self.config.snooze_duration)
+        
+        # Protokolliere Details
+        self._log_alarm_details(alarm, get_up_time)
+        
+        # Starte die Überwachung, falls noch nicht aktiv
+        if not self.running:
+            self._start_monitoring()
+            
+        return 0  # Immer ID 0 zurückgeben
     
     def get_next_alarm_info(self) -> Optional[Tuple[int, datetime.datetime, datetime.datetime]]:
         """
-        Gibt Informationen zum nächsten anstehenden Alarm zurück.
+        Gibt Informationen zum anstehenden Alarm zurück.
         
         Returns:
             Optional[Tuple[int, datetime.datetime, datetime.datetime]]: 
                 (alarm_id, wake_up_time, get_up_time) oder None, wenn kein Alarm gesetzt ist
         """
-        if not self.alarms:
+        if not self.current_alarm or self.current_alarm.triggered:
             return None
         
-        # Finde den nächsten anstehenden Alarm
-        next_alarm = self._find_next_alarm()
-        if not next_alarm:
-            return None
-        
-        get_up_time = next_alarm.time + datetime.timedelta(seconds=self.config.snooze_duration)
-        return (next_alarm.id, next_alarm.time, get_up_time)
+        get_up_time = self.current_alarm.time + datetime.timedelta(seconds=self.config.snooze_duration)
+        return (0, self.current_alarm.time, get_up_time)  # ID ist immer 0
     
-    def _find_next_alarm(self) -> Optional[AlarmItem]:
-        """Findet den nächsten anstehenden, nicht ausgelösten Alarm."""
-        return min(
-            [alarm for alarm in self.alarms if not alarm.triggered],
-            key=lambda a: a.time,
-            default=None
-        )
-    
-    def cancel_alarm(self, alarm_id: int) -> bool:
+    def cancel_alarm(self, alarm_id: int = 0) -> bool:
         """
-        Bricht einen Alarm ab.
+        Bricht den aktuellen Alarm ab.
         
         Args:
-            alarm_id: ID des abzubrechenden Alarms
+            alarm_id: Wird ignoriert, da es nur einen Alarm gibt
             
         Returns:
             bool: True, wenn der Alarm abgebrochen wurde, False sonst
         """
-        for i, alarm in enumerate(self.alarms):
-            if alarm.id == alarm_id and not alarm.triggered:
-                self.alarms.pop(i)
-                self.logger.info(f"⏰ Alarm #{alarm_id} abgebrochen")
-                return True
+        if self.current_alarm and not self.current_alarm.triggered:
+            self.current_alarm = None
+            self.logger.info("⏰ Alarm abgebrochen")
+            return True
+        
+        self.logger.info("⏰ Kein aktiver Alarm zum Abbrechen vorhanden")
         return False
     
     def _start_monitoring(self) -> None:
-        """Startet den Überwachungsthread für Alarme."""
+        """Startet den Überwachungsthread für den Alarm."""
         self.running = True
-        self.alarm_thread = threading.Thread(target=self._monitor_alarms, daemon=True)
+        self.alarm_thread = threading.Thread(target=self._monitor_alarm, daemon=True)
         self.alarm_thread.start()
         self.logger.info("⏰ Alarm-Überwachung gestartet")
     
-    def _monitor_alarms(self) -> None:
-        """Überwacht die Alarme und löst sie aus, wenn der Zeitpunkt erreicht ist."""
+    def _monitor_alarm(self) -> None:
+        """Überwacht den Alarm und löst ihn aus, wenn der Zeitpunkt erreicht ist."""
         while self.running:
-            now = datetime.datetime.now()
-            triggered_indices = []
-            
-            next_alarm_time = None
-            for i, alarm in enumerate(self.alarms):
-                if not alarm.triggered:
-                    if now >= alarm.time:
-                        self._start_alarm_thread(alarm)
-                        alarm.triggered = True
-                        triggered_indices.append(i)
-                    elif next_alarm_time is None or alarm.time < next_alarm_time:
-                        next_alarm_time = alarm.time
-            
-            # Entferne ausgelöste Alarme
-            for i in sorted(triggered_indices, reverse=True):
-                self.alarms.pop(i)
-            
-            # Berechne Schlafzeit bis zum nächsten Alarm
-            sleep_seconds = self._calculate_sleep_duration(now, next_alarm_time)
-            time.sleep(sleep_seconds)
+            # Prüfe, ob ein Alarm gesetzt ist
+            if self.current_alarm and not self.current_alarm.triggered:
+                now = datetime.datetime.now()
+                
+                # Prüfe, ob der Alarm ausgelöst werden soll
+                if now >= self.current_alarm.time:
+                    alarm = self.current_alarm
+                    self.current_alarm.triggered = True
+                    self._start_alarm_thread(alarm)
+                    
+                    # Warte bis zum nächsten Check
+                    time.sleep(60)  # Prüfe regelmäßig, ob ein neuer Alarm gesetzt wurde
+                else:
+                    # Berechne Wartezeit bis zum Alarm
+                    wait_seconds = (self.current_alarm.time - now).total_seconds()
+                    sleep_time = min(wait_seconds, 60)  # Maximal 1 Minute warten
+                    time.sleep(max(1, sleep_time))  # Mindestens 1 Sekunde warten
+            else:
+                # Kein Alarm gesetzt, prüfe gelegentlich wieder
+                time.sleep(60)
     
     def _start_alarm_thread(self, alarm: AlarmItem) -> None:
         """Startet einen Thread zur Alarmauslösung."""
@@ -275,13 +247,6 @@ class Alarm(LoggingMixin):
             args=(alarm,),
             daemon=True
         ).start()
-    
-    def _calculate_sleep_duration(self, now: datetime.datetime, next_alarm_time: Optional[datetime.datetime]) -> float:
-        """Berechnet die Schlafzeit bis zum nächsten Alarm."""
-        if next_alarm_time:
-            sleep_seconds = (next_alarm_time - now).total_seconds()
-            return max(1, min(sleep_seconds, 300))
-        return 60  # Kein Alarm geplant, prüfe weniger häufig
     
     def _run_async_in_thread(self, coro) -> None:
         """Führt eine asyncio-Coroutine in einem separaten Thread aus."""
@@ -294,8 +259,7 @@ class Alarm(LoggingMixin):
         Args:
             alarm: Der auszulösende Alarm
         """
-        alarm_id = alarm.id
-        self.logger.info(f"⏰ ALARM #{alarm_id} wird ausgelöst!")
+        self.logger.info("⏰ ALARM wird ausgelöst!")
         
         try:
             # Starte Lichtwecker, falls konfiguriert
@@ -309,21 +273,21 @@ class Alarm(LoggingMixin):
             
             # Phase 2: Get-Up Sound
             self._play_get_up_phase(alarm.get_up_sound_id)
+
             
-            phrase_generator = PhraseGenerator()
-            phrase_generator.play_random_speech_file_from_category("alarm")
-            
-            time.sleep(10)
-            
-            self.logger.info(f"⏰ Alarm #{alarm_id} abgeschlossen")
+            self.logger.info("⏰ Alarm abgeschlossen")
             
             # Führe Callback aus, falls vorhanden
             if alarm.callback:
                 alarm.callback()
                 
         except Exception as e:
-            self.logger.error(f"❌ Fehler bei Alarm #{alarm_id}: {e}")
+            self.logger.error(f"❌ Fehler beim Alarm: {e}")
             self._handle_alarm_error()
+        
+        # Setze alarm auf None, da er erledigt ist
+        if self.current_alarm and self.current_alarm.triggered:
+            self.current_alarm = None
     
     def _start_light_alarm_if_enabled(self, alarm: AlarmItem) -> Optional[threading.Thread]:
         """
@@ -400,13 +364,6 @@ class Alarm(LoggingMixin):
         stop()
     
     async def _start_light_alarm(self, scene_name: str, duration: int) -> None:
-        """
-        Startet den Lichtwecker mit der angegebenen Szene.
-        
-        Args:
-            scene_name: Name der zu verwendenden Lichtszene
-            duration: Dauer des Sonnenaufgangs in Sekunden
-        """
         try:
             if self.light_controller:
                 await self.light_controller.start_scene_based_sunrise(
@@ -440,47 +397,39 @@ class Alarm(LoggingMixin):
             
         self.logger.info("⏰ Alarm-System heruntergefahren")
 
+if __name__ == "__main__":
+    import logging
 
-def demo():
-    """Demo-Funktion zum Testen des Alarm-Managers."""
-    # Erstelle eine Alarm-Instanz
-    alarm_manager = Alarm()
+    # Konfiguriere das Logging
+    logging.basicConfig(level=logging.INFO)
     
-    print("\n⏰ Demo: Setze Alarm in der nächsten Minute...")
+    # Erstelle eine Alarm-Konfiguration
+    config = AlarmConfig(
+        wake_up_duration=10,
+        get_up_duration=20,
+        snooze_duration=40,
+        fade_out_duration=2.0,
+        use_light_alarm=True,
+        light_scene_name="Majestätischer Morgen"
+    )
     
-    # Hole die aktuelle Zeit
+    # Initialisiere den Alarm-Manager
+    alarm_manager = Alarm(config=config)
+    
+    # Setze einen Alarm für 1 Minute in der Zukunft
     now = datetime.datetime.now()
-    
-    # Setze den Alarm für die nächste Minute
-    hour = now.hour
-    minute = now.minute + 1
-    
-    # Wenn es die letzte Minute der Stunde ist, gehe zur nächsten Stunde über
-    if minute == 60:
-        minute = 0
-        hour = (hour + 1) % 24
-    
-    alarm_id = alarm_manager.set_alarm_for_time(
-        hour=hour,
-        minute=minute,
+    alarm_manager.set_alarm_for_time(
+        hour=now.hour,
+        minute=(now.minute + 1) % 60,
+        wake_sound_id="wake-up-focus",
+        get_up_sound_id="get-up-blossom",
         use_light=True,
         light_scene="Majestätischer Morgen"
     )
     
-    # Zeige Informationen zum nächsten Alarm an
-    next_alarm_info = alarm_manager.get_next_alarm_info()
-    if next_alarm_info:
-        alarm_id, wake_time, get_time = next_alarm_info
-        print(f"Nächster Alarm (#{alarm_id}):")
-        print(f"  Wake-Up-Phase: {wake_time.strftime('%H:%M:%S')}")
-        print(f"  Get-Up-Phase: {get_time.strftime('%H:%M:%S')}")
-
-if __name__ == "__main__":
-    demo()
-    
+    # Halte das Skript am Laufen, um den Alarm zu testen
     try:
-        # Warte auf Beendigung durch Strg+C
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nBeende Demo...")
+        alarm_manager.shutdown()
