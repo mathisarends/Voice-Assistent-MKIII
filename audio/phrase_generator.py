@@ -176,19 +176,31 @@ if __name__ == "__main__":
     # for phrase in alarm_phrases:
     #     tts.generate_speech_file(phrase, category="alarm_loading")
     
-    pomodoro_phrases = [
-        "Pomodoro-Timer wird initialisiert.",
-        "Fokus-Timing wird aktiviert.",
-        "Produktivitäts-Timer wird vorbereitet.",
-        "Zeitmanagement-System wird gestartet.",
-        "Pomodoro-Protokoll wird geladen.",
-        "Arbeitszyklus-Timer wird konfiguriert.",
-        "Fokus-Intervallsystem wird bereitgestellt.",
-        "Pomodoro-Tracking wird aktiviert."
+    # pomodoro_phrases = [
+    #     "Pomodoro-Timer wird initialisiert.",
+    #     "Fokus-Timing wird aktiviert.",
+    #     "Produktivitäts-Timer wird vorbereitet.",
+    #     "Zeitmanagement-System wird gestartet.",
+    #     "Pomodoro-Protokoll wird geladen.",
+    #     "Arbeitszyklus-Timer wird konfiguriert.",
+    #     "Fokus-Intervallsystem wird bereitgestellt.",
+    #     "Pomodoro-Tracking wird aktiviert."
+    # ]
+    
+    # for phrase in pomodoro_phrases:
+    #     tts.generate_speech_file(phrase, category="pomodoro_loading")
+    
+    youtube_phrases = [
+        "Videozusammenfassung wird vorbereitet.",
+        "Inhaltsextraktion wird initialisiert.",
+        "Zusammenfassungssystem wird aktiviert.",
+        "Video-Informationen werden gesammelt.",
+        "Inhaltliche Aufbereitung wird gestartet.",
+        "YouTube-Daten werden verarbeitet.",
     ]
     
-    for phrase in pomodoro_phrases:
-        tts.generate_speech_file(phrase, category="pomodoro_loading")
+    for phrase in youtube_phrases:
+        tts.generate_speech_file(phrase, category="youtube_loading")
 
     
 

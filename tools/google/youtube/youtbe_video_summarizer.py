@@ -1,10 +1,16 @@
 from typing import Optional
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 
 class YoutubeVideoSummarizer:
-    def __init__(self, model_name: str = "gpt-4o", temperature: float = 0.3):
-        self.llm = ChatOpenAI(model_name=model_name, temperature=temperature)
+    def __init__(self, model_name: str = "gemini-2.0-flash", temperature: float = 0.5):
+        self.llm = ChatGoogleGenerativeAI(
+            model=model_name,
+            temperature=temperature,
+            top_p=0.95,
+            top_k=40,
+            streaming=False,
+        )
         
         self.summary_prompt = ChatPromptTemplate.from_template("""
         # Anleitung zur Zusammenfassung von YouTube-Videos

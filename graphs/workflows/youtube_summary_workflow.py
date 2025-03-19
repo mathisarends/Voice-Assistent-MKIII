@@ -1,15 +1,15 @@
-import asyncio
 from typing import Optional, Dict, Any
 from langchain_anthropic import ChatAnthropic
+from assistant.speech_service import SpeechService
 from config.settings import DEFAULT_LLM_MODEL
 from graphs.base_graph import BaseGraph
 from langgraph.graph import StateGraph, END
 from states.state_definitions import State
 from tools.notion.clipboard.notion_clipboard_manager import NotionClipboardManager
 from langgraph.checkpoint.memory import MemorySaver
-from tools.youtube.youtbe_video_summarizer import YoutubeVideoSummarizer
-from tools.youtube.youtube_finder import YoutubeFinder
-from tools.youtube.youtube_transcript import YoutubeTranscript
+from tools.google.youtube.youtbe_video_summarizer import YoutubeVideoSummarizer
+from tools.google.youtube.youtube_finder import YoutubeFinder
+from tools.google.youtube.youtube_transcript import YoutubeTranscript
 
 class YoutubeSummaryState(State):
     """Zustand für den YouTube-Summary-Workflow."""
@@ -38,6 +38,8 @@ class YoutubeSummaryWorkflow(BaseGraph):
     def __init__(self, model_name: Optional[str] = None):
         self.model_name = model_name or DEFAULT_LLM_MODEL
         self.llm = ChatAnthropic(model=self.model_name)
+        self.speech_service = SpeechService(voice="nova")
+        self.speak_responses = True
         
         self._init_tools()
         
@@ -71,18 +73,15 @@ class YoutubeSummaryWorkflow(BaseGraph):
             "messages": [{"role": "assistant", "content": f"Suche nach YouTube-Videos mit dem Suchbegriff: {search_query}"}]
         }
     
-    async def _find_video(self, search_query: str) -> Dict[str, str]:
-        return await self.youtube_finder.find_youtube_video(search_query)
-    
     async def _find_video_url_and_title_by_prompt(self, state: YoutubeSummaryState) -> Dict[str, Any]:
         search_query = state.get("search_query", "")
         
-        result = await self._find_video(search_query)
+        title, url = await self.youtube_finder.find_matching_video(search_query)
         
         return {
-            "video_url": result.get("url"),
-            "video_title": result.get("title"),
-            "messages": [{"role": "assistant", "content": f"Ich habe ein passendes Video gefunden: '{result.get('title')}'"}]
+            "video_url": url,
+            "video_title": title,
+            "messages": [{"role": "assistant", "content": f"Ich habe ein passendes Video gefunden: '{title}'"}]
         }
                 
     def _get_transcript_by_url(self, state: YoutubeSummaryState) -> Dict[str, Any]:
@@ -119,8 +118,6 @@ class YoutubeSummaryWorkflow(BaseGraph):
         
         spoken_summary = await self.youtube_video_summarizer.create_spoken_summary(transcript=transcript, video_title=video_title)
         
-        print("=== SPOKEN SUMMARY ===")
-        print(spoken_summary)
         
         return {
             "spoken_summary": spoken_summary,
@@ -138,7 +135,6 @@ class YoutubeSummaryWorkflow(BaseGraph):
         }
         
     def build_graph(self):
-        # Knoten zum Graphen hinzufügen
         self.graph_builder.add_node("start_node", lambda state: state)
         self.graph_builder.add_node("optimize_search_query", self._optimize_search_query_from_prompt)
         self.graph_builder.add_node("find_video", self._find_video_url_and_title_by_prompt)
@@ -166,3 +162,12 @@ class YoutubeSummaryWorkflow(BaseGraph):
         self.graph_builder.add_edge("create_spoken_summary", "save_to_clipboard")
         
         self.graph_builder.add_edge("save_to_clipboard", END)
+
+async def demo():
+    workflow = YoutubeSummaryWorkflow()
+    final_response = await workflow.arun(input_message="Fasse mir das letzte gelikete Video von Thiago Forte zusammen!", thread_id="1")
+    print(final_response)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(demo())

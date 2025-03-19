@@ -10,6 +10,7 @@ from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.spotify_workflow import SpotifyWorkflow
 from graphs.workflows.volume_control_workflow import VolumeControlWorkflow
 from graphs.workflows.weather_workflow import WeatherWorkflow
+from graphs.workflows.youtube_summary_workflow import YoutubeSummaryWorkflow
 from tools.time.time_tool import TimeTool
 
 class WorkflowRegistry():
@@ -147,4 +148,11 @@ def register_workflows():
         PomodoroWorkflow,
         "Verwaltet Pomodoro-Timer für fokussierte Arbeitsintervalle und Pausen",
         ["Pomodoro", "Timer", "Fokus", "Produktivität", "Zeitmanagement"]
+    )
+    
+    WorkflowRegistry.register(
+        "youtube",
+        YoutubeSummaryWorkflow,
+        "Sucht und fasst YouTube-Videos zusammen und speichert sie in der Notion-Zwischenablage",
+        ["YouTube", "Video", "Zusammenfassung", "Transkript", "Notion", "Recherche"]
     )

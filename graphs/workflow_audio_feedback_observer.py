@@ -37,9 +37,11 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         "lights_loading": SoundCategory(name="lights_loading", count=7),
         "volume_loading": SoundCategory(name="volume_loading", count=5),
         "pomodoro_loading": SoundCategory(name="pomodoro_loading", count=5),
+        "youtube_loading": SoundCategory(name="youtube_loading", count=6)
         
     }
     
+    # Hier könnte man auch überlegen ob man das nicht direkt in die WorkflowRegistry Klassen packt diese mapping
     WORKFLOW_TO_SOUND_CATEGORY: ClassVar[Dict[str, str]] = {
         "weather": "weather",
         "alarm": "alarm_loading",
@@ -49,7 +51,8 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         "spotify": "spotify_loading",
         "lights": "lights_loading",
         "volume": "volume_loading",
-        "pomodoro": "pomodoro_loading"
+        "pomodoro": "pomodoro_loading",
+        "youtube": "youtube_loading"
     }
     
     def on_workflow_selected(self, workflow_name: str, context: Dict[str, Any]) -> None:
