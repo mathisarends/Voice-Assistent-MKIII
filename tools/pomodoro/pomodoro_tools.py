@@ -10,7 +10,7 @@ POMODORO_START_FAIL = "Es läuft bereits ein Timer."
 POMODORO_START_INVALID = "Die Dauer des Pomodoro-Timers muss positiv sein."
 POMODORO_STOP_SUCCESS = "Der Pomodoro-Timer wurde erfolgreich gestoppt."
 POMODORO_STOP_FAIL = "Es läuft kein Timer, der gestoppt werden könnte."
-POMODORO_STATUS_ACTIVE = "Pomodoro-Timer läuft. Noch {minutes} Minuten und {seconds} Sekunden verbleibend."
+POMODORO_STATUS_ACTIVE = "Pomodoro-Timer läuft. Noch {minutes} Minuten verbleibend."
 POMODORO_STATUS_INACTIVE = "Kein Pomodoro-Timer aktiv. Du kannst einen neuen Timer starten."
 POMODORO_RESET = "Pomodoro-Timer wurde zurückgesetzt. Du kannst jetzt einen neuen Timer starten."
 
@@ -68,12 +68,10 @@ def get_pomodoro_status() -> str:
     Gibt Informationen über den aktuellen Status des Pomodoro-Timers zurück.
     """
     try:
-        status = pomodoro_manager.get_timer_status()
+        remaining_minutes = pomodoro_manager.get_remaining_minutes()
         
-        if status["is_running"]:
-            response = POMODORO_STATUS_ACTIVE.format(
-                minutes=status['remaining_minutes'], 
-            )
+        if remaining_minutes > 0:
+            response = POMODORO_STATUS_ACTIVE.format(minutes=remaining_minutes)
             return audio_manager.respond_with_audio(response)
         else:
             return audio_manager.respond_with_audio(POMODORO_STATUS_INACTIVE)

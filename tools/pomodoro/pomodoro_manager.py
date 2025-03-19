@@ -66,22 +66,18 @@ class PomodoroManager(LoggingMixin):
         
         self.is_running = False
         
-    def get_timer_status(self) -> dict:
+    def get_remaining_minutes(self) -> int:
+        """
+        Gibt die verbleibende Zeit des Timers in Minuten zurück.
+        
+        Returns:
+            int: Verbleibende Minuten oder 0, wenn kein Timer aktiv ist
+        """
         if not self.is_running:
-            return {
-                "is_running": False,
-                "message": "Kein aktiver Timer."
-            }
+            return 0
         
         elapsed_time = time.time() - self.start_time
         remaining_time = max(0, self.duration_seconds - elapsed_time)
         minutes = int(remaining_time // 60)
-        seconds = int(remaining_time % 60)
         
-        return {
-            "is_running": True,
-            "remaining_minutes": minutes,
-            "remaining_seconds": seconds,
-            "end_time": self.end_time.strftime("%H:%M:%S"),
-            "message": f"Verbleibende Zeit: {minutes} Minuten und {seconds} Sekunden."
-        }
+        return minutes
