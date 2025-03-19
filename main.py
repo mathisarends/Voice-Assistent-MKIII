@@ -21,7 +21,7 @@ async def main():
     conversation = ConversationLoop(
         speech_service=speech_service,
         wakeword="picovoice",
-        vocabulary="Wetterbericht, Abendroutine, Stopp, Licht an, Licht aus, Lautstärke"
+        vocabulary="Wetterbericht, Abendroutine, Stopp, Licht an, Licht aus, Lautstärke, Pomodoro"
     )
     await conversation.run()
 

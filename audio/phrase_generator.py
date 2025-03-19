@@ -144,7 +144,7 @@ if __name__ == "__main__":
     #         "Die Fokuszeit ist vorbei. Eine kurze Pause tut jetzt gut.",
     #         "Pomodoro-Session beendet. Ihr Gehirn freut sich über eine Erholungspause.",
     #         "Die Zeit ist um. Ein guter Moment, kurz durchzuatmen.",
-    #         "Ihre Arbeitsphase ist abgeschlossen. Zeit für einen Moment der Entspannung.",
+    #         "Iwhre Arbeitsphase ist abgeschlossen. Zeit für einen Moment der Entspannung.",
     #         "Ihr Fokusintervall ist vorüber. Zeit, den Gedanken kurz freien Lauf zu lassen.",
     #         "Die Phase konzentrierten Arbeitens ist vorüber. Lassen Sie Ihre Gedanken kurz wandern.",
     # ]
@@ -163,9 +163,7 @@ if __name__ == "__main__":
     
     # for phrase in pomodoro_selection_phrases:
     #     tts.generate_speech_file(phrase, category="pomodoro_Loading")
-    
    
-    
     # alarm_phrases = [
     #     "Weckprotokoll-Parameter werden überprüft. Alarm-Synchronisation wird berechnet.",
     #     "Temporales Weckmodul aktiviert. Aufwachsequenz wird initiiert.",
@@ -177,5 +175,20 @@ if __name__ == "__main__":
     
     # for phrase in alarm_phrases:
     #     tts.generate_speech_file(phrase, category="alarm_loading")
+    
+    pomodoro_phrases = [
+        "Pomodoro-Timer wird initialisiert.",
+        "Fokus-Timing wird aktiviert.",
+        "Produktivitäts-Timer wird vorbereitet.",
+        "Zeitmanagement-System wird gestartet.",
+        "Pomodoro-Protokoll wird geladen.",
+        "Arbeitszyklus-Timer wird konfiguriert.",
+        "Fokus-Intervallsystem wird bereitgestellt.",
+        "Pomodoro-Tracking wird aktiviert."
+    ]
+    
+    for phrase in pomodoro_phrases:
+        tts.generate_speech_file(phrase, category="pomodoro_loading")
+
     
 

@@ -5,6 +5,7 @@ from graphs.base_graph import BaseGraph
 from graphs.workflows.alarm_workflow import AlarmWorkflow
 from graphs.workflows.lights_workflow import LightsWorkflow
 from graphs.workflows.notion_todo_workflow import NotionTodoWorkflow
+from graphs.workflows.pomodoro_workflow import PomodoroWorkflow
 from graphs.workflows.research_workflow import ResearchWorkflow
 from graphs.workflows.spotify_workflow import SpotifyWorkflow
 from graphs.workflows.volume_control_workflow import VolumeControlWorkflow
@@ -139,4 +140,11 @@ def register_workflows():
         VolumeControlWorkflow,
         "Steuert die Systemlautstärke des Geräts mit einfachen Sprachbefehlen",
         ["Lautstärke", "Volume", "Audio", "Ton", "Sound"]
+    )
+    
+    WorkflowRegistry.register(
+        "pomodoro",
+        PomodoroWorkflow,
+        "Verwaltet Pomodoro-Timer für fokussierte Arbeitsintervalle und Pausen",
+        ["Pomodoro", "Timer", "Fokus", "Produktivität", "Zeitmanagement"]
     )
