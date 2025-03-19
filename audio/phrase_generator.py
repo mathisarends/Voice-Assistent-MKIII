@@ -125,20 +125,46 @@ if __name__ == "__main__":
     # for phrase in lights_phrases:
     #     tts.generate_speech_file(phrase, category="lights_loading")
     
-    volume_phrases = [
-        "Lautstärkesteuerung wird aktiviert.",
-        "Audiosystem wird angepasst.",
-        "Lautstärkeregler wird initialisiert.",
-        "Audioparameter werden konfiguriert.",
-        "Klangeinstellungen werden geladen.",
-        "Lautstärkeprofile werden aktualisiert.",
-        "Audiosystem wird kalibriert.",
-        "Volumenkontrolle wird vorbereitet."
-    ]
+    # volume_phrases = [
+    #     "Lautstärkesteuerung wird aktiviert.",
+    #     "Audiosystem wird angepasst.",
+    #     "Lautstärkeregler wird initialisiert.",
+    #     "Audioparameter werden konfiguriert.",
+    #     "Klangeinstellungen werden geladen.",
+    #     "Lautstärkeprofile werden aktualisiert.",
+    #     "Audiosystem wird kalibriert.",
+    #     "Volumenkontrolle wird vorbereitet."
+    # ]
     
-    for phrase in volume_phrases:
-        tts.generate_speech_file(phrase, category="volume_loading")
+    # for phrase in volume_phrases:
+    #     tts.generate_speech_file(phrase, category="volume_loading")
     
+    # pomodoro_phrases = [
+    #         "Ihr Pomodoro-Timer ist abgelaufen. Zeit für eine kleine Unterbrechung.",
+    #         "Die Fokuszeit ist vorbei. Eine kurze Pause tut jetzt gut.",
+    #         "Pomodoro-Session beendet. Ihr Gehirn freut sich über eine Erholungspause.",
+    #         "Die Zeit ist um. Ein guter Moment, kurz durchzuatmen.",
+    #         "Ihre Arbeitsphase ist abgeschlossen. Zeit für einen Moment der Entspannung.",
+    #         "Ihr Fokusintervall ist vorüber. Zeit, den Gedanken kurz freien Lauf zu lassen.",
+    #         "Die Phase konzentrierten Arbeitens ist vorüber. Lassen Sie Ihre Gedanken kurz wandern.",
+    # ]
+    
+    # for phrase in pomodoro_phrases:
+    #     tts.generate_speech_file(phrase, category="pomodoro_phrases")
+    
+    
+    # pomodoro_selection_phrases = [
+    #     "Zeitmanagement-Workflow ausgewählt. Pomodoro-Funktionen stehen zur Verfügung.",
+    #     "Produktivitäts-Workflow Pomodoro wurde ausgewählt.",
+    #     "Pomodoro-Funktionalität steht zur Verfügung.",
+    #     "Zeitmanagement mit Pomodoro wird vorbereitet.",
+    #     "Pomodoro-Workflow steht Ihnen jetzt zur Verfügung."
+    # ]
+    
+    # for phrase in pomodoro_selection_phrases:
+    #     tts.generate_speech_file(phrase, category="pomodoro_Loading")
+    
+   
     
     # alarm_phrases = [
     #     "Weckprotokoll-Parameter werden überprüft. Alarm-Synchronisation wird berechnet.",

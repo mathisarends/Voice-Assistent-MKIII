@@ -10,7 +10,6 @@ from graphs.workflows.spotify_workflow import SpotifyWorkflow
 from graphs.workflows.volume_control_workflow import VolumeControlWorkflow
 from graphs.workflows.weather_workflow import WeatherWorkflow
 from tools.time.time_tool import TimeTool
-from util.loggin_mixin import LoggingMixin
 
 class WorkflowRegistry():
     """Registry für alle Workflows in der Anwendung."""
