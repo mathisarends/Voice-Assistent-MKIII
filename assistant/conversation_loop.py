@@ -13,7 +13,7 @@ class ConversationLoop(LoggingMixin):
     def __init__(self, 
                  speech_service: SpeechService,
                  wakeword="picovoice",
-                 vocabulary="Wetterbericht, Abendroutine, Stopp"):
+                 vocabulary="Wetterbericht, Abendroutine, Stopp Wetter"):
         super().__init__()
         self.wakeword = wakeword
         self.vocabulary = vocabulary

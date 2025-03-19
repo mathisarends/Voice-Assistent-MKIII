@@ -1,4 +1,5 @@
 from datetime import datetime
+import textwrap
 from typing_extensions import Any, Dict, List, Optional, override
 from graphs.base_graph import BaseGraph
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -27,15 +28,12 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
         
     @override
     def build_graph(self):
-        # Wir machen es ganz einfach sequentiell
         self.graph_builder.add_node("get_current_time", self._get_current_time)
         self.graph_builder.add_node("get_weather_data", self._get_weather_data)
         self.graph_builder.add_node("format_for_speech", self._format_for_speech)
         
-        # Einstiegspunkt ist get_current_time
         self.graph_builder.set_entry_point("get_current_time")
         
-        # Sequentieller Fluss - ganz einfach
         self.graph_builder.add_edge("get_current_time", "get_weather_data")
         self.graph_builder.add_edge("get_weather_data", "format_for_speech")
         
@@ -64,30 +62,36 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
             # Wetterdaten zu einem Text zusammenfassen
             weather_text = "\n".join(weather_data)
             
-            # System-Prompt für natürliche Sprachausgabe
+            # System-Prompt für natürliche Sprachausgabe im Jarvis-Stil
             system_prompt = """
+            Du bist ein hochentwickelter KI-Assistent mit einem präzisen, effizienten Kommunikationsstil, ähnlich wie Jarvis (ohne "Sir" zu verwenden).
+
             Deine Aufgabe ist es, Wetterinformationen in eine natürliche, gesprochene Form umzuwandeln.
-            
+
+            Beziehe dich NUR auf den aktuellen Tag und die nächsten Stunden.
+
             Folgende Richtlinien solltest du beachten:
-            1. Formuliere die Antwort so, als würdest du mit jemandem sprechen, nicht als würdest du einen Text schreiben
+            1. Sei präzise und direkt - vermittle die wichtigsten Informationen zuerst
             2. Halte die Antwort kurz und prägnant
-            3. Hebe die wichtigsten Informationen hervor (aktuelle Temperatur, Wetterlage)
-            4. Verwende gesprächstypische Formulierungen (z.B. "Es sind aktuell 14 Grad bei leichtem Regen.")
-            5. Vermeide Aufzählungen, Listen oder technische Formatierungen
-            6. Erwähne die Tageszeit und beziehe dich auf den Rest des Tages, wenn relevant
-            
+            3. Verwende einen effizienten, selbstbewussten Ton
+            4. Formuliere technisch präzise, aber verständlich
+            5. Vermeide Füllwörter und überflüssige Höflichkeiten
+            6. Hebe die aktuellen Bedingungen und relevante Veränderungen für die nächsten Stunden hervor
+            7. Struktur: Aktuelle Bedingungen → Wichtige Änderungen → Empfehlungen (falls sinnvoll)
+
             Gib NUR die optimierte Antwort zurück, ohne Erklärungen oder zusätzlichen Text.
             """
             
             # Human-Prompt mit Wetterdaten und aktueller Zeit
             human_prompt = f"""
             Es ist {current_time} Uhr.
-            
+
             Hier sind die Wetterdaten:
-            
+
             {weather_text}
-            
+
             Bitte wandle diese Informationen in eine natürliche, gesprochene Antwort um.
+            Beziehe dich nur auf den heutigen Tag und die aktuelle Situation.
             """
             
             # LLM für Sprachoptimierung verwenden
@@ -107,9 +111,6 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
             # Antwort als Nachricht hinzufügen
             state["messages"].append({"role": "assistant", "content": speech_result})
             
-            # Debug-Ausgabe
-            self.logger.info(f"Sprachoptimierung abgeschlossen: {len(speech_result)} Zeichen")
-            
             return state
         
         except Exception as e:
@@ -120,6 +121,7 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
                 state["messages"] = [{"role": "user", "content": "Wie ist das Wetter?"}]
             state["messages"].append({"role": "assistant", "content": default_message})
             return state
+            
         
     async def run_workflow(self, user_input: str):
             """Führt den Workflow aus und gibt das Ergebnis zurück."""

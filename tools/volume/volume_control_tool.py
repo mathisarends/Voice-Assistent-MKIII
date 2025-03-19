@@ -4,7 +4,7 @@ from tools.volume.volume_control import VolumeControl
 from audio.workflow_audio_response_manager import WorkflowAudioResponseManager
 
 # Kurze, prägnante Antworttexte
-VOLUME_SET_SUCCESS = "Lautstärke auf {percent} Prozent gesetzt."
+VOLUME_SET_SUCCESS = "Lautstärke auf {level} von 10 gesetzt."
 VOLUME_INCREASE_SUCCESS = "Lautstärke auf {percent} Prozent erhöht."
 VOLUME_DECREASE_SUCCESS = "Lautstärke auf {percent} Prozent verringert."
 VOLUME_GET_CURRENT = "Lautstärke beträgt {percent} Prozent."
@@ -15,28 +15,26 @@ audio_manager = WorkflowAudioResponseManager(
     category="volume_responses",
 )
 
-# Fix these two parameters please
-
 def run_async(coro):
     return asyncio.run(coro)
 
 @tool("set_volume", return_direct=True)
 def set_volume(level: int):
-    """Setzt die Systemlautstärke auf einen bestimmten Prozentwert.
+    """Setzt die Systemlautstärke auf einen bestimmten Level.
     
     Args:
-        level: Lautstärkelevel zwischen 1 und 10 (wobei 10 = 100%)
+        level: Lautstärkelevel zwischen 1 und 10
     """
     try:
         if not 1 <= level <= 10:
-            return audio_manager.respond_with_audio("Lautstärke muss zwischen 1 und 10 liegen.")
+            return audio_manager.respond_with_audio(VOLUME_ERROR_RANGE)
         
         # Umrechnung von 1-10 Skala zu 0-100% Skala
         percent = level * 10
         VolumeControl.set_volume(percent)
         
-        current_volume = VolumeControl.get_volume()
-        response = VOLUME_SET_SUCCESS.format(percent=current_volume)
+        # Hier wird jetzt der Level anstelle des Prozentsatzes ausgegeben
+        response = VOLUME_SET_SUCCESS.format(level=level)
         return audio_manager.respond_with_audio(response)
     except Exception as e:
         error_msg = f"Fehler bei Lautstärke: {str(e)}"
