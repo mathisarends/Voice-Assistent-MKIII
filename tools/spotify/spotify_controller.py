@@ -2,7 +2,9 @@ from tools.spotify.spotify_command import SpotifyCommand
 from tools.spotify.spotify_commands import GetActiveDevicesCommand, GetCurrentTrackCommand, NextTrackCommand, PauseCommand, PlayPlaylistCommand, PlayTrackCommand, PreviousTrackCommand, ResumeCommand, SetVolumeCommand, StartConcentrationPhaseCommand, StartEveningPhaseCommand, SwitchDeviceCommand
 from tools.spotify.spotify_device_manager import SpotifyDeviceManager
 from tools.spotify.spotify_player import SpotifyPlayer
+from singleton_decorator import singleton
 
+@singleton
 class SpotifyController:
     def __init__(self, player: SpotifyPlayer, device_manager: SpotifyDeviceManager):
         self.player = player

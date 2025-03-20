@@ -13,9 +13,9 @@ class SpotifyClient:
             client_id=os.getenv("SPOTIFY_CLIENT_ID"),
             client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
             redirect_uri="http://localhost:8080",
-            scope="user-modify-playback-state,user-read-playback-state"
+            scope="user-modify-playback-state user-read-playback-state user-read-currently-playing streaming app-remote-control user-library-read user-library-modify user-read-private user-top-read"
+            # cache_path=".cache"
         ))
-
 class SpotifyPlayer:
     def __init__(self, device_name="MATHISPC"):
         self.client = SpotifyClient().api
@@ -45,15 +45,26 @@ class SpotifyPlayer:
         return True
     
     def search_track(self, query):
-        results = self.client.search(q=query, type="track", limit=1)
+        results = self.client.search(q=query, type="track", limit=5)
         
-        if results["tracks"]["items"]:
-            track = results["tracks"]["items"][0]
-            print(f"🎵 Gefunden: {track['name']} - {track['artists'][0]['name']}")
-            return track["uri"]
-                
-        print("❌ Kein Song gefunden!")
-        return None
+        if not results["tracks"]["items"]:
+            print("❌ Kein Song gefunden!")
+            return None
+        
+        tracks = results["tracks"]["items"]
+        # Versuche, einen exakten Match des Künstlers zu finden
+        # Wenn der Query einen Künstlernamen enthält (z.B. "Mr. Brightside The Killers")
+        artist_keywords = query.lower().split()
+        
+        for track in tracks:
+            track_artists = [artist["name"].lower() for artist in track["artists"]]
+            if any(any(keyword in artist for keyword in artist_keywords) for artist in track_artists):
+                print(f"🎵 Gefunden (Künstler-Match): {track['name']} - {track['artists'][0]['name']}")
+                return track["uri"]
+        
+        track = tracks[0]
+        print(f"🎵 Gefunden (Erstes Ergebnis): {track['name']} - {track['artists'][0]['name']}")
+        return track["uri"]
     
     def play_track(self, query):
         if not self._ensure_device_connection():
@@ -245,7 +256,159 @@ class SpotifyPlayer:
             print(f"❌ Fehler beim Abrufen des aktuellen Tracks: {e}")
             return None
         
+    def get_track_audio_features(self, track_uri=None):
+        """
+        Ruft die Audio-Features (Tempo, Lautstärke, Tonart, etc.) für den aktuellen oder einen bestimmten Track ab.
+        
+        Args:
+            track_uri: Optional, URI des Tracks. Wenn None, wird der aktuelle Track verwendet.
+            w
+        Returns:
+            Dictionary mit Audio-Features oder None wenn ein Fehler auftritt
+        """
+        try:
+            if track_uri is None:
+                current_track = self.get_current_track()
+                if not current_track:
+                    print("❌ Kein aktueller Track gefunden")
+                    return None
+                track_uri = current_track['uri']
+            
+            # Track-ID aus URI extrahieren
+            track_id = track_uri.split(':')[-1]
+            
+            # Audio-Features abrufen
+            features = self.client.audio_features(track_id)[0]
+            
+            if features:
+                # Die wichtigsten Features formatieren und anzeigen
+                print(f"🎵 Audio-Features für den Track:")
+                print(f"   Tempo: {round(features['tempo'])} BPM")
+                print(f"   Energie: {round(features['energy'] * 100)}%")
+                print(f"   Tanzbarkeit: {round(features['danceability'] * 100)}%")
+                print(f"   Akustik: {round(features['acousticness'] * 100)}%")
+                print(f"   Instrumental: {round(features['instrumentalness'] * 100)}%")
+                print(f"   Lautstärke: {features['loudness']} dB")
+                print(f"   Stimmung (Valenz): {round(features['valence'] * 100)}%")
+                
+                return features
+            else:
+                print("❌ Keine Audio-Features gefunden")
+                return None
+                
+        except spotipy.exceptions.SpotifyException as e:
+            print(f"❌ Fehler beim Abrufen der Audio-Features: {e}")
+            return None
+
+    def get_track_audio_analysis(self, track_uri=None):
+        """
+        Ruft die detaillierte Audio-Analyse für den aktuellen oder einen bestimmten Track ab.
+        Diese enthält zeitgenaue Informationen über Takte, Segmente, Frequenzen etc.
+        
+        Args:
+            track_uri: Optional, URI des Tracks. Wenn None, wird der aktuelle Track verwendet.
+            
+        Returns:
+            Dictionary mit detaillierter Audio-Analyse oder None wenn ein Fehler auftritt
+        """
+        try:
+            if track_uri is None:
+                current_track = self.get_current_track()
+                if not current_track:
+                    print("❌ Kein aktueller Track gefunden")
+                    return None
+                track_uri = current_track['uri']
+            
+            # Track-ID aus URI extrahieren
+            track_id = track_uri.split(':')[-1]
+            
+            # Detaillierte Audio-Analyse abrufen
+            analysis = self.client.audio_analysis(track_id)
+            
+            if analysis:
+                # Einige Basisinformationen anzeigen
+                print(f"🔊 Audio-Analyse für den Track:")
+                print(f"   Anzahl Takte: {len(analysis['bars'])}")
+                print(f"   Anzahl Beats: {len(analysis['beats'])}")
+                print(f"   Anzahl Segmente: {len(analysis['segments'])}")
+                print(f"   Anzahl Sektionen: {len(analysis['sections'])}")
+                
+                # Beispiel für Sektionen-Analyse
+                print(f"\n📊 Sektions-Übersicht:")
+                for i, section in enumerate(analysis['sections'][:5]):  # Zeige nur die ersten 5 Sektionen
+                    print(f"   Sektion {i+1}: Start {round(section['start'], 2)}s, Länge {round(section['duration'], 2)}s, " +
+                        f"Tempo {round(section['tempo'])} BPM, Lautstärke {round(section['loudness'])} dB")
+                
+                if len(analysis['sections']) > 5:
+                    print(f"   ... und {len(analysis['sections']) - 5} weitere Sektionen")
+                
+                return analysis
+            else:
+                print("❌ Keine Audio-Analyse gefunden")
+                return None
+                
+        except spotipy.exceptions.SpotifyException as e:
+            print(f"❌ Fehler beim Abrufen der Audio-Analyse: {e}")
+            return None
+
+    def get_frequency_spectrum(self, track_uri=None):
+        """
+        Extrahiert und bereitet die Frequenzspektrum-Daten aus der Audio-Analyse auf.
+        
+        Args:
+            track_uri: Optional, URI des Tracks. Wenn None, wird der aktuelle Track verwendet.
+            
+        Returns:
+            Dictionary mit aufbereiteten Frequenzspektrum-Daten oder None bei Fehler
+        """
+        analysis = self.get_track_audio_analysis(track_uri)
+        if not analysis:
+            return None
+        
+        # Frequenzbänder aus den Segmenten extrahieren
+        segments = analysis['segments']
+        
+        # Durchschnittswerte für die Frequenzbänder berechnen
+        avg_timbre = [0] * 12  # 12 Timbre-Koeffizienten
+        for segment in segments:
+            for i, timbre in enumerate(segment['timbre']):
+                avg_timbre[i] += timbre
+        
+        # Durchschnitt berechnen
+        if segments:
+            avg_timbre = [t / len(segments) for t in avg_timbre]
+        
+        # Timbre beschreiben - dies sind die 12 Koeffizienten
+        timbre_desc = [
+            "Lautstärke",
+            "Helligkeit",
+            "Klangfarbe",
+            "Attacke",
+            "Decay",
+            "Stärke der tiefen Frequenzen",
+            "Stärke der mittleren Frequenzen",
+            "Stärke der hohen Frequenzen",
+            "Rauigkeit",
+            "Harmonische vs. perkussive Anteile",
+            "Perkussive Energie",
+            "Harmonische Energie"
+        ]
+        
+        # Ergebnisse formatieren
+        freq_data = {}
+        print("\n🎛️ Frequenzspektrum-Analyse:")
+        for i, (desc, value) in enumerate(zip(timbre_desc, avg_timbre)):
+            normalized = (value + 100) / 200  # Normalisierung auf 0-1 (Werte sind typischerweise zwischen -100 und +100)
+            print(f"   {desc}: {round(normalized * 100)}%")
+            freq_data[desc] = normalized
+        
+        return freq_data
+       
 if __name__ == "__main__":
+    # Test der SpotifyPlayer-Instanz
     spotify_player = SpotifyPlayer()
-    devices = spotify_player.get_available_devices()
-    print(devices)
+    
+    # Verfügbare Geräte anzeigen
+    spotify_player.play_track("Lichter aus Makko")
+    
+    spotify_player.get_frequency_spectrum("spotify:track:5Z01UMMf7V1o0MzF86s6WJ")

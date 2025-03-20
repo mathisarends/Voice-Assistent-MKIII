@@ -9,4 +9,4 @@ class SpotifyWorkflow(BaseGraph):
     def __init__(self, model_name: Optional[str] = None):
         tools = get_spotify_tools()
         
-        super().__init__(tools, model_name)
+        super().__init__(tools=tools, model_name=model_name)

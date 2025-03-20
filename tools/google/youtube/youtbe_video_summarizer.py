@@ -32,7 +32,7 @@ class YoutubeVideoSummarizer:
         Wichtig: Das Format soll so sein:
         
         # [Prägnanter Titel]
-        [Video-Link: {video_url}]
+        [Video-Link: {video_url}]s
         
         ## Kernpunkte
         1. [Erster wichtiger Punkt]
