@@ -1,4 +1,5 @@
 import os
+from typing import List
 from dotenv import load_dotenv
 import pvporcupine
 import pyaudio
@@ -7,6 +8,7 @@ import threading
 import time
 import logging
 from audio.audio_manager import play
+from speech.wake_word_observer import get_wake_word_observers, WakeWordObserver
 
 load_dotenv()
 
@@ -49,6 +51,8 @@ class WakeWordListener:
         self.is_listening = False
         self.should_stop = False
         self._detection_event = threading.Event()
+        
+        self._observers: List[WakeWordObserver] = get_wake_word_observers()
 
     def __enter__(self):
         return self
@@ -64,9 +68,9 @@ class WakeWordListener:
             keyword_index = self.handle.process(pcm)
             
             if keyword_index >= 0:
-                threading.Thread(target=play, args=("wakesound",), daemon=True).start()
                 self.logger.info("🚀 Wake-Word erkannt!")
                 self._detection_event.set()
+                self.notify_observers()
 
         return (in_data, pyaudio.paContinue)
 
@@ -105,4 +109,27 @@ class WakeWordListener:
             self.handle.delete()
         
         self.logger.info("✅ Wake-Word-Listener erfolgreich beendet")
+        
+    def add_observer(self, observer: WakeWordObserver):
+        """Fügt einen neuen Observer hinzu."""
+        if observer not in self._observers:
+            self._observers.append(observer)
+            self.logger.info(f"Observer {observer.__class__.__name__} hinzugefügt")
+    
+    def remove_observer(self, observer: WakeWordObserver):
+        """Entfernt einen Observer."""
+        if observer in self._observers:
+            self._observers.remove(observer)
+            self.logger.info(f"Observer {observer.__class__.__name__} entfernt")
+    
+    def notify_observers(self):
+        """Benachrichtigt alle Observer über die Wakeword-Erkennung."""
+        for observer in self._observers:
+            # Jeder Observer wird in einem eigenen Thread benachrichtigt,
+            # damit langsame Observer die anderen nicht blockieren
+            threading.Thread(
+                target=observer.on_wakeword_detected,
+                args=(),
+                daemon=True
+            ).start()
     
