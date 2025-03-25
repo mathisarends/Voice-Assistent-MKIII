@@ -10,9 +10,6 @@ import pygame
 from openai import OpenAI
 from pydub import AudioSegment
 
-from tools.lights.animation.processing_step_animation import LightAnimationService
-from tools.lights.bridge.bridge import HueBridge
-from tools.lights.light_controller import LightController
 from util.loggin_mixin import LoggingMixin
 from singleton_decorator import singleton
 
@@ -52,10 +49,6 @@ class SpeechService(LoggingMixin):
         self.playback_worker.start()
         
         self.logger.info("SpeechService initialisiert mit Stimme '%s'", voice)
-        
-        bridge = HueBridge.connect_by_ip()
-        controller = LightController(bridge)
-        self.animation_service = LightAnimationService(controller)
     
     def _setup_ffmpeg(self) -> None:
         """Überprüft und setzt den FFmpeg-Pfad, falls nötig"""
