@@ -9,4 +9,4 @@ class AlarmWorkflow(BaseGraph):
     def __init__(self, model_name: Optional[str] = None):
         tools = get_alarm_tools()
         
-        super().__init__(tools, model_name)
+        super().__init__(tools=tools, model_name=model_name)

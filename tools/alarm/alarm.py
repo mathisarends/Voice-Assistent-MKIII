@@ -5,10 +5,9 @@ import datetime
 from typing import Optional, Callable, Tuple
 from dataclasses import dataclass
 
-from audio.phrase_generator import PhraseGenerator
+from audio.sonos.sonos_manager import SonosAudioManager
 from tools.alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
 from tools.alarm.alarm_item import AlarmItem
-from audio.audio_manager import stop, play_loop, fade_out, get_mapper
 
 from tools.lights.animation.sunrise_controller import SceneBasedSunriseController
 from tools.lights.bridge.bridge import HueBridge
@@ -34,7 +33,7 @@ class Alarm(LoggingMixin):
         self.current_alarm: Optional[AlarmItem] = None
         self.running: bool = False
         self.alarm_thread: Optional[threading.Thread] = None
-        self.audio_manager = get_mapper()
+        self.audio_manager = SonosAudioManager()
         
         self.config = config or AlarmConfig()
         
@@ -317,7 +316,7 @@ class Alarm(LoggingMixin):
         fade_duration = self.config.fade_out_duration
         
         self.logger.info(f"🔊 Spiele Wake-Up Sound '{sound_id}' für {duration} Sekunden...")
-        play_loop(sound_id, duration - fade_duration)
+        self.audio_manager.play_loop(sound_id, duration - fade_duration)
         
         self._handle_fade_out_if_playing()
     
@@ -327,7 +326,7 @@ class Alarm(LoggingMixin):
         fade_duration = self.config.fade_out_duration
         
         self.logger.info(f"🔊 Spiele Get-Up Sound '{sound_id}' für {duration} Sekunden...")
-        play_loop(sound_id, duration - fade_duration)
+        self.audio_manager.play_loop(sound_id, duration - fade_duration)
         
         self._handle_fade_out_if_playing()
     
@@ -336,7 +335,7 @@ class Alarm(LoggingMixin):
         fade_duration = self.config.fade_out_duration
         
         if self.audio_manager.is_playing():
-            fade_out(fade_duration)
+            self.audio_manager.fade_out(fade_duration)
             time.sleep(fade_duration)
     
     def _handle_snooze_phase(self, light_thread: Optional[threading.Thread]) -> None:

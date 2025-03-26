@@ -186,7 +186,7 @@ class SonosAudioManager:
             print(f"❌ Fehler beim Prüfen des Sonos-Status: {e}")
             return False
     
-    def play_loop(self, sound_id: str, duration: float, volume: float = 1.0) -> bool:
+    def play_loop(self, sound_id: str, duration: float, volume: float = 0.35) -> bool:
         """Spielt einen Sound im Loop für die angegebene Dauer ab."""
         if sound_id not in self.sound_map:
             print(f"❌ Sound '{sound_id}' nicht gefunden")
