@@ -5,6 +5,19 @@ import threading
 import socket
 from singleton_decorator import singleton
 
+class CustomHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+    rbufsize = 64 * 1024
+
+    def guess_type(self, path):
+        """Überschriebe Methode, um korrekte MIME-Typen für Audio-Dateien zu liefern."""
+        base, ext = os.path.splitext(path)
+        if ext.lower() == '.wav':
+            return 'audio/wav'
+        return super().guess_type(path)
+
 @singleton
 class SonosHTTPServer:
     """Einfacher HTTP-Server, um Audiodateien für Sonos bereitzustellen."""
@@ -49,11 +62,7 @@ class SonosHTTPServer:
         
         os.chdir(self.project_dir)
         
-        class CustomHandler(SimpleHTTPRequestHandler):
-            def log_message(self, format, *args):
-                pass
-            
-            rbufsize = 64*1024
+
         
         try:
             self._server = HTTPServer(("", self.port), CustomHandler)
