@@ -2,7 +2,6 @@ import os
 import hashlib
 from typing import Dict
 from openai import OpenAI
-from audio.audio_manager import play, get_mapper
 from audio.sonos.sonos_manager import SonosAudioManager
 from util.loggin_mixin import LoggingMixin
 
@@ -15,7 +14,8 @@ class WorkflowAudioResponseManager(LoggingMixin):
         self.cache_dir = os.path.join(output_dir, category)
         os.makedirs(self.cache_dir, exist_ok=True)
         
-        self.audio_manager = get_mapper()
+        # Verwende eine einzige Instanz des SonosAudioManager (Singleton)
+        self.sonos_manager = SonosAudioManager()
         self._message_cache: Dict[str, str] = {}
         self._load_cache()
     
@@ -37,6 +37,39 @@ class WorkflowAudioResponseManager(LoggingMixin):
     def _get_message_hash(self, message: str) -> str:
         return hashlib.md5(message.encode('utf-8')).hexdigest()[:8]
     
+    def _register_with_sonos_manager(self, sound_id: str, file_path: str):
+        """
+        Registriert eine Audiodatei im Sonos-Manager mit korrekter URL-Generierung.
+        
+        Args:
+            sound_id: ID des Sounds (Dateiname ohne Erweiterung)
+            file_path: Pfad zur Audiodatei
+        """
+        try:
+            # Verwende den aktuellen HTTP-Server Port vom Sonos-Manager
+            http_server_port = self.sonos_manager.http_server_port
+            
+            # Berechne den relativen Pfad vom Projektverzeichnis
+            rel_path = os.path.relpath(file_path, self.sonos_manager.project_dir)
+            url_path = rel_path.replace("\\", "/")
+            
+            # Erstelle die URL mit dem korrekten Port
+            sound_url = f"http://{self.sonos_manager.http_server_ip}:{http_server_port}/{url_path}"
+            
+            # Registriere im Sound-Map
+            self.sonos_manager.sound_map[sound_id] = {
+                "path": file_path,
+                "category": self.category,
+                "filename": os.path.basename(file_path),
+                "format": ".mp3",
+                "url": sound_url
+            }
+            
+            self.logger.info(f"🔍 Neue Audiodatei registriert: {sound_id} -> {sound_url}")
+            
+        except Exception as e:
+            self.logger.error(f"❌ Fehler bei der Registrierung im Sonos-Manager: {e}")
+    
     def _generate_tts_file(self, text: str, message_hash: str) -> str:
         try:
             filename = f"tts_{self.category}_{message_hash}"
@@ -53,15 +86,9 @@ class WorkflowAudioResponseManager(LoggingMixin):
             
             self.logger.info(f"✅ Sprachdatei gespeichert: {file_path}")
             
-            # Register in AudioManager
-            self.audio_manager.sound_map[filename] = {
-                "path": file_path,
-                "category": self.category,
-                "filename": f"{filename}.mp3",
-                "format": ".mp3"
-            }
+            # Registriere im Sonos-Manager mit der verbesserten Methode
+            self._register_with_sonos_manager(filename, file_path)
             
-            self.logger.info(f"🔍 Neue Audiodatei registriert: {filename}")
             return filename
             
         except Exception as e:
@@ -78,7 +105,8 @@ class WorkflowAudioResponseManager(LoggingMixin):
         if message_hash in self._message_cache:
             cached_filename = self._message_cache[message_hash]
             self.logger.info(f"🔊 Spiele gecachte Audio: {cached_filename}")
-            SonosAudioManager.play(cached_filename)
+            # Verwende die konsistente Sonos-Manager-Instanz
+            self.sonos_manager.play(cached_filename)
             return message
         
         # Check existing file
@@ -88,23 +116,19 @@ class WorkflowAudioResponseManager(LoggingMixin):
         if os.path.exists(file_path):
             self._message_cache[message_hash] = filename
             
-            # Ensure registered in AudioManager
-            if filename not in self.audio_manager.sound_map:
-                self.audio_manager.sound_map[filename] = {
-                    "path": file_path,
-                    "category": self.category,
-                    "filename": f"{filename}.mp3",
-                    "format": ".mp3"
-                }
+            # Registriere im Sonos-Manager mit der verbesserten Methode
+            self._register_with_sonos_manager(filename, file_path)
             
-            SonosAudioManager().play(filename)
+            # Verwende die konsistente Sonos-Manager-Instanz
+            self.sonos_manager.play(filename)
             return message
         
         # Generate new file
         new_filename = self._generate_tts_file(message, message_hash)
         if new_filename:
             self._message_cache[message_hash] = new_filename
-            SonosAudioManager().play(new_filename)
+            # Verwende die konsistente Sonos-Manager-Instanz
+            self.sonos_manager.play(new_filename)
         
         return message
     
