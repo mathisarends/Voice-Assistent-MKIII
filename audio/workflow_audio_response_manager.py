@@ -3,6 +3,7 @@ import hashlib
 from typing import Dict
 from openai import OpenAI
 from audio.audio_manager import play, get_mapper
+from audio.sonos.sonos_manager import SonosAudioManager
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowAudioResponseManager(LoggingMixin):
@@ -77,7 +78,7 @@ class WorkflowAudioResponseManager(LoggingMixin):
         if message_hash in self._message_cache:
             cached_filename = self._message_cache[message_hash]
             self.logger.info(f"🔊 Spiele gecachte Audio: {cached_filename}")
-            play(cached_filename)
+            SonosAudioManager.play(cached_filename)
             return message
         
         # Check existing file
@@ -96,14 +97,14 @@ class WorkflowAudioResponseManager(LoggingMixin):
                     "format": ".mp3"
                 }
             
-            play(filename)
+            SonosAudioManager().play(filename)
             return message
         
         # Generate new file
         new_filename = self._generate_tts_file(message, message_hash)
         if new_filename:
             self._message_cache[message_hash] = new_filename
-            play(new_filename)
+            SonosAudioManager().play(new_filename)
         
         return message
     

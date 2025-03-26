@@ -1,8 +1,5 @@
 import os
-import random
 from openai import OpenAI
-
-from audio.audio_manager import play
 
 class PhraseGenerator:
     def __init__(self, voice="nova", output_dir="audio/sounds/standard_phrases"):
@@ -17,7 +14,7 @@ class PhraseGenerator:
             raise ValueError("Der eingegebene Text ist leer.")
         
         try:
-            # Kategorie-Unterverzeichnis erstellen
+            # Kategorie-Unterverzeichnis erstellenplay
             category_dir = os.path.join(self.output_dir, category)
             os.makedirs(category_dir, exist_ok=True)
             
@@ -44,25 +41,6 @@ class PhraseGenerator:
         except Exception as e:
             print(f"❌ Fehler bei der Sprachgenerierung: {e}")
             return None
-
-    def play_random_speech_file_from_category(self, category="general"):
-        category_dir = os.path.join(self.output_dir, category)
-        if not os.path.exists(category_dir):
-            print(f"❌ Keine Dateien in der Kategorie '{category}' gefunden.")
-            return None
-
-        files = [f for f in os.listdir(category_dir) if f.endswith(".mp3")]
-        if not files:
-            print(f"❌ Keine gespeicherten Dateien in '{category}'.")
-            return None
-
-        # Wähle eine zufällige Datei
-        random_file = random.choice(files)
-        
-        # Entferne die Dateiendung (.mp3)
-        file_without_extension = os.path.splitext(random_file)[0]
-        
-        play(file_without_extension)
 
 if __name__ == "__main__":
     # PhraseGenerator mit dem korrekten Pfad initialisieren

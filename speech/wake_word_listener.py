@@ -7,7 +7,6 @@ import numpy as np
 import threading
 import time
 import logging
-from audio.audio_manager import play
 from speech.wake_word_observer import get_wake_word_observers, WakeWordObserver
 
 load_dotenv()

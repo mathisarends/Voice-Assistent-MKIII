@@ -1,5 +1,3 @@
-from langchain.tools import tool
-from typing import Optional
 from singleton_decorator import singleton
 import time
 import random
@@ -8,7 +6,7 @@ from datetime import datetime, timedelta
 
 # Annahme: Diese Importe existieren in Ihrem Projekt
 from assistant.speech_service import SpeechService
-from audio.audio_manager import play
+from audio.sonos.sonos_manager import SonosAudioManager
 from util.loggin_mixin import LoggingMixin
 
 @singleton
@@ -62,7 +60,7 @@ class PomodoroManager(LoggingMixin):
         
         random_number = random.randint(1, 7)
         sound_file = f"tts_pomodoro_phrases_{random_number}"
-        play(sound_file)
+        SonosAudioManager().play(sound_file)
         
         self.is_running = False
         

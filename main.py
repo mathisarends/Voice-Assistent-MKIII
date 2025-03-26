@@ -15,6 +15,7 @@ load_dotenv()
 
 # Alle verfügbaren Workflows registrieren
 register_workflows()
+
 setup_sonos()
 
 async def main():

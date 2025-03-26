@@ -3,7 +3,7 @@ import random
 from typing import Dict, Any, Protocol, ClassVar
 from dataclasses import dataclass
 
-from audio.audio_manager import play
+from audio.sonos.sonos_manager import SonosAudioManager
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowObserver(Protocol):
@@ -72,4 +72,4 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         filename = category.get_random_filename()
         self.logger.info(f"[AUDIO] Zufälliger Sound ausgewählt: {filename}")
         
-        play(filename)
+        SonosAudioManager().play(filename)

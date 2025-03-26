@@ -10,6 +10,12 @@ class CustomHandler(SimpleHTTPRequestHandler):
         pass
 
     rbufsize = 64 * 1024
+    
+    def handle(self):
+        try:
+            super().handle()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def guess_type(self, path):
         """Überschriebe Methode, um korrekte MIME-Typen für Audio-Dateien zu liefern."""

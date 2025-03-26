@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 import traceback
 
 from assistant.speech_service import SpeechService
-from audio.audio_manager import play
 from audio.sonos.sonos_manager import SonosAudioManager
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from speech.recognition.whisper_speech_recognition import WhisperSpeechRecognition
