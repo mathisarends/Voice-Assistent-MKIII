@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 # Annahme: Diese Importe existieren in Ihrem Projekt
 from assistant.speech_service import SpeechService
-from audio.sonos.sonos_manager import SonosAudioManager
+from audio.strategy.audio_manager import AudioManager
 from util.loggin_mixin import LoggingMixin
 
 @singleton
@@ -60,7 +60,7 @@ class PomodoroManager(LoggingMixin):
         
         random_number = random.randint(1, 7)
         sound_file = f"tts_pomodoro_phrases_{random_number}"
-        SonosAudioManager().play(sound_file)
+        AudioManager().play(sound_file)
         
         self.is_running = False
         

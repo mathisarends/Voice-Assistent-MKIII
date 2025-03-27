@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 from typing_extensions import override
 
-from audio.sonos.sonos_manager import SonosAudioManager
+from audio.strategy.audio_manager import AudioManager
 from tools.spotify.spotify_controller import SpotifyController
 from tools.spotify.spotify_device_manager import SpotifyDeviceManager
 from tools.spotify.spotify_player import SpotifyPlayer
@@ -18,7 +18,7 @@ class WakeWordObserver(ABC):
 class WakeWordAudioFeedbackObserver(WakeWordObserver):
     @override
     def on_wakeword_detected(self):
-        SonosAudioManager().play("wakesound")
+        AudioManager().play("wakesound")
         
 class SpotifyVolumeAdjustmentObserver(WakeWordObserver):
     def __init__(self):

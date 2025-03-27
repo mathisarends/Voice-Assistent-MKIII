@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 
 from assistant.speech_service import SpeechService
 from assistant.conversation_loop import ConversationLoop
+from audio.strategy.audio_manager import get_audio_manager, switch_to_sonos
 from graphs.workflow_registry import register_workflows
-from audio.sonos.sonos_setup import setup_sonos
 
 # Umgebungsvariablen laden
 load_dotenv()
@@ -16,7 +16,9 @@ load_dotenv()
 # Alle verfügbaren Workflows registrieren
 register_workflows()
 
-setup_sonos()
+get_audio_manager()
+switch_to_sonos(speaker_ip="192.168.178.68")
+
 
 async def main():
     speech_service = SpeechService(voice="nova")

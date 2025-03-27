@@ -4,10 +4,9 @@ import soco
 import socket
 from pathlib import Path
 import time
-from typing import Dict
 import socket
 
-from audio.sonos.sonos_http_server import start_http_server
+from audio.strategy.sonos_http_server import start_http_server
 from audio.strategy.audio_playback_strategy import AudioPlaybackStrategy
 from audio.strategy.sound_info import SoundInfo
 

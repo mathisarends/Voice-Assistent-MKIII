@@ -11,13 +11,13 @@ import pygame
 from openai import OpenAI
 from pydub import AudioSegment
 
-from audio.sonos.sonos_manager import SonosAudioManager
+from audio.strategy.audio_manager import AudioManager
 from util.loggin_mixin import LoggingMixin
 from singleton_decorator import singleton
 
 @singleton
 class SpeechService(LoggingMixin):
-    def __init__(self, voice: str = "nova", cache_dir: str = "./audio/sounds/temp_responses", use_sonos: bool = True, cache_cleanup_interval: int = 120):
+    def __init__(self, voice: str = "nova", cache_dir: str = "./audio/sounds/temp_responses", cache_cleanup_interval: int = 120):
         """
         Initialisiert den SpeechService mit OpenAI API und Audio-Framework.
         
@@ -34,7 +34,6 @@ class SpeechService(LoggingMixin):
         # Projektpfad finden (relativ)
         self.project_dir = os.path.abspath(os.path.curdir)
         self.cache_dir = os.path.join(self.project_dir, cache_dir)
-        self.use_sonos = use_sonos
         self.cache_cleanup_interval = cache_cleanup_interval
         self._last_cleanup_time = time.time()
         
@@ -46,18 +45,8 @@ class SpeechService(LoggingMixin):
         self._setup_ffmpeg()
         
         # Sonos Manager referenzieren (als Singleton bereits initialisiert)
-        self.sonos_manager = SonosAudioManager() if use_sonos else None
+        self.sonos_manager = AudioManager()
         
-        # Pygame nur initialisieren, wenn kein Sonos verwendet wird oder als Fallback
-        if not use_sonos or not self.sonos_manager.sonos_device:
-            self._setup_pygame()
-            if use_sonos:
-                self.logger.warning("Kein Sonos-Gerät verfügbar, verwende lokale Wiedergabe")
-                self.use_sonos = False
-        else:
-            self.logger.info("Sonos-Integration aktiviert mit Gerät: %s", 
-                            self.sonos_manager.sonos_device.player_name)
-            
         self._audio_lock = threading.Lock()
         
         # Queue-Mechanismen für die asynchrone Verarbeitung
@@ -327,19 +316,6 @@ class SpeechService(LoggingMixin):
         # Versuche Lock zu erwerben mit Timeout
         if self._audio_lock.acquire(timeout=1.0):
             try:
-                # Stoppe aktuelle Audiowiedergabe
-                if self.use_sonos and self.sonos_manager and self.sonos_manager.sonos_device:
-                    # Sonos-Wiedergabe stoppen mit Fade-Out
-                    self.sonos_manager.stop()
-                else:
-                    # Lokale Audiowiedergabe stoppen
-                    if pygame.mixer.get_init():
-                        pygame.mixer.music.stop()
-                        try:
-                            pygame.mixer.music.unload()
-                        except:
-                            pass
-                
                 # Leere Queues sicher
                 self._clear_queues()
                 

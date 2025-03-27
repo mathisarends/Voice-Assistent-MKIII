@@ -5,7 +5,7 @@ import datetime
 from typing import Optional, Callable, Tuple
 from dataclasses import dataclass
 
-from audio.sonos.sonos_manager import SonosAudioManager
+from audio.strategy.audio_manager import AudioManager
 from tools.alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
 from tools.alarm.alarm_item import AlarmItem
 
@@ -33,7 +33,7 @@ class Alarm(LoggingMixin):
         self.current_alarm: Optional[AlarmItem] = None
         self.running: bool = False
         self.alarm_thread: Optional[threading.Thread] = None
-        self.audio_manager = SonosAudioManager()
+        self.audio_manager = AudioManager()
         
         self.config = config or AlarmConfig()
         

@@ -2,7 +2,7 @@ import os
 import hashlib
 from typing import Dict
 from openai import OpenAI
-from audio.sonos.sonos_manager import SonosAudioManager
+from audio.strategy.audio_manager import AudioManager
 from util.loggin_mixin import LoggingMixin
 
 class WorkflowAudioResponseManager(LoggingMixin):
@@ -15,7 +15,7 @@ class WorkflowAudioResponseManager(LoggingMixin):
         os.makedirs(self.cache_dir, exist_ok=True)
         
         # Verwende eine einzige Instanz des SonosAudioManager (Singleton)
-        self.sonos_manager = SonosAudioManager()
+        self.sonos_manager = AudioManager()
         self._message_cache: Dict[str, str] = {}
         self._load_cache()
     

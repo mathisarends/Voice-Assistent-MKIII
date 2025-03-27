@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import traceback
 
 from assistant.speech_service import SpeechService
-from audio.sonos.sonos_manager import SonosAudioManager
+from audio.strategy.audio_manager import AudioManager, play
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from speech.recognition.whisper_speech_recognition import WhisperSpeechRecognition
 from speech.recognition.audio_transcriber import AudioTranscriber
@@ -44,7 +44,7 @@ class ConversationLoop(LoggingMixin):
         )
         
         if not user_prompt or user_prompt.strip() == "":
-            SonosAudioManager().play("stop-listening-no-message")
+            play("stop-listening-no-message")
             self.logger.info("⚠️ Keine Sprache erkannt oder leerer Text")
             return False
         
@@ -72,7 +72,7 @@ class ConversationLoop(LoggingMixin):
                         try:
                             self.speech_service.interrupt_and_reset()
                             audio_data = self.speech_recorder.record_audio()
-                            SonosAudioManager().play("process-sound-new")
+                            AudioManager().play("process-sound-new")
                             
                             await self.handle_user_input(audio_data)
                                 
