@@ -9,6 +9,7 @@ import socket
 
 from audio.sonos.sonos_http_server import start_http_server
 from audio.strategy.audio_playback_strategy import AudioPlaybackStrategy
+from audio.strategy.sound_info import SoundInfo
 
 class SonosAudioStrategy(AudioPlaybackStrategy):
     """Implementiert Audio-Wiedergabe über Sonos-Lautsprecher."""
@@ -107,7 +108,7 @@ class SonosAudioStrategy(AudioPlaybackStrategy):
             print("   Sonos-Funktionalität wird eingeschränkt sein!")
             return False
     
-    def play_sound(self, sound_info: Dict, volume: float) -> bool:
+    def play_sound(self, sound_info: SoundInfo, volume: float) -> bool:
         """Spielt einen Sound über Sonos-Lautsprecher ab."""
         if not self.sonos_device:
             print("❌ Kein Sonos-Lautsprecher verfügbar")
@@ -115,12 +116,12 @@ class SonosAudioStrategy(AudioPlaybackStrategy):
         
         try:
             # URL aus Sound-Info verwenden oder neu erstellen
-            if "url" in sound_info:
-                sound_url = sound_info["url"]
+            if sound_info.url:
+                sound_url = sound_info.url
             else:
                 # Sonst manuell eine URL erstellen
-                category = sound_info["category"]
-                filename = sound_info["filename"]
+                category = sound_info.category
+                filename = sound_info.filename
                 sound_url = f"http://{self.http_server_ip}:{self.http_server_port}/audio/sounds/{category}/{filename}"
             
             print(f"🔊 Spiele Sound auf Sonos ab: {sound_url}")

@@ -1,11 +1,11 @@
 import os
 import time
-from typing import Dict
 import pygame
 from io import BytesIO
 from pydub import AudioSegment
 import pygame
 
+from audio.strategy.audio_manager import SoundInfo
 from audio.strategy.audio_playback_strategy import AudioPlaybackStrategy
 from util.loggin_mixin import LoggingMixin
 
@@ -15,15 +15,14 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
     
     def initialize(self):
         """Initialisiert den Pygame-Mixer."""
-        import pygame
         pygame.mixer.init()
         self.logger.info("✅ Pygame-Audiosystem initialisiert")
     
-    def play_sound(self, sound_info: Dict, volume: float) -> bool:
+    def play_sound(self, sound_info: SoundInfo, volume: float) -> bool:
         """Spielt einen Sound mit Pygame ab."""
         try:
-            sound_path = sound_info["path"]
-            sound_format = sound_info["format"]
+            sound_path = sound_info.path
+            sound_format = sound_info.format
             
             if sound_format == ".wav" and os.path.exists(sound_path):
                 try:

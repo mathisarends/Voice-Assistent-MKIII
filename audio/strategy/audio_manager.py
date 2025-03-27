@@ -5,10 +5,8 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from audio.strategy.audio_playback_strategy import AudioPlaybackStrategy
+from audio.strategy.sound_info import SoundInfo
 from singleton_decorator import singleton
-
-from audio.strategy.pygame_audio_strategy import PygameAudioStrategy
-from audio.strategy.sonos_playback_strategy import SonosAudioStrategy
 from util.loggin_mixin import LoggingMixin
 
 @singleton
@@ -19,7 +17,7 @@ class AudioManager(LoggingMixin):
         self.project_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.audio_dir = self.project_dir / root_dir
         
-        self.sound_map: Dict[str, Dict] = {}
+        self.sound_map: Dict[str, SoundInfo] = {}
         
         self._lock = threading.Lock()
         
@@ -33,6 +31,8 @@ class AudioManager(LoggingMixin):
         self.fade_out_duration = 2.5
         
         if strategy is None:
+            # Lazy import, um zirkuläre Imports zu vermeiden
+            from audio.strategy.pygame_audio_strategy import PygameAudioStrategy
             self.strategy = PygameAudioStrategy()
         else:
             self.strategy = strategy
@@ -70,18 +70,21 @@ class AudioManager(LoggingMixin):
             
             sound_id = sound_file.stem
             
-            # Basisinfo für den Sound
-            sound_info = {
-                "path": str(sound_file),
-                "category": category,
-                "filename": filename,
-                "format": sound_file.suffix.lower()
-            }
+            # SoundInfo-Objekt erstellen
+            sound_info = SoundInfo(
+                path=str(sound_file),
+                category=category,
+                filename=filename,
+                format=sound_file.suffix.lower()
+            )
             
-            if isinstance(self.strategy, SonosAudioStrategy):
-                rel_path_from_audio = sound_file.relative_to(self.audio_dir)
-                url_path = str(rel_path_from_audio).replace("\\", "/")
-                sound_info["url"] = f"http://{self.strategy.http_server_ip}:{self.strategy.http_server_port}/audio/{url_path}"
+            # URL für Sonos erzeugen falls nötig
+            if hasattr(self.strategy, 'http_server_ip') and hasattr(self.strategy, 'http_server_port'):
+                sound_info.create_sonos_url(
+                    self.audio_dir, 
+                    self.strategy.http_server_ip, 
+                    self.strategy.http_server_port
+                )
 
             self.sound_map[sound_id] = sound_info
         
@@ -90,7 +93,7 @@ class AudioManager(LoggingMixin):
         # Zeige Statistik der gefundenen Formate
         format_stats = {}
         for info in self.sound_map.values():
-            format_ext = info["format"]
+            format_ext = info.format
             format_stats[format_ext] = format_stats.get(format_ext, 0) + 1
         
         for fmt, count in format_stats.items():
@@ -104,20 +107,22 @@ class AudioManager(LoggingMixin):
         self.strategy = strategy
         self.strategy.initialize()
         
-        if isinstance(strategy, SonosAudioStrategy):
-            for sound_id, sound_info in self.sound_map.items():
-                sound_path = Path(sound_info["path"])
-                rel_path_from_project = sound_path.relative_to(self.project_dir)
-                url_path = str(rel_path_from_project).replace("\\", "/")
-                sound_info["url"] = f"http://{strategy.http_server_ip}:{strategy.http_server_port}/audio/{url_path}"
+        # URLs für Sonos aktualisieren, falls nötig
+        if hasattr(strategy, 'http_server_ip') and hasattr(strategy, 'http_server_port'):
+            for sound_info in self.sound_map.values():
+                sound_info.create_sonos_url(
+                    self.audio_dir,
+                    strategy.http_server_ip,
+                    strategy.http_server_port
+                )
         
         self.logger.info(f"✅ Gewechselt zu {strategy.__class__.__name__}")
     
-    def get_sounds_by_category(self, category: str) -> Dict[str, Dict]:
+    def get_sounds_by_category(self, category: str) -> Dict[str, SoundInfo]:
         """Gibt alle Sounds einer bestimmten Kategorie zurück."""
         return {
             sound_id: info for sound_id, info in self.sound_map.items()
-            if info["category"] == category
+            if info.category == category
         }
     
     def play(self, sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
@@ -236,10 +241,12 @@ class AudioManager(LoggingMixin):
 # Factory-Funktionen für einfachen Zugriff
 def create_pygame_strategy():
     """Erstellt eine Pygame-Audio-Strategie."""
+    from audio.strategy.pygame_audio_strategy import PygameAudioStrategy
     return PygameAudioStrategy()
 
 def create_sonos_strategy(speaker_name: str = None, speaker_ip: str = None, http_server_port: int = 8000):
     """Erstellt eine Sonos-Audio-Strategie."""
+    from audio.strategy.sonos_playback_strategy import SonosAudioStrategy
     return SonosAudioStrategy(speaker_name, speaker_ip, http_server_port)
 
 
@@ -280,7 +287,7 @@ def set_volume(volume: float):
     """Setzt die Lautstärke für die Wiedergabe."""
     get_audio_manager().set_volume(volume)
 
-def get_sounds_by_category(category: str) -> Dict[str, Dict]:
+def get_sounds_by_category(category: str) -> Dict[str, SoundInfo]:
     """Gibt alle Sounds einer bestimmten Kategorie zurück."""
     return get_audio_manager().get_sounds_by_category(category)
 
