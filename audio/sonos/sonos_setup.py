@@ -44,4 +44,6 @@ def setup_sonos(speaker_ip="192.168.178.68"):
     
     print(f"\n✅ Erfolgreich mit Sonos-Lautsprecher '{sonos_manager.sonos_device.player_name}' verbunden!")
     
+    time.sleep(10)
+    
 setup_sonos()

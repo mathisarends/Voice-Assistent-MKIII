@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional
@@ -8,6 +9,14 @@ import soco
 import socket
 import requests
 from singleton_decorator import singleton
+
+def safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+        sys.stdout.flush()
+    except Exception:
+        pass
+
 
 @singleton
 class SonosAudioManager:
@@ -52,51 +61,51 @@ class SonosAudioManager:
             s.close()
             return local_ip
         except Exception as e:
-            print(f"❌ Fehler beim Ermitteln der IP-Adresse: {e}")
+            safe_print(f"❌ Fehler beim Ermitteln der IP-Adresse: {e}")
             return "127.0.0.1"
     
     def _find_sonos_device(self, speaker_name: str = None, ip_address: str = None):
         """Findet ein Sonos-Gerät basierend auf Namen oder IP-Adresse."""
-        print("🔍 Suche nach Sonos-Lautsprechern im Netzwerk...")
+        safe_print("🔍 Suche nach Sonos-Lautsprechern im Netzwerk...")
         
         try:
             if ip_address:
                 try:
                     device = soco.SoCo(ip_address)
                     device.player_name
-                    print(f"✅ Sonos-Lautsprecher gefunden: {device.player_name} ({ip_address})")
+                    safe_print(f"✅ Sonos-Lautsprecher gefunden: {device.player_name} ({ip_address})")
                     return device
                 except Exception as e:
-                    print(f"❌ Konnte nicht mit Sonos-Lautsprecher unter {ip_address} verbinden: {e}")
+                    safe_print(f"❌ Konnte nicht mit Sonos-Lautsprecher unter {ip_address} verbinden: {e}")
             
             # Fall 2: Nach Namen suchen
             if speaker_name:
                 devices = list(soco.discover())
                 for device in devices:
                     if device.player_name.lower() == speaker_name.lower():
-                        print(f"✅ Sonos-Lautsprecher gefunden: {device.player_name} ({device.ip_address})")
+                        safe_print(f"✅ Sonos-Lautsprecher gefunden: {device.player_name} ({device.ip_address})")
                         return device
-                print(f"❌ Kein Sonos-Lautsprecher mit Namen '{speaker_name}' gefunden")
+                safe_print(f"❌ Kein Sonos-Lautsprecher mit Namen '{speaker_name}' gefunden")
             
             devices = list(soco.discover())
             if devices:
                 device = devices[0]
-                print(f"✅ Sonos-Lautsprecher automatisch gewählt: {device.player_name} ({device.ip_address})")
+                safe_print(f"✅ Sonos-Lautsprecher automatisch gewählt: {device.player_name} ({device.ip_address})")
                 return device
             else:
-                print("❌ Keine Sonos-Lautsprecher im Netzwerk gefunden")
+                safe_print("❌ Keine Sonos-Lautsprecher im Netzwerk gefunden")
                 return None
                 
         except Exception as e:
-            print(f"❌ Fehler bei der Suche nach Sonos-Lautsprechern: {e}")
+            safe_print(f"❌ Fehler bei der Suche nach Sonos-Lautsprechern: {e}")
             return None
     
     def _discover_sounds(self):
         """Durchsucht rekursiv das Audio-Verzeichnis nach Sounddateien."""
-        print(f"🔍 Durchsuche Verzeichnis: {self.audio_dir}")
+        safe_print(f"🔍 Durchsuche Verzeichnis: {self.audio_dir}")
         
         if not self.audio_dir.exists():
-            print(f"❌ Verzeichnis nicht gefunden: {self.audio_dir}")
+            safe_print(f"❌ Verzeichnis nicht gefunden: {self.audio_dir}")
             return
         
         sound_files = []
@@ -105,7 +114,7 @@ class SonosAudioManager:
             sound_files.extend(list(self.audio_dir.glob(f"**/*{format_ext}")))
         
         if not sound_files:
-            print(f"❌ Keine Sounddateien gefunden in: {self.audio_dir}")
+            safe_print(f"❌ Keine Sounddateien gefunden in: {self.audio_dir}")
             return
         
         for sound_file in sound_files:
@@ -132,7 +141,7 @@ class SonosAudioManager:
                 "url": sound_url
             }
         
-        print(f"✅ {len(self.sound_map)} Sounds gefunden und gemappt.")
+        safe_print(f"✅ {len(self.sound_map)} Sounds gefunden und gemappt.")
         
         # Zeige Statistik der gefundenen Formate
         format_stats = {}
@@ -141,7 +150,7 @@ class SonosAudioManager:
             format_stats[format_ext] = format_stats.get(format_ext, 0) + 1
         
         for fmt, count in format_stats.items():
-            print(f"  - {fmt}: {count} Dateien")
+            safe_print(f"  - {fmt}: {count} Dateien")
     
     def get_sounds_by_category(self, category: str) -> Dict[str, Dict]:
         """Gibt alle Sounds einer bestimmten Kategorie zurück."""
@@ -153,11 +162,11 @@ class SonosAudioManager:
     def play(self, sound_id: str, block: bool = False, volume: float = 0.35) -> bool:
         """Spielt einen Sound über den Sonos-Lautsprecher ab."""
         if not self.sonos_device:
-            print("❌ Kein Sonos-Lautsprecher verfügbar")
+            safe_print("❌ Kein Sonos-Lautsprecher verfügbar")
             return False
             
         if sound_id not in self.sound_map:
-            print(f"❌ Sound '{sound_id}' nicht gefunden")
+            safe_print(f"❌ Sound '{sound_id}' nicht gefunden")
             return False
         
         # Aktuelle Lautstärke speichern
@@ -183,13 +192,13 @@ class SonosAudioManager:
         try:
             return self.sonos_device.get_current_transport_info()['current_transport_state'] == 'PLAYING'
         except Exception as e:
-            print(f"❌ Fehler beim Prüfen des Sonos-Status: {e}")
+            safe_print(f"❌ Fehler beim Prüfen des Sonos-Status: {e}")
             return False
     
     def play_loop(self, sound_id: str, duration: float, volume: float = 0.35) -> bool:
         """Spielt einen Sound im Loop für die angegebene Dauer ab."""
         if sound_id not in self.sound_map:
-            print(f"❌ Sound '{sound_id}' nicht gefunden")
+            safe_print(f"❌ Sound '{sound_id}' nicht gefunden")
             return False
         
         # Aktuelle Lautstärke speichern
@@ -213,7 +222,7 @@ class SonosAudioManager:
         start_time = time.time()
         end_time = start_time + duration
         
-        print(f"🔄 Loop gestartet für '{sound_id}' ({duration} Sekunden)")
+        safe_print(f"🔄 Loop gestartet für '{sound_id}' ({duration} Sekunden)")
         
         try:
             while time.time() < end_time and not self._stop_loop:
@@ -225,9 +234,9 @@ class SonosAudioManager:
                 if time.time() >= end_time:
                     break
         except Exception as e:
-            print(f"❌ Fehler beim Loopen von '{sound_id}': {e}")
+            safe_print(f"❌ Fehler beim Loopen von '{sound_id}': {e}")
         finally:
-            print(f"🔄 Loop beendet für '{sound_id}'")
+            safe_print(f"🔄 Loop beendet für '{sound_id}'")
     
     def stop_loop(self):
         """Stoppt den aktuellen Sound-Loop mit Fade-Out."""
@@ -239,7 +248,7 @@ class SonosAudioManager:
             
             # Warte bis der Loop-Thread beendet ist (mit Timeout)
             self._loop_thread.join(timeout=1.0)
-            print("🔄 Loop gestoppt")
+            safe_print("🔄 Loop gestoppt")
     
     def fade_out(self, duration: Optional[float] = None):
         """
@@ -254,7 +263,7 @@ class SonosAudioManager:
         if duration is None:
             duration = self.fade_out_duration
         
-        print(f"🔉 Führe Fade-Out über {duration} Sekunden durch...")
+        safe_print(f"🔉 Führe Fade-Out über {duration} Sekunden durch...")
         
         try:
             # Starte mit der aktuellen Lautstärke
@@ -287,10 +296,10 @@ class SonosAudioManager:
             time.sleep(0.5)
             self.sonos_device.volume = start_volume
             
-            print("🔇 Fade-Out abgeschlossen")
+            safe_print("🔇 Fade-Out abgeschlossen")
             
         except Exception as e:
-            print(f"❌ Fehler beim Fade-Out: {e}")
+            safe_print(f"❌ Fehler beim Fade-Out: {e}")
             try:
                 # Im Fehlerfall trotzdem versuchen zu stoppen
                 self.sonos_device.stop()
@@ -300,7 +309,7 @@ class SonosAudioManager:
     def _play_sound(self, sound_id: str, volume: float) -> bool:
         """Interne Methode zum Abspielen eines Sounds über Sonos."""
         if not self.sonos_device:
-            print("❌ Kein Sonos-Lautsprecher verfügbar")
+            safe_print("❌ Kein Sonos-Lautsprecher verfügbar")
             return False
             
         with self._lock:
@@ -308,17 +317,18 @@ class SonosAudioManager:
                 sound_info = self.sound_map[sound_id]
                 sound_url = sound_info["url"]
                 print("sound_url", sound_url)
+                safe_print("sound_url", sound_url)
                 
-                print(f"🔊 Spiele Sound '{sound_id}' auf Sonos ab")
+                safe_print(f"🔊 Spiele Sound '{sound_id}' auf Sonos ab")
                 
                 # Teste die URL-Erreichbarkeit
                 try:
                     response = requests.head(sound_url, timeout=2)
                     if response.status_code != 200:
-                        print(f"⚠️ Warnung: URL nicht erreichbar (Status {response.status_code}): {sound_url}")
-                        print("   Stelle sicher, dass der HTTP-Server läuft und das Projektverzeichnis korrekt eingestellt ist.")
+                        safe_print(f"⚠️ Warnung: URL nicht erreichbar (Status {response.status_code}): {sound_url}")
+                        safe_print("   Stelle sicher, dass der HTTP-Server läuft und das Projektverzeichnis korrekt eingestellt ist.")
                 except Exception as e:
-                    print(f"⚠️ Warnung: Konnte URL nicht überprüfen: {e}")
+                    safe_print(f"⚠️ Warnung: Konnte URL nicht überprüfen: {e}")
                 
                 # Stelle Lautstärke ein (Umrechnung von 0-1 auf 0-100)
                 sonos_volume = int(min(100, max(0, volume * 100)))
@@ -343,11 +353,11 @@ class SonosAudioManager:
                     
                     return True
                 except Exception as e:
-                    print(f"❌ Fehler beim Abspielen der URL: {e}")
+                    safe_print(f"❌ Fehler beim Abspielen der URL: {e}")
                     return False
                 
             except Exception as e:
-                print(f"❌ Fehler beim Abspielen von '{sound_id}': {e}")
+                safe_print(f"❌ Fehler beim Abspielen von '{sound_id}': {e}")
                 return False
     
     def stop(self):
@@ -368,7 +378,7 @@ class SonosAudioManager:
             devices = list(soco.discover())
             return [{"name": device.player_name, "ip": device.ip_address} for device in devices]
         except Exception as e:
-            print(f"❌ Fehler beim Abrufen der Sonos-Lautsprecher: {e}")
+            safe_print(f"❌ Fehler beim Abrufen der Sonos-Lautsprecher: {e}")
             return []
 
     def select_speaker(self, speaker_name=None, speaker_ip=None):

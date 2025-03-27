@@ -113,8 +113,6 @@ class SonosAudioStrategy(AudioPlaybackStrategy):
             print("❌ Kein Sonos-Lautsprecher verfügbar")
             return False
         
-        print("sound_info", sound_info)
-        
         try:
             # URL aus Sound-Info verwenden oder neu erstellen
             if "url" in sound_info:

@@ -78,13 +78,11 @@ class AudioManager(LoggingMixin):
                 "format": sound_file.suffix.lower()
             }
             
-            # Wenn wir eine Sonos-Strategie haben, füge URL hinzu
             if isinstance(self.strategy, SonosAudioStrategy):
-                rel_path_from_project = sound_file.relative_to(self.project_dir)
-                url_path = str(rel_path_from_project).replace("\\", "/")
-                sound_info["url"] = f"http://{self.strategy.http_server_ip}:{self.strategy.http_server_port}/{url_path}"
-            
-            # Erstelle Eintrag in der Sound-Map
+                rel_path_from_audio = sound_file.relative_to(self.audio_dir)
+                url_path = str(rel_path_from_audio).replace("\\", "/")
+                sound_info["url"] = f"http://{self.strategy.http_server_ip}:{self.strategy.http_server_port}/audio/{url_path}"
+
             self.sound_map[sound_id] = sound_info
         
         self.logger.info(f"✅ {len(self.sound_map)} Sounds gefunden und gemappt.")
@@ -106,13 +104,12 @@ class AudioManager(LoggingMixin):
         self.strategy = strategy
         self.strategy.initialize()
         
-        # Bei Wechsel zu Sonos URLs hinzufügen
         if isinstance(strategy, SonosAudioStrategy):
             for sound_id, sound_info in self.sound_map.items():
                 sound_path = Path(sound_info["path"])
                 rel_path_from_project = sound_path.relative_to(self.project_dir)
                 url_path = str(rel_path_from_project).replace("\\", "/")
-                sound_info["url"] = f"http://{strategy.http_server_ip}:{strategy.http_server_port}/{url_path}"
+                sound_info["url"] = f"http://{strategy.http_server_ip}:{strategy.http_server_port}/audio/{url_path}"
         
         self.logger.info(f"✅ Gewechselt zu {strategy.__class__.__name__}")
     
@@ -206,9 +203,6 @@ class AudioManager(LoggingMixin):
     def fade_out(self, duration: Optional[float] = None):
         """
         Führt einen Fade-Out für alle aktuell spielenden Sounds durch.
-        
-        Args:
-            duration: Dauer des Fade-Outs in Sekunden, wenn None wird der Standardwert verwendet
         """
         if not self.is_playing():
             return
