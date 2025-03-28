@@ -95,7 +95,7 @@ class SpeechService(LoggingMixin):
                 
                 # Spiele die Audio-Datei über den AudioManager ab
                 with self._audio_lock:
-                    self.audio_manager.play(sound_id, block=True, volume=0.6)
+                    self.audio_manager.play(sound_id, block=True)
                 
                 # Markiere Aufgabe als erledigt
                 self.audio_queue.task_done()

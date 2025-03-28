@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
-from audio.strategy.audio_playback_strategy import AudioPlaybackStrategy
+from audio.strategy.audio_strategies import AudioPlaybackStrategy
 from audio.strategy.sound_info import SoundInfo
 from singleton_decorator import singleton
 from util.loggin_mixin import LoggingMixin
@@ -31,12 +31,14 @@ class AudioManager(LoggingMixin):
         self.fade_out_duration = 2.5
         
         if strategy is None:
-            from audio.strategy.pygame_audio_strategy import PygameAudioStrategy
+            from audio.strategy.audio_strategies import PygameAudioStrategy
             self.strategy = PygameAudioStrategy()
         else:
             self.strategy = strategy
             
         self.strategy.initialize()
+        
+        self.strategy.set_volume(self._current_volume)
         
         # Sounds entdecken
         self._discover_sounds()
@@ -104,7 +106,6 @@ class AudioManager(LoggingMixin):
                 path=str(sound_path),
                 category=category,
                 filename=sound_path.name,
-                format=".mp3"
             )
             
             if hasattr(self.strategy, 'http_server_ip') and hasattr(self.strategy, 'http_server_port'):
@@ -265,12 +266,12 @@ class AudioManager(LoggingMixin):
 # Factory-Funktionen für einfachen Zugriff
 def create_pygame_strategy():
     """Erstellt eine Pygame-Audio-Strategie."""
-    from audio.strategy.pygame_audio_strategy import PygameAudioStrategy
+    from audio.strategy.audio_strategies import PygameAudioStrategy
     return PygameAudioStrategy()
 
 def create_sonos_strategy(speaker_name: str = None, speaker_ip: str = None, http_server_port: int = 8000):
     """Erstellt eine Sonos-Audio-Strategie."""
-    from audio.strategy.sonos_playback_strategy import SonosAudioStrategy
+    from audio.strategy.audio_strategies import SonosAudioStrategy
     return SonosAudioStrategy(speaker_name, speaker_ip, http_server_port)
 
 
