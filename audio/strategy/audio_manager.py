@@ -26,7 +26,7 @@ class AudioManager(LoggingMixin):
         self._stop_loop = False
         self._loop_thread = None
         
-        self._current_volume = 1.0
+        self._current_volume = 0.65
         
         self.fade_out_duration = 2.5
         
@@ -159,23 +159,20 @@ class AudioManager(LoggingMixin):
         
         self.logger.info(f"✅ Gewechselt zu {strategy.__class__.__name__}")
     
-    def play(self, sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
+    def play(self, sound_id: str, block: bool = False) -> bool:
         """Spielt einen Sound ab."""
         if sound_id not in self.sound_map:
             self.logger.info(f"❌ Sound '{sound_id}' nicht gefunden")
             return False
         
-        # Aktuelle Lautstärke speichern
-        self._current_volume = volume
-        
         if block:
             # Im aktuellen Thread abspielen
-            return self._play_sound(sound_id, volume)
+            return self._play_sound(sound_id)
         else:
             # In separatem Thread abspielen
             threading.Thread(
                 target=self._play_sound,
-                args=(sound_id, volume),
+                args=(sound_id, ),
                 daemon=True
             ).start()
             return True
@@ -184,14 +181,11 @@ class AudioManager(LoggingMixin):
         """Prüft, ob aktuell ein Sound abgespielt wird."""
         return self.strategy.is_playing()
     
-    def play_loop(self, sound_id: str, duration: float, volume: float = 1.0) -> bool:
+    def play_loop(self, sound_id: str, duration: float) -> bool:
         """Spielt einen Sound im Loop für die angegebene Dauer ab."""
         if sound_id not in self.sound_map:
             self.logger.info(f"❌ Sound '{sound_id}' nicht gefunden")
             return False
-        
-        # Aktuelle Lautstärke speichern
-        self._current_volume = volume
         
         # Stoppe eventuell laufenden Loop
         self.stop_loop()
@@ -200,13 +194,13 @@ class AudioManager(LoggingMixin):
         self._stop_loop = False
         self._loop_thread = threading.Thread(
             target=self._loop_sound,
-            args=(sound_id, duration, volume),
+            args=(sound_id, duration, self._current_volume),
             daemon=True
         )
         self._loop_thread.start()
         return True
     
-    def _loop_sound(self, sound_id: str, duration: float, volume: float):
+    def _loop_sound(self, sound_id: str, duration: float):
         """Interne Methode zum Loopen eines Sounds für eine bestimmte Dauer."""
         start_time = time.time()
         end_time = start_time + duration
@@ -215,7 +209,7 @@ class AudioManager(LoggingMixin):
         
         try:
             while time.time() < end_time and not self._stop_loop:
-                self._play_sound(sound_id, volume)
+                self._play_sound(sound_id, self._current_volume)
                 
                 if self._stop_loop:
                     break
@@ -252,12 +246,12 @@ class AudioManager(LoggingMixin):
         # Delegiere an Strategie
         self.strategy.fade_out(duration)
     
-    def _play_sound(self, sound_id: str, volume: float) -> bool:
+    def _play_sound(self, sound_id: str) -> bool:
         """Interne Methode zum Abspielen eines Sounds."""
         with self._lock:
             try:
                 sound_info = self.sound_map[sound_id]
-                return self.strategy.play_sound(sound_info, volume)
+                return self.strategy.play_sound(sound_info)
             except Exception as e:
                 self.logger.info(f"❌ Fehler beim Abspielen von '{sound_id}': {e}")
                 return False
@@ -266,10 +260,25 @@ class AudioManager(LoggingMixin):
         """Stoppt alle Sounds mit Fade-Out."""
         self.fade_out()
     
-    def set_volume(self, volume: float):
-        """Setzt die Lautstärke für die Wiedergabe."""
-        self._current_volume = volume
-        self.strategy.set_volume(volume)
+    @property
+    def volume(self) -> float:
+        return self._current_volume
+    
+    @volume.setter
+    def volume(self, value: float):
+        """
+        Setzt die Lautstärke zwischen 0.0 und 1.0.
+        """
+        if value > 1.0:
+            value = value / 100.0
+        
+        value = max(0.0, min(1.0, value))
+        
+        self._current_volume = value
+        
+        self.strategy.set_volume(value)
+        
+        self.logger.info(f"🔊 Lautstärke auf {value:.2f} ({value*100:.0f}%) gesetzt")
 
 
 # Factory-Funktionen für einfachen Zugriff
@@ -297,9 +306,9 @@ def switch_to_sonos(speaker_name: str = None, speaker_ip: str = None, http_serve
     """Wechselt zur Sonos-Wiedergabe-Strategie."""
     get_audio_manager().set_strategy(create_sonos_strategy(speaker_name, speaker_ip, http_server_port))
 
-def play(sound_id: str, block: bool = False, volume: float = 0.35) -> bool:
+def play(sound_id: str, block: bool = False) -> bool:
     """Spielt einen Sound ab."""
-    return get_audio_manager().play(sound_id, block, volume)
+    return get_audio_manager().play(sound_id, block)
 
 def stop():
     """Stoppt alle Sounds mit Fade-Out."""
@@ -309,9 +318,9 @@ def fade_out(duration: Optional[float] = None):
     """Führt einen Fade-Out für alle aktuell spielenden Sounds durch."""
     get_audio_manager().fade_out(duration)
 
-def play_loop(sound_id: str, duration: float, volume: float = 0.35) -> bool:
+def play_loop(sound_id: str, duration: float) -> bool:
     """Spielt einen Sound im Loop für die angegebene Dauer ab."""
-    return get_audio_manager().play_loop(sound_id, duration, volume)
+    return get_audio_manager().play_loop(sound_id, duration)
 
 def stop_loop():
     """Stoppt den aktuellen Sound-Loop mit Fade-Out."""
@@ -324,21 +333,3 @@ def set_volume(volume: float):
 def get_sounds_by_category(category: str) -> Dict[str, SoundInfo]:
     """Gibt alle Sounds einer bestimmten Kategorie zurück."""
     return get_audio_manager().get_sounds_by_category(category)
-
-
-# Beispielcode für die Verwendung:
-if __name__ == "__main__":
-    import time
-    # 1. Normaler Gebrauch mit Standard-Strategie (Pygame)
-    audio_manager = get_audio_manager()
-    
-    # Sound abspielen
-    audio_manager.play("wakesound")
-    
-    switch_to_sonos(speaker_ip="192.168.178.68")
-    
-    play("wakesound")
-    
-    time.sleep(10)
-    
-    switch_to_pygame()

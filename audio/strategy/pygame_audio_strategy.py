@@ -18,7 +18,7 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
         pygame.mixer.init()
         self.logger.info("✅ Pygame-Audiosystem initialisiert")
     
-    def play_sound(self, sound_info: SoundInfo, volume: float) -> bool:
+    def play_sound(self, sound_info: SoundInfo) -> bool:
         """Spielt einen Sound mit Pygame ab."""
         try:
             sound_path = sound_info.path
@@ -27,7 +27,7 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
             if sound_format == ".wav" and os.path.exists(sound_path):
                 try:
                     pygame_sound = pygame.mixer.Sound(sound_path)
-                    pygame_sound.set_volume(max(0.0, min(1.0, volume)))
+                    pygame_sound.set_volume(max(0.0, min(1.0, self._current_volume)))
                     pygame_sound.play()
                     
                     while pygame.mixer.get_busy():
@@ -45,7 +45,7 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
             
             pygame_sound = pygame.mixer.Sound(audio_io)
             
-            pygame_sound.set_volume(max(0.0, min(1.0, volume)))
+            pygame_sound.set_volume(max(0.0, min(1.0, self._current_volume)))
             
             pygame_sound.play()
             

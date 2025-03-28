@@ -107,7 +107,7 @@ class SonosAudioStrategy(AudioPlaybackStrategy):
             print("   Sonos-Funktionalität wird eingeschränkt sein!")
             return False
     
-    def play_sound(self, sound_info: SoundInfo, volume: float) -> bool:
+    def play_sound(self, sound_info: SoundInfo) -> bool:
         """Spielt einen Sound über Sonos-Lautsprecher ab."""
         if not self.sonos_device:
             print("❌ Kein Sonos-Lautsprecher verfügbar")
@@ -136,14 +136,13 @@ class SonosAudioStrategy(AudioPlaybackStrategy):
                 print(f"⚠️ Warnung: Konnte URL nicht überprüfen: {e}")
             
             # Stelle Lautstärke ein (Umrechnung von 0-1 auf 0-100)
-            sonos_volume = int(min(100, max(0, volume * 100)))
+            sonos_volume = int(min(100, max(0, self._current_volume * 100)))
             
             # Speichere aktuelle Sonos-Einstellungen
             previous_volume = self.sonos_device.volume
             
             # Setze Lautstärke
             self.sonos_device.volume = sonos_volume
-            self._current_volume = volume
             
             # Spiele die URL auf dem Sonos-Gerät ab
             self.sonos_device.play_uri(sound_url)
