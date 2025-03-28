@@ -98,6 +98,47 @@ class AudioManager(LoggingMixin):
         
         for fmt, count in format_stats.items():
             self.logger.info(f"  - {fmt}: {count} Dateien")
+            
+    def register_sound(self, sound_id: str, file_path: str, category: str = "runtime") -> bool:
+        """
+        Registriert einen einzelnen Sound zur Laufzeit in der sound_map.
+        """
+        try:
+            from pathlib import Path
+            
+            sound_path = Path(file_path)
+            
+            if not sound_path.exists():
+                self.logger.info(f"❌ Sounddatei nicht gefunden: {file_path}")
+                return False
+                
+            if sound_path.suffix.lower() not in self.supported_formats:
+                self.logger.info(f"❌ Nicht unterstütztes Format: {sound_path.suffix}")
+                return False
+                
+            sound_info = SoundInfo(
+                path=str(sound_path),
+                category=category,
+                filename=sound_path.name,
+                format=sound_path.suffix.lower()
+            )
+            
+            if hasattr(self.strategy, 'http_server_ip') and hasattr(self.strategy, 'http_server_port'):
+                sound_info.create_sonos_url(
+                    self.audio_dir, 
+                    self.strategy.http_server_ip, 
+                    self.strategy.http_server_port
+                )
+
+            with self._lock:
+                self.sound_map[sound_id] = sound_info
+                
+            self.logger.info(f"✅ Sound '{sound_id}' erfolgreich registriert: {file_path}")
+            return True
+            
+        except Exception as e:
+            self.logger.info(f"❌ Fehler beim Registrieren von Sound '{sound_id}': {e}")
+            return False
     
     def set_strategy(self, strategy: AudioPlaybackStrategy):
         """Ändert die Wiedergabe-Strategie zur Laufzeit."""
@@ -117,13 +158,6 @@ class AudioManager(LoggingMixin):
                 )
         
         self.logger.info(f"✅ Gewechselt zu {strategy.__class__.__name__}")
-    
-    def get_sounds_by_category(self, category: str) -> Dict[str, SoundInfo]:
-        """Gibt alle Sounds einer bestimmten Kategorie zurück."""
-        return {
-            sound_id: info for sound_id, info in self.sound_map.items()
-            if info.category == category
-        }
     
     def play(self, sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
         """Spielt einen Sound ab."""
@@ -263,7 +297,7 @@ def switch_to_sonos(speaker_name: str = None, speaker_ip: str = None, http_serve
     """Wechselt zur Sonos-Wiedergabe-Strategie."""
     get_audio_manager().set_strategy(create_sonos_strategy(speaker_name, speaker_ip, http_server_port))
 
-def play(sound_id: str, block: bool = False, volume: float = 1.0) -> bool:
+def play(sound_id: str, block: bool = False, volume: float = 0.35) -> bool:
     """Spielt einen Sound ab."""
     return get_audio_manager().play(sound_id, block, volume)
 
@@ -275,7 +309,7 @@ def fade_out(duration: Optional[float] = None):
     """Führt einen Fade-Out für alle aktuell spielenden Sounds durch."""
     get_audio_manager().fade_out(duration)
 
-def play_loop(sound_id: str, duration: float, volume: float = 1.0) -> bool:
+def play_loop(sound_id: str, duration: float, volume: float = 0.35) -> bool:
     """Spielt einen Sound im Loop für die angegebene Dauer ab."""
     return get_audio_manager().play_loop(sound_id, duration, volume)
 

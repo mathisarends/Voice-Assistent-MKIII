@@ -221,6 +221,8 @@ class SpeechService(LoggingMixin):
             sound_id = filename  # Sound-ID ohne Erweiterung
             cache_path = os.path.join(self.cache_dir, f"{filename}.mp3")
             
+            #  TODO: Das hier muss als nächstes gemacht werden hier müssen die sachen in den audioManager gecached werden
+            
             # Prüfe, ob die Datei bereits im Cache ist
             if os.path.exists(cache_path):
                 self.logger.info(f"🔄 Verwende gecachte TTS-Datei: {filename}")
