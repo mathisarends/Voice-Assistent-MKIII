@@ -6,7 +6,7 @@ def extract_user_message(messages):
         messages_list = messages["messages"]
     else:
         messages_list = messages
-            
+
     # Durchlaufe die Nachrichten und finde die Benutzernachricht
     for message in messages_list:
         if hasattr(message, "type") and message.type == "human":
@@ -14,4 +14,3 @@ def extract_user_message(messages):
         elif isinstance(message, dict) and message.get("role") == "user":
             return message.get("content", "")
     return ""
-    

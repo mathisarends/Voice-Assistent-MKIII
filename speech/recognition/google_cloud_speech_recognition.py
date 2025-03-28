@@ -6,9 +6,17 @@ import threading
 import sys
 from google.cloud import speech
 
+
 class SpeechRecognition:
-    def __init__(self, credentials_filename="credentials.json", language="de-DE", silence_timeout=5, 
-                 alternative_languages=None, speech_contexts=None, model="default"):
+    def __init__(
+        self,
+        credentials_filename="credentials.json",
+        language="de-DE",
+        silence_timeout=5,
+        alternative_languages=None,
+        speech_contexts=None,
+        model="default",
+    ):
         """
         Initialisiert die Spracherkennungsklasse mit erweiterten Konfigurationsoptionen.
 
@@ -36,7 +44,9 @@ class SpeechRecognition:
             ]
 
         # Konfiguriere alternative Sprachen falls angegeben
-        alternative_language_codes = alternative_languages if alternative_languages else []
+        alternative_language_codes = (
+            alternative_languages if alternative_languages else []
+        )
 
         # RecognitionConfig erstellen
         self.config = speech.RecognitionConfig(
@@ -52,8 +62,7 @@ class SpeechRecognition:
         )
 
         self.streaming_config = speech.StreamingRecognitionConfig(
-            config=self.config, 
-            interim_results=True
+            config=self.config, interim_results=True
         )
 
         self.stop_recording = False
@@ -105,29 +114,30 @@ class SpeechRecognition:
         print("🎤 Starte Aufnahme... Sprich jetzt!")
 
         # Initialer Timeout für den Fall, dass keine Sprache erkannt wird
-        initial_timeout = threading.Timer(self.silence_timeout, self._stop_recording_initial)
+        initial_timeout = threading.Timer(
+            self.silence_timeout, self._stop_recording_initial
+        )
         initial_timeout.daemon = True
         initial_timeout.start()
-        
+
         # Variable zum Tracken des finalen Ergebnisses
         final_transcript = ""
-        
+
         try:
             responses = self.client.streaming_recognize(
-                self.streaming_config, 
-                self._generate_audio()
+                self.streaming_config, self._generate_audio()
             )
-            
+
             last_speech_time = time.time()
 
             for response in responses:
                 # Timer deaktivieren, sobald wir in der Schleife sind
                 if initial_timeout.is_alive():
                     initial_timeout.cancel()
-                
+
                 if self.stop_recording:
                     break
-                
+
                 if not response.results:
                     continue
 
@@ -136,53 +146,57 @@ class SpeechRecognition:
                     if result.is_final:
                         final_transcript = result.alternatives[0].transcript
                         print(f"\n📝 Finale Transkription: {final_transcript}")
-                        
+
                         # Optional: Alternative Transkriptionen anzeigen
                         if len(result.alternatives) > 1:
                             print("🔄 Alternative Transkriptionen:")
                             for i, alternative in enumerate(result.alternatives[1:], 1):
                                 print(f"  {i}. {alternative.transcript}")
-                        
+
                         self.stop_recording = True
                         break  # Schleife beenden
                     else:
                         # Zwischentranskription anzeigen
                         transcript = result.alternatives[0].transcript
-                        print(f"\r🔄 Zwischentranskription: {transcript}", end="", flush=True)
+                        print(
+                            f"\r🔄 Zwischentranskription: {transcript}",
+                            end="",
+                            flush=True,
+                        )
                         last_speech_time = time.time()
-                
+
                 # Wenn wir ein finales Ergebnis haben, brechen wir die Schleife ab
                 if self.stop_recording and final_transcript:
                     break
-                
+
                 # Timeout prüfen
                 if time.time() - last_speech_time > self.silence_timeout:
                     print("\n⏳ Keine weitere Sprache erkannt, Aufnahme wird gestoppt.")
                     self.stop_recording = True
                     break
-                
+
         except Exception as e:
             print(f"\nFehler während der Spracherkennung: {e}")
         finally:
             # Aufräumen
             if initial_timeout.is_alive():
                 initial_timeout.cancel()
-            
+
             try:
                 stream.stop_stream()
             except OSError:
                 pass
-            
+
             try:
                 stream.close()
             except OSError:
                 pass
-            
+
             try:
                 p.terminate()
             except OSError:
                 pass
-            
+
             print("\n✅ Aufnahme beendet.")
 
         # Rückgabe des finalen Transkripts, wenn vorhanden
@@ -192,37 +206,48 @@ class SpeechRecognition:
 if __name__ == "__main__":
     # Beispielkonfiguration für verbesserte Erkennung technischer Begriffe
     tech_phrases = [
-        "Langchain", "ChatGPT", "Python", "API", "LLM", 
-        "Machine Learning", "AI", "Künstliche Intelligenz",
-        "Prompt Engineering", "Transformer", "OpenAI", "Claude",
-        "Anthropic", "Embedding", "Vector Database"
+        "Langchain",
+        "ChatGPT",
+        "Python",
+        "API",
+        "LLM",
+        "Machine Learning",
+        "AI",
+        "Künstliche Intelligenz",
+        "Prompt Engineering",
+        "Transformer",
+        "OpenAI",
+        "Claude",
+        "Anthropic",
+        "Embedding",
+        "Vector Database",
     ]
-    
+
     # Erstelle eine Instanz mit Deutsch als Hauptsprache und Englisch als Alternative
     recorder = SpeechRecognition(
         language="de-DE",
         alternative_languages=["en-US"],  # Englisch als alternative Sprache
         speech_contexts=tech_phrases,  # Technische Begriffe bevorzugen
         model="default",  # Alternatives Modell: "command_and_search" für kurze Sprachbefehle
-        silence_timeout=3
+        silence_timeout=3,
     )
-    
+
     try:
         print("Das Programm startet in 3 Sekunden...")
         time.sleep(3)
         print("Fang an zu sprechen!")
-        
+
         start_time = time.time()
         user_text = recorder.record_user_prompt()
         end_time = time.time()
-        
+
         duration = end_time - start_time
-        
+
         if user_text:
             print(f"\n🎤 Endgültiges Ergebnis: {user_text}")
         else:
             print("\n⚠️ Keine finale Transkription erhalten.")
-        
+
         print(f"Verstrichene Zeit: {duration:.2f} Sekunden")
     except KeyboardInterrupt:
         print("\n\nProgramm durch Benutzer beendet (Ctrl+C).")

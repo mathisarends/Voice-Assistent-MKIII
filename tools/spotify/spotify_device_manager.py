@@ -1,6 +1,7 @@
 import spotipy
 from tools.spotify.spotify_player import SpotifyClient
 
+
 class SpotifyDeviceManager:
     def __init__(self):
         self.client = SpotifyClient().api
@@ -35,7 +36,9 @@ class SpotifyDeviceManager:
             print(f"🔄 Gerät gewechselt zu: {device_name}")
             return True
         else:
-            print(f"❌ Gerät '{device_name}' nicht gefunden. Verfügbare Geräte: {', '.join(self.devices.keys())}")
+            print(
+                f"❌ Gerät '{device_name}' nicht gefunden. Verfügbare Geräte: {', '.join(self.devices.keys())}"
+            )
             return False
 
     def print_devices(self):
@@ -43,12 +46,15 @@ class SpotifyDeviceManager:
         print("📱 Verfügbare Geräte:")
         for name, device in self.devices.items():
             status = "🟢 Aktiv" if device["is_active"] else "⚫ Inaktiv"
-            print(f"- {name} ({device['type']}), Lautstärke: {device['volume_percent']}% {status}")
+            print(
+                f"- {name} ({device['type']}), Lautstärke: {device['volume_percent']}% {status}"
+            )
+
 
 # Testen der Geräteverwaltung
 if __name__ == "__main__":
     device_manager = SpotifyDeviceManager()
     device_manager.print_devices()
-    
+
     # Beispiel: Wechsel zum Pixel 8, falls vorhanden
     device_manager.switch_device("Pixel 8")

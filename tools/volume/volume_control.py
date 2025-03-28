@@ -1,19 +1,24 @@
 import subprocess
 
+
 class VolumeControl:
     """Steuert die Systemlautstärke mit PulseAudio über `pactl`."""
 
     @staticmethod
     def get_volume() -> int:
         """Holt die aktuelle Lautstärke als Prozentwert (0-100%)."""
-        result = subprocess.run(["pactl", "get-sink-volume", "@DEFAULT_SINK@"], capture_output=True, text=True)
-        return int(result.stdout.split('/')[1].strip().replace('%', ''))
+        result = subprocess.run(
+            ["pactl", "get-sink-volume", "@DEFAULT_SINK@"],
+            capture_output=True,
+            text=True,
+        )
+        return int(result.stdout.split("/")[1].strip().replace("%", ""))
 
     @staticmethod
     def set_volume_level(level: int):
         """
         Setzt die Lautstärke auf eine Stufe von 1 bis 10.
-        
+
         :param level: Lautstärkestufe (1 = 10%, 10 = 100%)
         """
         if not 1 <= level <= 10:
@@ -25,7 +30,7 @@ class VolumeControl:
     def set_volume(volume: int):
         """
         Setzt die Lautstärke direkt als Prozentwert (0-100%).
-        
+
         :param volume: Lautstärke in Prozent (z. B. 50 für 50%)
         """
         if not 0 <= volume <= 100:
@@ -51,9 +56,10 @@ class VolumeControl:
         """Schaltet die Lautstärke stumm oder hebt die Stummschaltung auf."""
         subprocess.run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"])
 
+
 if __name__ == "__main__":
     VolumeControl.mute()
-    
+
     print(f"Aktuelle Lautstärke: {VolumeControl.get_volume()}%")
 
     VolumeControl.set_volume_level(5)

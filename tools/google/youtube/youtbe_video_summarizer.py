@@ -2,6 +2,7 @@ from typing import Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 
+
 class YoutubeVideoSummarizer:
     def __init__(self, model_name: str = "gemini-2.0-flash", temperature: float = 0.5):
         self.llm = ChatGoogleGenerativeAI(
@@ -11,8 +12,9 @@ class YoutubeVideoSummarizer:
             top_k=40,
             streaming=False,
         )
-        
-        self.summary_prompt = ChatPromptTemplate.from_template("""
+
+        self.summary_prompt = ChatPromptTemplate.from_template(
+            """
         # Anleitung zur Zusammenfassung von YouTube-Videos
         
         Erstelle eine strukturierte Zusammenfassung im Markdown-Format für folgendes Video-Transkript:
@@ -41,9 +43,11 @@ class YoutubeVideoSummarizer:
         
         ## [Abschnittstitel 1]
         ...
-        """)
-        
-        self.spoken_summary_prompt = ChatPromptTemplate.from_template("""
+        """
+        )
+
+        self.spoken_summary_prompt = ChatPromptTemplate.from_template(
+            """
         # Anleitung für gesprochene Zusammenfassung
         
         Erstelle eine kurze, gesprochene Zusammenfassung der wichtigsten Punkte aus diesem Video aufgrundlage des dir gelieferten Transkripts.
@@ -59,29 +63,32 @@ class YoutubeVideoSummarizer:
         ## Zusammenfassung des Videos, aus der du die wichtigsten Punkte extrahieren sollst:
         
         {summary}
-        """)
-        
+        """
+        )
+
     async def create_summary(self, transcript: str, video_title=None, video_url=None):
         if video_title:
             context = f"Titel des Videos: {video_title}\n\n{transcript}"
         else:
             context = transcript
-        
+
         chain = self.summary_prompt | self.llm
-        response = await chain.ainvoke({
-            "transcript": context,
-            "video_url": video_url or "[Kein Link verfügbar]"
-        })
-        
+        response = await chain.ainvoke(
+            {"transcript": context, "video_url": video_url or "[Kein Link verfügbar]"}
+        )
+
         return response.content
-    
-    async def create_spoken_summary(self, transcript: str, video_title: Optional[str] = None):
+
+    async def create_spoken_summary(
+        self, transcript: str, video_title: Optional[str] = None
+    ):
         if video_title:
             context = f"Titel des Videos: {video_title}\n\n{transcript}"
         else:
             context = transcript
-        
-        direct_spoken_prompt = ChatPromptTemplate.from_template("""
+
+        direct_spoken_prompt = ChatPromptTemplate.from_template(
+            """
         # Anleitung für gesprochene Zusammenfassung
         
         Erstelle eine kurze, gesprochene Zusammenfassung der wichtigsten Punkte aus diesem Video-Transkript.
@@ -96,11 +103,10 @@ class YoutubeVideoSummarizer:
         ## Video-Transkript:
         
         {transcript}
-        """)
-        
+        """
+        )
+
         chain = direct_spoken_prompt | self.llm
-        response = await chain.ainvoke({
-            "transcript": context
-        })
-        
+        response = await chain.ainvoke({"transcript": context})
+
         return response.content

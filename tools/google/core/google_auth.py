@@ -5,6 +5,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from google.auth.exceptions import RefreshError
 
+
 class GoogleAuth:
     """
     Eine zentrale Authentifizierungsklasse für alle Google-Dienste.
@@ -16,7 +17,7 @@ class GoogleAuth:
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/youtube.readonly",
         "https://www.googleapis.com/auth/calendar",
-        "https://www.googleapis.com/auth/drive.readonly"
+        "https://www.googleapis.com/auth/drive.readonly",
     ]
 
     # Speicherpfade für Credentials & Token
@@ -70,6 +71,7 @@ class GoogleAuth:
         """
         creds = GoogleAuth.get_credentials()
         return build(service_name, version, credentials=creds)
+
 
 # Falls dieses Skript direkt ausgeführt wird, einfach mal testen
 if __name__ == "__main__":

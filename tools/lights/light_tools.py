@@ -22,8 +22,10 @@ audio_manager = WorkflowAudioResponseManager(
     category="light_responses",
 )
 
+
 def run_async(coro):
     return asyncio.run(coro)
+
 
 @tool("list_hue_scenes", return_direct=False)
 def list_hue_scenes():
@@ -31,15 +33,16 @@ def list_hue_scenes():
     try:
         scenes = run_async(hue_controller.get_scene_names())
         return SCENE_LIST_SUCCESS.format(scenes=", ".join(scenes))
-    
+
     except Exception as e:
         error_msg = f"Fehler beim Abrufen der Lichtszenen: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
+
 @tool("activate_hue_scene", return_direct=True)
 def activate_hue_scene(scene_name: str):
     """Aktiviert eine bestimmte Philips Hue Lichtszene anhand ihres Namens.
-    
+
     Args:
         scene_name: Name der zu aktivierenden Lichtszene
     """
@@ -51,6 +54,7 @@ def activate_hue_scene(scene_name: str):
         error_msg = f"Fehler beim Aktivieren der Lichtszene '{scene_name}': {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
+
 @tool("next_hue_scene", return_direct=True)
 def next_hue_scene():
     """Wechselt zur nächsten Philips Hue Lichtszene in der aktuellen Gruppe."""
@@ -60,7 +64,8 @@ def next_hue_scene():
     except Exception as e:
         error_msg = f"Fehler beim Wechseln zur nächsten Lichtszene: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
-    
+
+
 @tool("previous_hue_scene", return_direct=True)
 def previous_hue_scene():
     """Wechselt zur vorherigen Philips Hue Lichtszene in der aktuellen Gruppe."""
@@ -71,12 +76,14 @@ def previous_hue_scene():
         error_msg = f"Fehler beim Wechseln zur vorherigen Lichtszene: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
+
 # ---- Lichtsteuerung Tools ----
+
 
 @tool("toggle_hue_lights", return_direct=True)
 def toggle_hue_lights(action: str, fade_duration: float = 2.0):
     """Schaltet alle Philips Hue Lichter ein oder aus mit einem sanften Übergang.
-    
+
     Args:
         action: Gewünschte Aktion: 'on' oder 'off'
         fade_duration: Fade-Dauer in Sekunden (optional, Standard: 2.0)
@@ -89,16 +96,19 @@ def toggle_hue_lights(action: str, fade_duration: float = 2.0):
             run_async(hue_controller.turn_off())
             return audio_manager.respond_with_audio(LIGHT_OFF_SUCCESS)
         else:
-            error_msg = f"Ungültige Aktion: '{action}'. Bitte 'on' oder 'off' verwenden."
+            error_msg = (
+                f"Ungültige Aktion: '{action}'. Bitte 'on' oder 'off' verwenden."
+            )
             return audio_manager.respond_with_audio(error_msg)
     except Exception as e:
         error_msg = f"Fehler beim Schalten der Lichter: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
+
 @tool("adjust_hue_brightness", return_direct=True)
 def adjust_hue_brightness(percent_change: float):
     """Passt die Helligkeit der Philips Hue Lichter prozentual an.
-    
+
     Args:
         percent_change: Prozentuale Änderung der Helligkeit (positiv = heller, negativ = dunkler)
     """
@@ -113,10 +123,11 @@ def adjust_hue_brightness(percent_change: float):
         error_msg = f"Fehler bei der Helligkeitsanpassung: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
+
 @tool("set_hue_brightness", return_direct=True)
 def set_hue_brightness(percent: int):
     """Setzt die Helligkeit der Philips Hue Lichter auf einen bestimmten Prozentwert.
-    
+
     Args:
         percent: Helligkeit in Prozent (0-100)
     """
@@ -129,6 +140,7 @@ def set_hue_brightness(percent: int):
         error_msg = f"Fehler beim Setzen der Helligkeit: {str(e)}"
         return audio_manager.respond_with_audio(error_msg)
 
+
 def get_hue_tools():
     return [
         list_hue_scenes,
@@ -137,5 +149,5 @@ def get_hue_tools():
         previous_hue_scene,
         toggle_hue_lights,
         adjust_hue_brightness,
-        set_hue_brightness
+        set_hue_brightness,
     ]
