@@ -8,7 +8,6 @@ class SoundInfo:
     path: str
     category: str
     filename: str
-    format: str
     url: Optional[str] = None # type: ignore
     
     def create_sonos_url(self, base_dir: Path, http_server_ip: str, http_server_port: int) -> None:

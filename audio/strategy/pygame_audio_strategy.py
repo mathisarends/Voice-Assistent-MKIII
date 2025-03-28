@@ -22,20 +22,6 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
         """Spielt einen Sound mit Pygame ab."""
         try:
             sound_path = sound_info.path
-            sound_format = sound_info.format
-            
-            if sound_format == ".wav" and os.path.exists(sound_path):
-                try:
-                    pygame_sound = pygame.mixer.Sound(sound_path)
-                    pygame_sound.set_volume(max(0.0, min(1.0, self._current_volume)))
-                    pygame_sound.play()
-                    
-                    while pygame.mixer.get_busy():
-                        pygame.time.wait(100)
-                        
-                    return True
-                except Exception as e:
-                    self.logger.error(f"⚠️ Direkte WAV-Wiedergabe fehlgeschlagen, versuche mit pydub: {e}")
             
             sound = AudioSegment.from_file(sound_path)
             
@@ -66,12 +52,10 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
     
     def stop_playback(self):
         """Stoppt alle Pygame-Audio-Wiedergaben."""
-        import pygame
         pygame.mixer.stop()
     
     def set_volume(self, volume: float):
         """Setzt die Lautstärke für alle aktiven Pygame-Kanäle."""
-        import pygame
         self._current_volume = volume
         for i in range(pygame.mixer.get_num_channels()):
             channel = pygame.mixer.Channel(i)

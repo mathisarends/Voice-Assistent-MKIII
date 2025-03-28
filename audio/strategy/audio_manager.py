@@ -21,7 +21,7 @@ class AudioManager(LoggingMixin):
         
         self._lock = threading.Lock()
         
-        self.supported_formats = [".mp3", ".wav"]
+        self.supported_formats = [".mp3"]
         
         self._stop_loop = False
         self._loop_thread = None
@@ -31,7 +31,6 @@ class AudioManager(LoggingMixin):
         self.fade_out_duration = 2.5
         
         if strategy is None:
-            # Lazy import, um zirkuläre Imports zu vermeiden
             from audio.strategy.pygame_audio_strategy import PygameAudioStrategy
             self.strategy = PygameAudioStrategy()
         else:
@@ -43,22 +42,18 @@ class AudioManager(LoggingMixin):
         self._discover_sounds()
     
     def _discover_sounds(self):
-        """Durchsucht rekursiv das Audio-Verzeichnis nach Sounddateien."""
-        self.logger.info(f"🔍 Durchsuche Verzeichnis: {self.audio_dir}")
+        """Durchsucht rekursiv das Audio-Verzeichnis nach MP3-Dateien."""
+        self.logger.info(f"🔍 Durchsuche Verzeichnis nach MP3-Dateien: {self.audio_dir}")
         
         if not self.audio_dir.exists():
             self.logger.info(f"❌ Verzeichnis nicht gefunden: {self.audio_dir}")
             return
         
-        # Liste für alle gefundenen Sounddateien
-        sound_files = []
-        
-        # Alle unterstützten Formate suchen
-        for format_ext in self.supported_formats:
-            sound_files.extend(list(self.audio_dir.glob(f"**/*{format_ext}")))
+        # Wir suchen jetzt nur noch nach MP3-Dateien
+        sound_files = list(self.audio_dir.glob("**/*.mp3"))
         
         if not sound_files:
-            self.logger.info(f"❌ Keine Sounddateien gefunden in: {self.audio_dir}")
+            self.logger.info(f"❌ Keine MP3-Dateien gefunden in: {self.audio_dir}")
             return
         
         for sound_file in sound_files:
@@ -70,12 +65,10 @@ class AudioManager(LoggingMixin):
             
             sound_id = sound_file.stem
             
-            # SoundInfo-Objekt erstellen
             sound_info = SoundInfo(
                 path=str(sound_file),
                 category=category,
                 filename=filename,
-                format=sound_file.suffix.lower()
             )
             
             # URL für Sonos erzeugen falls nötig
@@ -88,20 +81,11 @@ class AudioManager(LoggingMixin):
 
             self.sound_map[sound_id] = sound_info
         
-        self.logger.info(f"✅ {len(self.sound_map)} Sounds gefunden und gemappt.")
-        
-        # Zeige Statistik der gefundenen Formate
-        format_stats = {}
-        for info in self.sound_map.values():
-            format_ext = info.format
-            format_stats[format_ext] = format_stats.get(format_ext, 0) + 1
-        
-        for fmt, count in format_stats.items():
-            self.logger.info(f"  - {fmt}: {count} Dateien")
+        self.logger.info(f"✅ {len(self.sound_map)} MP3-Sounds gefunden und gemappt.")
             
     def register_sound(self, sound_id: str, file_path: str, category: str = "runtime") -> bool:
         """
-        Registriert einen einzelnen Sound zur Laufzeit in der sound_map.
+        Registriert einen einzelnen MP3-Sound zur Laufzeit in der sound_map.
         """
         try:
             from pathlib import Path
@@ -109,18 +93,18 @@ class AudioManager(LoggingMixin):
             sound_path = Path(file_path)
             
             if not sound_path.exists():
-                self.logger.info(f"❌ Sounddatei nicht gefunden: {file_path}")
+                self.logger.info(f"❌ MP3-Datei nicht gefunden: {file_path}")
                 return False
                 
-            if sound_path.suffix.lower() not in self.supported_formats:
-                self.logger.info(f"❌ Nicht unterstütztes Format: {sound_path.suffix}")
+            if sound_path.suffix.lower() != ".mp3":
+                self.logger.info(f"❌ Nur MP3-Format wird unterstützt: {sound_path.suffix}")
                 return False
                 
             sound_info = SoundInfo(
                 path=str(sound_path),
                 category=category,
                 filename=sound_path.name,
-                format=sound_path.suffix.lower()
+                format=".mp3"
             )
             
             if hasattr(self.strategy, 'http_server_ip') and hasattr(self.strategy, 'http_server_port'):
@@ -133,11 +117,11 @@ class AudioManager(LoggingMixin):
             with self._lock:
                 self.sound_map[sound_id] = sound_info
                 
-            self.logger.info(f"✅ Sound '{sound_id}' erfolgreich registriert: {file_path}")
+            self.logger.info(f"✅ MP3-Sound '{sound_id}' erfolgreich registriert: {file_path}")
             return True
             
         except Exception as e:
-            self.logger.info(f"❌ Fehler beim Registrieren von Sound '{sound_id}': {e}")
+            self.logger.info(f"❌ Fehler beim Registrieren von MP3-Sound '{sound_id}': {e}")
             return False
     
     def set_strategy(self, strategy: AudioPlaybackStrategy):
@@ -166,10 +150,8 @@ class AudioManager(LoggingMixin):
             return False
         
         if block:
-            # Im aktuellen Thread abspielen
             return self._play_sound(sound_id)
         else:
-            # In separatem Thread abspielen
             threading.Thread(
                 target=self._play_sound,
                 args=(sound_id, ),
@@ -194,7 +176,7 @@ class AudioManager(LoggingMixin):
         self._stop_loop = False
         self._loop_thread = threading.Thread(
             target=self._loop_sound,
-            args=(sound_id, duration, self._current_volume),
+            args=(sound_id, duration),
             daemon=True
         )
         self._loop_thread.start()
@@ -209,7 +191,7 @@ class AudioManager(LoggingMixin):
         
         try:
             while time.time() < end_time and not self._stop_loop:
-                self._play_sound(sound_id, self._current_volume)
+                self._play_sound(sound_id)
                 
                 if self._stop_loop:
                     break
@@ -229,7 +211,6 @@ class AudioManager(LoggingMixin):
             
             self._stop_loop = True
             
-            # Warte bis der Loop-Thread beendet ist (mit Timeout)
             self._loop_thread.join(timeout=1.0)
             self.logger.info("🔄 Loop gestoppt")
     
@@ -309,27 +290,3 @@ def switch_to_sonos(speaker_name: str = None, speaker_ip: str = None, http_serve
 def play(sound_id: str, block: bool = False) -> bool:
     """Spielt einen Sound ab."""
     return get_audio_manager().play(sound_id, block)
-
-def stop():
-    """Stoppt alle Sounds mit Fade-Out."""
-    get_audio_manager().stop()
-
-def fade_out(duration: Optional[float] = None):
-    """Führt einen Fade-Out für alle aktuell spielenden Sounds durch."""
-    get_audio_manager().fade_out(duration)
-
-def play_loop(sound_id: str, duration: float) -> bool:
-    """Spielt einen Sound im Loop für die angegebene Dauer ab."""
-    return get_audio_manager().play_loop(sound_id, duration)
-
-def stop_loop():
-    """Stoppt den aktuellen Sound-Loop mit Fade-Out."""
-    get_audio_manager().stop_loop()
-
-def set_volume(volume: float):
-    """Setzt die Lautstärke für die Wiedergabe."""
-    get_audio_manager().set_volume(volume)
-
-def get_sounds_by_category(category: str) -> Dict[str, SoundInfo]:
-    """Gibt alle Sounds einer bestimmten Kategorie zurück."""
-    return get_audio_manager().get_sounds_by_category(category)
