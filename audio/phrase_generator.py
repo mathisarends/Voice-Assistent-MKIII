@@ -1,184 +1,40 @@
 import os
 from openai import OpenAI
 
+from util.decorator import log_exceptions_from_self_logger
+
 class PhraseGenerator:
     def __init__(self, voice="nova", output_dir="audio/sounds/standard_phrases"):
         self.openai = OpenAI()
         self.voice = voice
         self.output_dir = output_dir
         
-        # Verzeichnis existiert bereits, also müssen wir es nicht erstellen
-    
+    @log_exceptions_from_self_logger(context="Fehler bei der Sprachgenerierung")
     def generate_speech_file(self, text, category="general", file_format="mp3"):
         if not text.strip():
             raise ValueError("Der eingegebene Text ist leer.")
         
-        try:
-            # Kategorie-Unterverzeichnis erstellenplay
-            category_dir = os.path.join(self.output_dir, category)
-            os.makedirs(category_dir, exist_ok=True)
+        category_dir = os.path.join(self.output_dir, category)
+        os.makedirs(category_dir, exist_ok=True)
             
-            # Nächsten verfügbaren Dateinamen bestimmen
-            existing_files = [f for f in os.listdir(category_dir) if f.endswith(f".{file_format}")]
-            index = len(existing_files) + 1
-            file_name = f"tts_{category}_{index}.{file_format}"
-            file_path = os.path.join(category_dir, file_name)
+        existing_files = [f for f in os.listdir(category_dir) if f.endswith(f".{file_format}")]
+        index = len(existing_files) + 1
+        file_name = f"tts_{category}_{index}.{file_format}"
+        file_path = os.path.join(category_dir, file_name)
             
-            # TTS API aufrufen
-            response = self.openai.audio.speech.create(
-                model="tts-1",
-                voice=self.voice,
-                input=text
-            )
+        response = self.openai.audio.speech.create(
+            model="tts-1",
+            voice=self.voice,
+            input=text
+        )
             
-            # Inhalt in Datei schreiben
-            with open(file_path, "wb") as file:
-                file.write(response.content)
+        with open(file_path, "wb") as file:
+            file.write(response.content)
             
-            print(f"✅ Sprachdatei gespeichert: {file_path}")
-            return file_path
+        print(f"✅ Sprachdatei gespeichert: {file_path}")
+        return file_path
         
-        except Exception as e:
-            print(f"❌ Fehler bei der Sprachgenerierung: {e}")
-            return None
+
 
 if __name__ == "__main__":
-    # PhraseGenerator mit dem korrekten Pfad initialisieren
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
-    
-    # Wetter
-    # tts.generate_speech_file("Analysiere Wetterdaten. Initiiere Wetterprotokoll.", category="weather")
-    # tts.generate_speech_file("Scanning meteorologische Datenbanken. Wetter-Update wird vorbereitet.", category="weather")
-    # tts.generate_speech_file("Umgebungsparameter werden überprüft. Atmosphärische Bedingungen werden berechnet.", category="weather")
-    # tts.generate_speech_file("Standort-Tracking aktiviert. Meteorologische Systeme online.", category="weather")
-    # tts.generate_speech_file("Wetter-Informationen werden abgerufen. Präzisionsanalyse läuft.", category="weather")
-    # tts.generate_speech_file("Atmosphärische Datenstruktur wird kompiliert. Fortschritt: 25 Prozent", category="weather")
-    
-    # tts.generate_speech_file("Benutze Licht Workflow.", category="test")
-    
-    # spotify_phrases = [
-    #     "Musikdatenbanken werden abgerufen. Präzisionsanalyse läuft.",
-    #     "Audiowiedergabesystem synchronisiert. Musikstreaming-Protokolle initiiert.",
-    #     "Soundmanagement wird vorbereitet. Audioressourcen werden gescannt.",
-    #     "Musikwiedergabesystem online. Erweiterte Audiosteuerung initiiert."
-    # ]
-    
-    # for phrase in spotify_phrases:
-    #     tts.generate_speech_file(phrase, category="spotify_loading")
-    
-    
-    # notion_todo_phrases = [
-    #     "Aufgabenstruktur wird kompiliert. Fortschritt: 25 Prozent",
-    #     "Produktivitäts-Managementsystem geladen. Aufgabenoptimierung startet.",
-    #     "Intelligente Taskverwaltung initiiert. Projektstruktur wird analysiert.",
-    #     "To-Do-Algorithmus aktiviert. Aufgabenprioritäten werden berechnet.",
-    #     "Projektmanagement-Systeme online. Aufgabenintegritätscheck läuft."
-    # ]
-    
-    # for phrase in notion_todo_phrases:
-    #     tts.generate_speech_file(phrase, category="notion_todo_loading")
-
-
-    # notion_clipboard_phrases = [
-    #     "Recherche-Tracking aktiviert. Informationssysteme online.",
-    #     "Globale Datenrecherche wird vorbereitet. Wissensakkumulation startet.",
-    #     "Informationsretrievalsystem initiiert. Webdatenbank wird gescannt.",
-    #     "Intelligente Suchalgorithmen aktiviert. Informationsfilterung läuft.",
-    #     "Zwischenablage-Recherchemodul online. Datensammlung wird gestartet."
-    # ]   
-    
-    # for phrase in notion_clipboard_phrases:
-    #     tts.generate_speech_file(phrase, category="notion_clipboard_loading")
-    
-    # lights_phrases = [
-    #     "Beleuchtungssysteme werden gescannt.",
-    #     "Lichtmanagement wird aktiviert.",
-    #     "Farbspektrum wird kalibriert.",
-    #     "Lichtsteuerung wird gestartet.",
-    #     "Adaptive Lichtanpassung beginnt.",
-    #     "Philips Hue wird synchronisiert.",
-    #     "Dynamische Lichtanpassung bereit."
-    # ]
-    
-    # for phrase in lights_phrases:
-    #     tts.generate_speech_file(phrase, category="lights_loading")
-    
-    # volume_phrases = [
-    #     "Lautstärkesteuerung wird aktiviert.",
-    #     "Audiosystem wird angepasst.",
-    #     "Lautstärkeregler wird initialisiert.",
-    #     "Audioparameter werden konfiguriert.",
-    #     "Klangeinstellungen werden geladen.",
-    #     "Lautstärkeprofile werden aktualisiert.",
-    #     "Audiosystem wird kalibriert.",
-    #     "Volumenkontrolle wird vorbereitet."
-    # ]
-    
-    # for phrase in volume_phrases:
-    #     tts.generate_speech_file(phrase, category="volume_loading")
-    
-    # pomodoro_phrases = [
-    #         "Ihr Pomodoro-Timer ist abgelaufen. Zeit für eine kleine Unterbrechung.",
-    #         "Die Fokuszeit ist vorbei. Eine kurze Pause tut jetzt gut.",
-    #         "Pomodoro-Session beendet. Ihr Gehirn freut sich über eine Erholungspause.",
-    #         "Die Zeit ist um. Ein guter Moment, kurz durchzuatmen.",
-    #         "Iwhre Arbeitsphase ist abgeschlossen. Zeit für einen Moment der Entspannung.",
-    #         "Ihr Fokusintervall ist vorüber. Zeit, den Gedanken kurz freien Lauf zu lassen.",
-    #         "Die Phase konzentrierten Arbeitens ist vorüber. Lassen Sie Ihre Gedanken kurz wandern.",
-    # ]
-    
-    # for phrase in pomodoro_phrases:
-    #     tts.generate_speech_file(phrase, category="pomodoro_phrases")
-    
-    
-    # pomodoro_selection_phrases = [
-    #     "Zeitmanagement-Workflow ausgewählt. Pomodoro-Funktionen stehen zur Verfügung.",
-    #     "Produktivitäts-Workflow Pomodoro wurde ausgewählt.",
-    #     "Pomodoro-Funktionalität steht zur Verfügung.",
-    #     "Zeitmanagement mit Pomodoro wird vorbereitet.",
-    #     "Pomodoro-Workflow steht Ihnen jetzt zur Verfügung."
-    # ]
-    
-    # for phrase in pomodoro_selection_phrases:
-    #     tts.generate_speech_file(phrase, category="pomodoro_Loading")
-   
-    # alarm_phrases = [
-    #     "Weckprotokoll-Parameter werden überprüft. Alarm-Synchronisation wird berechnet.",
-    #     "Temporales Weckmodul aktiviert. Aufwachsequenz wird initiiert.",
-    #     "Wecker-Systemintegration startet. Intelligente Weckfunktionen werden geladen.",
-    #     "Alarm-Präzisionsprotokoll wird vorbereitet. Zeitliche Synchronisation aktiviert.",
-    #     "Alarm-Systemintegration online. Adaptive Weckstrategien werden aktiviert.",
-    #     "Lichtwecker-Protokoll initiiert. Dynamische Aufwachsteuerung wird vorbereitet."
-    # ]
-    
-    # for phrase in alarm_phrases:
-    #     tts.generate_speech_file(phrase, category="alarm_loading")
-    
-    # pomodoro_phrases = [
-    #     "Pomodoro-Timer wird initialisiert.",
-    #     "Fokus-Timing wird aktiviert.",
-    #     "Produktivitäts-Timer wird vorbereitet.",
-    #     "Zeitmanagement-System wird gestartet.",
-    #     "Pomodoro-Protokoll wird geladen.",
-    #     "Arbeitszyklus-Timer wird konfiguriert.",
-    #     "Fokus-Intervallsystem wird bereitgestellt.",
-    #     "Pomodoro-Tracking wird aktiviert."
-    # ]
-    
-    # for phrase in pomodoro_phrases:
-    #     tts.generate_speech_file(phrase, category="pomodoro_loading")
-    
-    youtube_phrases = [
-        "Videozusammenfassung wird vorbereitet.",
-        "Inhaltsextraktion wird initialisiert.",
-        "Zusammenfassungssystem wird aktiviert.",
-        "Video-Informationen werden gesammelt.",
-        "Inhaltliche Aufbereitung wird gestartet.",
-        "YouTube-Daten werden verarbeitet.",
-    ]
-    
-    for phrase in youtube_phrases:
-        tts.generate_speech_file(phrase, category="youtube_loading")
-
-    
-

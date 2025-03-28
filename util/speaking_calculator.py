@@ -3,7 +3,6 @@ import re
 import logging
 import numpy as np
 
-
 class SpeakingCalculator:    
     def __init__(self):
         """Initialize the speaking calculator."""
