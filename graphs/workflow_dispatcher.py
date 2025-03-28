@@ -1,11 +1,11 @@
 from typing import Dict, Any, TypedDict, List
 import textwrap
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 
 from assistant.speech_service import SpeechService
-from config.settings import GPT_MINI
+from config.settings import GEMINI_FLASH
 from graphs.base_graph import BaseGraph
 from graphs.workflow_registry import WorkflowRegistry
 from graphs.workflow_audio_feedback_observer import WorkflowAudioFeedbackObserver, WorkflowObserver
@@ -20,7 +20,7 @@ class WorkflowState(TypedDict):
 
 class WorkflowDispatcher(LoggingMixin):
     def __init__(self, model_name: str = None):
-        self.model_name = model_name or GPT_MINI
+        self.model_name = model_name or GEMINI_FLASH
         self.speech_service = SpeechService(voice="nova")
         
         self.observers = [WorkflowAudioFeedbackObserver()]
@@ -52,7 +52,8 @@ class WorkflowDispatcher(LoggingMixin):
         self.graph = workflow_graph.compile()
     
     async def _select_workflow(self, state: WorkflowState) -> WorkflowState:
-        llm = ChatOpenAI(model=self.model_name)
+        # Gemini für schnellere Verarbeitung verwenden
+        llm = ChatGoogleGenerativeAI(model=self.model_name, temperature=0.0, max_output_tokens=20)
         workflow_names = WorkflowRegistry.get_workflow_names()
         workflow_names_str = ", ".join(workflow_names) + ", default"
 
@@ -79,7 +80,8 @@ class WorkflowDispatcher(LoggingMixin):
         return state
     
     async def _run_default_workflow(self, state: WorkflowState) -> WorkflowState:
-        llm = ChatOpenAI(model=self.model_name)
+        # Hier auch Gemini verwenden
+        llm = ChatGoogleGenerativeAI(model=self.model_name)
         response = await llm.ainvoke([HumanMessage(content=state["user_message"])])
         state["response"] = response.content
         self.logger.info(f"[DEFAULT] Antwort: {response.content[:100]}...")

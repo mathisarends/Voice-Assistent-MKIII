@@ -25,7 +25,6 @@ class SoundCategory:
 class WorkflowAudioFeedbackObserver(LoggingMixin):
     """Observer, der Audio-Feedback für ausgewählte Workflows abspielt."""
     
-    # Definiere alle Sound-Kategorien als Klassenvariablen für bessere Wartbarkeit
     SOUND_CATEGORIES: ClassVar[Dict[str, SoundCategory]] = {
         "weather": SoundCategory(name="weather", count=6),
         "alarm": SoundCategory(name="alarm", count=4),
@@ -37,7 +36,8 @@ class WorkflowAudioFeedbackObserver(LoggingMixin):
         "lights_loading": SoundCategory(name="lights_loading", count=7),
         "volume_loading": SoundCategory(name="volume_loading", count=5),
         "pomodoro_loading": SoundCategory(name="pomodoro_loading", count=5),
-        "youtube_loading": SoundCategory(name="youtube_loading", count=6)
+        "youtube_loading": SoundCategory(name="youtube_loading", count=6),
+        "default": SoundCategory(name="default", count=4),
         
     }
     
