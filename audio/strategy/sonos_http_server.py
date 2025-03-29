@@ -1,8 +1,9 @@
 import os
-from pathlib import Path
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import threading
 import socket
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from pathlib import Path
+
 from singleton_decorator import singleton
 
 

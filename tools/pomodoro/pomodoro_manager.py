@@ -1,12 +1,13 @@
-from singleton_decorator import singleton
-import time
 import random
 import threading
+import time
 from datetime import datetime, timedelta
 
-# Annahme: Diese Importe existieren in Ihrem Projekt
-from assistant.speech_service import SpeechService
+from singleton_decorator import singleton
+
 from audio.strategy.audio_manager import AudioManager
+# Annahme: Diese Importe existieren in Ihrem Projekt
+from service.speech_service import SpeechService
 from util.loggin_mixin import LoggingMixin
 
 

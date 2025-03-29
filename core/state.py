@@ -6,10 +6,10 @@ from typing import Optional
 
 from typing_extensions import override
 
-from assistant.service_locator import ServiceLocator
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
-from speech.wake_word_listener import WakeWordListener
+from processing.wake_word_listener import WakeWordListener
+from service.service_locator import ServiceLocator
 from tools.lights.animation.light_animation import (AnimationType,
                                                     LightAnimationFactory)
 from tools.lights.bridge import HueBridge

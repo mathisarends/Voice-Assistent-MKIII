@@ -2,7 +2,7 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from assistant.state import ConversationStateMachine
+from core.state import ConversationStateMachine
 from graphs.workflow_registry import register_workflows
 
 load_dotenv()

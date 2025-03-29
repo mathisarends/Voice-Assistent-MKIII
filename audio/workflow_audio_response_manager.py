@@ -1,8 +1,9 @@
 import os
-from assistant.tts_generator import get_tts_generator
+
 from audio.strategy.audio_manager import get_audio_manager
-from util.loggin_mixin import LoggingMixin
+from service.tts_generator import get_tts_generator
 from util.decorator import log_exceptions_from_self_logger
+from util.loggin_mixin import LoggingMixin
 
 
 class WorkflowAudioResponseManager(LoggingMixin):

@@ -1,15 +1,18 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from langchain_anthropic import ChatAnthropic
-from assistant.speech_service import SpeechService
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
+
 from config.settings import DEFAULT_LLM_MODEL
 from graphs.base_graph import BaseGraph
-from langgraph.graph import StateGraph, END
+from service.speech_service import SpeechService
 from states.state_definitions import State
-from tools.notion.clipboard.notion_clipboard_manager import NotionClipboardManager
-from langgraph.checkpoint.memory import MemorySaver
 from tools.google.youtube.youtbe_video_summarizer import YoutubeVideoSummarizer
 from tools.google.youtube.youtube_finder import YoutubeFinder
 from tools.google.youtube.youtube_transcript import YoutubeTranscript
+from tools.notion.clipboard.notion_clipboard_manager import \
+    NotionClipboardManager
 
 
 class YoutubeSummaryState(State):

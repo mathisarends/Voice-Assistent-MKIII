@@ -1,7 +1,6 @@
-from assistant.speech_service import SpeechService
-from speech.recognition.audio_transcriber import AudioTranscriber
-from speech.recognition.whisper_speech_recognition import \
-    WhisperSpeechRecognition
+from processing.audio_transcriber import AudioTranscriber
+from processing.whisper_speech_recognition import WhisperSpeechRecognition
+from service.speech_service import SpeechService
 from tools.lights.bridge import HueBridge
 from tools.lights.light_controller import LightController
 from tools.spotify.spotify_api import SpotifyPlaybackController

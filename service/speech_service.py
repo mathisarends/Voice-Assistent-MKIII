@@ -7,8 +7,8 @@ from typing import Dict, Optional
 
 from singleton_decorator import singleton
 
-from assistant.tts_generator import get_tts_generator
 from audio.strategy.audio_manager import get_audio_manager
+from service.tts_generator import get_tts_generator
 from util.decorator import log_exceptions_from_self_logger, non_blocking
 from util.loggin_mixin import LoggingMixin
 

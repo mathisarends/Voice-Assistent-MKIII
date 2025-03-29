@@ -1,4 +1,5 @@
 import os
+
 from openai import OpenAI
 
 from util.decorator import log_exceptions_from_self_logger
@@ -38,13 +39,3 @@ class PhraseGenerator:
 
 if __name__ == "__main__":
     tts = PhraseGenerator(output_dir="audio/sounds/standard_phrases")
-
-    standard_workflow_phrases = [
-        "Logikmodule aktiv",
-        "Verarbeite Kontextinformationen.",
-        "Sammle relevante Informationen.",
-        "Verbindung zur Wissensbasis aktiv.",
-    ]
-
-    for phrase in standard_workflow_phrases:
-        tts.generate_speech_file(phrase, category="default")
