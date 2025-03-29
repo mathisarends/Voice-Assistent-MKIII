@@ -1,6 +1,5 @@
 import os
-import time
-from typing import Optional
+from typing import List, Optional
 
 import aiofiles
 from openai import AsyncOpenAI
@@ -16,7 +15,7 @@ class AudioTranscriber(LoggingMixin):
 
     @measure_performance
     async def transcribe_audio(
-        self, filename, language="de"
+        self, filename, language="de", vocabulary: List[str] = ["Wetter"]
     ) -> Optional[str]:
         """
         Sendet die Audiodatei an OpenAI Whisper API und gibt den erkannten Text zurück
@@ -29,6 +28,9 @@ class AudioTranscriber(LoggingMixin):
             prompt = ""
             if language == "de":
                 prompt = "Dies ist eine Aufnahme auf Deutsch. "
+                
+            vocab_str = ", ".join(vocabulary)
+            prompt += f"Folgende Wörter können vorkommen: {vocab_str}"
 
             async with aiofiles.open(filename, "rb") as audio_file:
                 audio_data = await audio_file.read()
@@ -39,8 +41,6 @@ class AudioTranscriber(LoggingMixin):
                 response_format="text",
                 prompt=prompt if prompt else None,
             )
-
-            self.logger.info(f"📊 Dateigröße: {os.path.getsize(filename) / 1024:.2f} KB")
 
             return transcription
 

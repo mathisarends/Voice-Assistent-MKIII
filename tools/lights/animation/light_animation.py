@@ -133,7 +133,7 @@ class WakeFlashAnimation(LightAnimation):
         light_ids: List[str], 
         brightness_increase: int = 50,  # Helligkeit erhöhen um X Einheiten
         transition_time_up: int = 1,     # 0.1 Sekunden hoch (in Zehntelsekunden)
-        transition_time_down: int = 10,  # 1.0 Sekunden zurück (in Zehntelsekunden)
+        transition_time_down: int = 8,  # 1.0 Sekunden zurück (in Zehntelsekunden)
         hold_time: float = 0.1           # Kurze Haltezeit am hellsten Punkt
     ) -> None:
         """

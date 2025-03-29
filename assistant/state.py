@@ -8,13 +8,68 @@ from typing_extensions import override
 from assistant.service_locator import ServiceLocator
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
-from speech.recognition.audio_transcriber import AudioTranscriber
 from speech.wake_word_listener import WakeWordListener
 from tools.lights.animation.light_animation import (AnimationType,
                                                     LightAnimationFactory)
 from tools.lights.bridge.bridge import HueBridge
 from tools.lights.light_controller import LightController
+from util.decorator import non_blocking
 from util.loggin_mixin import LoggingMixin
+
+
+class ConversationStateMachine(LoggingMixin):
+    def __init__(
+        self,
+        wakeword="picovoice",
+    ):
+        super().__init__()
+        self.wakeword = wakeword
+        self.audio_manager = get_audio_manager()
+        self.should_stop = False
+        
+        self.current_state = None
+        self.wakeword_listener = None
+
+    async def run(self):
+        """Startet die Zustandsmaschine"""
+        async with WakeWordListener.create(wakeword=self.wakeword) as wakeword_listener:
+            self.wakeword_listener = wakeword_listener
+            
+            # Setze den initialen Zustand
+            self.current_state = WaitingForWakeWordState(
+                wakeword_listener=wakeword_listener,
+            )
+            
+            await self._run_state_machine()
+
+    async def _run_state_machine(self):
+        while not self.should_stop:
+            try:
+                # Verarbeite den aktuellen Zustand
+                next_state = await self.current_state.process()
+                
+                if next_state is None:
+                    self.current_state = WaitingForWakeWordState(
+                        wakeword_listener=self.wakeword_listener,
+                    )
+                else:
+                    self.current_state = next_state
+                
+            except KeyboardInterrupt:
+                self.logger.info("🛑 Programm manuell beendet.")
+                self.should_stop = True
+                
+            except Exception as e:
+                self.logger.error("❌ Unerwarteter Fehler in der Zustandsmaschine: %s", e)
+                self.logger.error("Traceback: %s", traceback.format_exc())
+                
+                self.current_state = WaitingForWakeWordState(
+                    wakeword_listener=self.wakeword_listener,
+                )
+
+    def stop(self):
+        self.should_stop = True
+        self.logger.info("Zustandsmaschine wird gestoppt...")
 
 
 class ConversationState(ABC, LoggingMixin):
@@ -39,6 +94,7 @@ class ConversationState(ABC, LoggingMixin):
     def play_audio_feedback(self, sound_name):
         self.audio_manager.play(sound_name)
     
+    @non_blocking
     async def provide_light_feedback(self):
         print(f"🔦 Lichtszene für {self.get_name()} wird aktiviert")
 
@@ -71,16 +127,17 @@ class WaitingForWakeWordState(ConversationState):
         
         if self.wakeword_listener.listen_for_wakeword():
             self.play_audio_feedback("wakesound")
-            await self.provide_light_feedback()
             self.logger.info("🔔 Wake-Word erkannt!")
+            
+            await self.provide_light_feedback()
             
             return WakeWordDetectedState()
         
         await asyncio.sleep(0.1)
         return None
     
-    # TODO: Muss eigentlich immer in einem anderen Thread abgespielt werden damit das hier nicht blockt.
     @override
+    @non_blocking
     async def provide_light_feedback(self):
         wake_flash_anim = self.light_animation_factory.get_animation(animation_type=AnimationType.WAKE_FLASH)
         await wake_flash_anim.execute(["1", "5", "6", "7"])
@@ -96,16 +153,13 @@ class WakeWordDetectedState(ConversationState):
     @override
     async def process(self):
         self.logger.info("🎙️ Starte Sprachaufnahme...")
-        self.speech_service.interrupt_and_reset()
-        await self.provide_light_feedback()
+        # self.speech_service.interrupt_and_reset() TODO: Das hier unterbricht die Quue sorgt aber auch dafür das 2.5 Sekunden hier nichts mehr gemacht wird. Das sollte hier auch non-blocking sein.
         
         try:
             audio_data = self.speech_recorder.record_audio()
-            
-            audio_transcriber = AudioTranscriber()
+            print("Audio data:", audio_data)
             
             return TranscribingState(
-                audio_transcriber=audio_transcriber,
                 audio_data=audio_data,
             )
             
@@ -117,15 +171,14 @@ class WakeWordDetectedState(ConversationState):
 class TranscribingState(ConversationState):
     """Transkribiert die aufgenommene Sprache"""
     
-    def __init__(self, audio_transcriber: AudioTranscriber, audio_data):
+    def __init__(self, audio_data):
         super().__init__()
-        self.audio_transcriber = audio_transcriber
         self.audio_data = audio_data
+        self.audio_transcriber = ServiceLocator.get_instance().get_audio_transcriber()
         
     @override
     async def process(self):
         self.logger.info("📝 Transkribiere Audiodaten...")
-        await self.provide_light_feedback()
         
         try:
             user_prompt = await self.audio_transcriber.transcribe_audio(
@@ -133,7 +186,8 @@ class TranscribingState(ConversationState):
             )
             
             if not user_prompt or user_prompt.strip() == "":
-                return self.handle_error("Keine Sprache erkannt oder leerer Text")
+                 self.play_audio_feedback("stop-listening-no-message")
+                 return WakeWordDetectedState()
             
             self.logger.info("🗣 Erkannt: %s", user_prompt)
             

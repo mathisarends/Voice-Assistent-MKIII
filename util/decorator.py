@@ -1,6 +1,9 @@
+import asyncio
+import functools
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Any, Callable
+from typing import Callable
 
 
 def log_exceptions_from_self_logger(context: str = ""):
@@ -63,3 +66,20 @@ def measure_performance(func: Callable) -> Callable:
     if hasattr(func, '__code__') and (func.__code__.co_flags & 0x80):
         return async_wrapper
     return sync_wrapper
+
+
+_thread_pool = ThreadPoolExecutor()
+
+def non_blocking(func):
+    """
+    Dekorator, der eine Methode in einem separaten Thread ausführt,
+    ohne den Hauptthread zu blockieren.
+    """
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            _thread_pool, 
+            functools.partial(asyncio.run, func(self, *args, **kwargs))
+        )
+    return wrapper
