@@ -1,12 +1,53 @@
 from __future__ import annotations
 
 import asyncio
-import threading
-from typing import Any, List, Dict, Protocol, Optional, Callable, Awaitable
 from abc import ABC, abstractmethod
+from enum import Enum, auto
+from typing import Any, Dict, List, Optional, Type
+
 from tools.lights.bridge.bridge import HueBridge
 from tools.lights.light_controller import LightController
 from util.loggin_mixin import LoggingMixin
+
+
+class AnimationType(Enum):
+    """Aufzählung der verfügbaren Animationstypen"""
+    ROTATE = auto()
+    ERROR_FLASH = auto()
+    PULSE = auto()
+
+
+class LightAnimationFactory:
+    """Fabrik zur Erzeugung von Lichtanimationen"""
+
+    def __init__(self, controller: LightController):
+        """
+        Initialisiert die Animationsfabrik mit einem LightController
+        """
+        self.controller = controller
+        
+        # Mapping von AnimationType zu den entsprechenden Klassen
+        self._animation_classes: Dict[AnimationType, Type[LightAnimation]] = {
+            AnimationType.ROTATE: RotateColorsAnimation,
+            AnimationType.ERROR_FLASH: ErrorFlashAnimation,
+            AnimationType.PULSE: PulseAnimation,
+        }
+        
+        self._animation_instances: Dict[AnimationType, LightAnimation] = {}
+
+    def get_animation(self, animation_type: AnimationType) -> LightAnimation:
+        """
+        Erzeugt oder gibt eine bestehende Animation des angegebenen Typs zurück
+        """
+        if animation_type not in self._animation_classes:
+            raise ValueError(f"Nicht unterstützter Animationstyp: {animation_type}")
+        
+        if animation_type not in self._animation_instances:
+            animation_class = self._animation_classes[animation_type]
+            self._animation_instances[animation_type] = animation_class(self.controller)
+            
+        return self._animation_instances[animation_type]
+
 
 
 # Basisklasse für Animationen mit erweiterter Funktionalität
