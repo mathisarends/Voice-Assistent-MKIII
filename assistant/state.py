@@ -1,4 +1,5 @@
 import asyncio
+import time
 import traceback
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -24,6 +25,7 @@ class ConversationStateMachine(LoggingMixin):
     def __init__(
         self,
         wakeword="picovoice",
+        
     ):
         super().__init__()
         self.wakeword = wakeword
@@ -31,7 +33,6 @@ class ConversationStateMachine(LoggingMixin):
         self.should_stop = False
         self.current_state = None
         
-        # Make this instance available globally
         ConversationStateMachine._instance = self
 
     @classmethod
@@ -41,7 +42,6 @@ class ConversationStateMachine(LoggingMixin):
     async def run(self):
         """Startet die Zustandsmaschine"""
         async with WakeWordListener.create(wakeword=self.wakeword) as wakeword_listener:
-            # Store the wakeword_listener in the class attribute
             ConversationStateMachine.wakeword_listener = wakeword_listener
             
             # Setze den initialen Zustand
@@ -78,6 +78,7 @@ class ConversationStateMachine(LoggingMixin):
 class ConversationState(ABC, LoggingMixin):
     def __init__(self):
         super().__init__()
+        
         self.audio_manager = get_audio_manager()
         
         bridge = HueBridge.connect_by_ip()
@@ -135,6 +136,8 @@ class WaitingForWakeWordState(ConversationState):
             self.logger.info("🔔 Wake-Word erkannt!")
             
             await self.provide_light_feedback()
+            
+            time.sleep(1) # TODO: Die audio sollte eigentlich blockierend abgespielt werden.
             
             return WakeWordDetectedState()
         

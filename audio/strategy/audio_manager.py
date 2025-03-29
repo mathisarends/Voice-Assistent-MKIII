@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+import traceback
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -18,6 +19,8 @@ class AudioManager(LoggingMixin):
     def __init__(
         self, strategy: AudioPlaybackStrategy = None, root_dir: str = "sounds"
     ):
+        print("lets geht init with strategy", strategy)
+        traceback.print_stack()
         self.project_dir = Path(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         )
@@ -35,9 +38,8 @@ class AudioManager(LoggingMixin):
         self.fade_out_duration = 2.5
 
         if strategy is None:
-            from audio.strategy.audio_strategies import PygameAudioStrategy
-
-            self.strategy = PygameAudioStrategy()
+            from audio.strategy.audio_strategies import AudioStrategyFactory
+            self.strategy = AudioStrategyFactory().create_sonos_strategy()
         else:
             self.strategy = strategy
 

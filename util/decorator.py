@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import inspect
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
@@ -72,14 +73,23 @@ _thread_pool = ThreadPoolExecutor()
 
 def non_blocking(func):
     """
-    Dekorator, der eine Methode in einem separaten Thread ausführt,
-    ohne den Hauptthread zu blockieren.
+    Führt die Funktion in einem separaten Thread aus – egal ob sync oder async.
     """
     @functools.wraps(func)
     async def wrapper(self, *args, **kwargs):
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            _thread_pool, 
-            functools.partial(asyncio.run, func(self, *args, **kwargs))
-        )
+
+        if inspect.iscoroutinefunction(func):
+            # async-Funktion: führe sie im Eventloop in einem separaten Thread aus
+            return await loop.run_in_executor(
+                _thread_pool,
+                lambda: asyncio.run(func(self, *args, **kwargs))
+            )
+        else:
+            # normale Funktion: direkt in Executor ausführen
+            return await loop.run_in_executor(
+                _thread_pool,
+                functools.partial(func, self, *args, **kwargs)
+            )
+
     return wrapper
