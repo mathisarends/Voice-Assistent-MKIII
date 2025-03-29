@@ -1,19 +1,19 @@
-import time
-import threading
 import asyncio
 import datetime
-from typing import Optional, Callable, Tuple
+import threading
+import time
 from dataclasses import dataclass
-
-from audio.strategy.audio_manager import AudioManager
-from tools.alarm.alarm_config import DEFAULT_WAKE_SOUND, DEFAULT_GET_UP_SOUND
-from tools.alarm.alarm_item import AlarmItem
-
-from tools.lights.animation.sunrise_controller import SceneBasedSunriseController
-from tools.lights.bridge.bridge import HueBridge
-from util.loggin_mixin import LoggingMixin
+from typing import Callable, Optional, Tuple
 
 from singleton_decorator import singleton
+
+from audio.strategy.audio_manager import AudioManager
+from tools.alarm.alarm_config import DEFAULT_GET_UP_SOUND, DEFAULT_WAKE_SOUND
+from tools.alarm.alarm_item import AlarmItem
+from tools.lights.animation.sunrise_controller import \
+    SceneBasedSunriseController
+from tools.lights.bridge import HueBridge
+from util.loggin_mixin import LoggingMixin
 
 
 @dataclass

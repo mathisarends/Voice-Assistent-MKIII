@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import math
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
+from tools.lights.bridge import HueBridge
 from tools.lights.group_controller import GroupController
 from tools.lights.light_controller import LightController
 from tools.lights.scene_controller import SceneController
-
-import asyncio
-from tools.lights.bridge.bridge import HueBridge
 
 
 class SceneBasedSunriseController:

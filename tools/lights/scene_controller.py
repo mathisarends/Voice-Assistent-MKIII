@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from typing import Any
-from tools.lights.bridge.bridge import HueBridge
+
+from tools.lights.bridge import HueBridge
 from tools.lights.group_controller import GroupController
 
 

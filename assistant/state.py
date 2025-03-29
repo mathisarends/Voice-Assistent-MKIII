@@ -12,7 +12,7 @@ from graphs.workflow_dispatcher import WorkflowDispatcher
 from speech.wake_word_listener import WakeWordListener
 from tools.lights.animation.light_animation import (AnimationType,
                                                     LightAnimationFactory)
-from tools.lights.bridge.bridge import HueBridge
+from tools.lights.bridge import HueBridge
 from tools.lights.light_controller import LightController
 from util.decorator import non_blocking
 from util.loggin_mixin import LoggingMixin

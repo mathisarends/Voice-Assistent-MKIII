@@ -1,8 +1,9 @@
 import asyncio
+
 from langchain.tools import tool
 
 from audio.workflow_audio_response_manager import WorkflowAudioResponseManager
-from tools.lights.bridge.bridge import HueBridge
+from tools.lights.bridge import HueBridge
 from tools.lights.hue_controller import HueController
 
 SCENE_NEXT_SUCCESS = "Zur nächsten Lichtszene gewechselt."

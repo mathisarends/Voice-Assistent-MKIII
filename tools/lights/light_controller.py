@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from tools.lights.bridge.bridge import HueBridge
+from typing import Any
+
+from tools.lights.bridge import HueBridge
 
 
 class LightController:
