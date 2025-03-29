@@ -1,7 +1,9 @@
 from typing import Optional
+
 from langchain_community.tools.tavily_search import TavilySearchResults
+
+from graphs.core.base_graph import BaseGraph
 from tools.notion.clipboard.notion_clipboard_tool import NotionClipboardTool
-from graphs.base_graph import BaseGraph
 
 
 class ResearchWorkflow(BaseGraph):

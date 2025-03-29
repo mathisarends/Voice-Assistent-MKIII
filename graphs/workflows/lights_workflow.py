@@ -1,6 +1,6 @@
 from typing import Optional
 
-from graphs.base_graph import BaseGraph
+from graphs.core.base_graph import BaseGraph
 from tools.light_tools import get_hue_tools
 from tools.time_tool import get_current_time
 

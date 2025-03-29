@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 
 from core.state import ConversationStateMachine
-from graphs.workflow_registry import register_workflows
+from graphs.core.workflow_registry import register_workflows
 from service.service_locator import ServiceLocator
 
 load_dotenv()

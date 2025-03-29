@@ -1,6 +1,6 @@
 from typing import Optional
-from graphs.base_graph import BaseGraph
 
+from graphs.core.base_graph import BaseGraph
 from tools.alarm.alarm_tools import get_alarm_tools
 
 

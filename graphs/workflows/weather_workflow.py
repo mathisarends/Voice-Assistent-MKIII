@@ -6,10 +6,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph
 from typing_extensions import Any, Dict, List, Optional, override
 
-from graphs.base_graph import BaseGraph
+from graphs.core.base_graph import BaseGraph
 from integrations.python_weather import PythonWeatherClient
 from states.state_definitions import State
-from util.loggin_mixin import LoggingMixin
 
 
 class WeatherWorkflowState(State):
@@ -18,7 +17,7 @@ class WeatherWorkflowState(State):
     speech_result: str = ""
 
 
-class WeatherWorkflow(BaseGraph, LoggingMixin):
+class WeatherWorkflow(BaseGraph):
     """Ein Workflow für Lichtsteuerung."""
 
     def __init__(self, model_name: Optional[str] = None):

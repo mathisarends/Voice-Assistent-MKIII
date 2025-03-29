@@ -1,14 +1,16 @@
-from typing import Optional, Dict, Any, List
 import asyncio
+from typing import Any, Dict, List, Optional
+
 from langgraph.graph import StateGraph
-from graphs.base_graph import BaseGraph
+
 from states.state_definitions import State
-from tools.notion.second_brain.notion_project_repository import NotionProjectsRepository
-from tools.notion.second_brain.notion_second_brain_notes_repository import (
-    NotionNotesRepository,
-)
-from tools.search.tavily_tool import TavilySearchTool
+from tools.notion.second_brain.notion_project_repository import \
+    NotionProjectsRepository
+from tools.notion.second_brain.notion_second_brain_notes_repository import \
+    NotionNotesRepository
+from tools.tavily_tool import TavilySearchTool
 from util.extract_user_message import extract_user_message
+from workflow.core.base_graph import BaseGraph
 
 
 class SecondBrainWorkflowState(State):

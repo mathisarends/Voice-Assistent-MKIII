@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from graphs.base_graph import BaseGraph
+from graphs.core.base_graph import BaseGraph
 from graphs.workflows.alarm_workflow import AlarmWorkflow
 from graphs.workflows.lights_workflow import LightsWorkflow
 from graphs.workflows.notion_todo_workflow import NotionTodoWorkflow

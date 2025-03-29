@@ -1,6 +1,6 @@
 from typing import Optional
 
-from graphs.base_graph import BaseGraph
+from graphs.core.base_graph import BaseGraph
 from tools.volume_control_tool import get_volume_tools
 
 

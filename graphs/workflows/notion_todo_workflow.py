@@ -1,10 +1,9 @@
 from typing import Optional
-from graphs.base_graph import BaseGraph
-from tools.notion.todo.notion_todo_tools import (
-    NotionAddTodoTool,
-    NotionGetDailyTopTasksTool,
-    NotionGetTodosByProjectTool,
-)
+
+from graphs.core.base_graph import BaseGraph
+from tools.notion.todo.notion_todo_tools import (NotionAddTodoTool,
+                                                 NotionGetDailyTopTasksTool,
+                                                 NotionGetTodosByProjectTool)
 
 
 # Kleinen Graphen für den get Tasks by Project.

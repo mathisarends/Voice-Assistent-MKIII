@@ -6,10 +6,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
 from config.settings import GEMINI_FLASH
-from graphs.base_graph import BaseGraph
-from graphs.workflow_audio_feedback_observer import (
+from graphs.core.workflow_audio_feedback_observer import (
     WorkflowAudioFeedbackObserver, WorkflowObserver)
-from graphs.workflow_registry import WorkflowRegistry
+from graphs.core.workflow_registry import WorkflowRegistry
 from service.speech_service import SpeechService
 from util.loggin_mixin import LoggingMixin
 

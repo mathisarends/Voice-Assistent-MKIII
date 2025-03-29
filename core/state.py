@@ -7,7 +7,7 @@ from typing import Optional
 from typing_extensions import override
 
 from audio.strategy.audio_manager import get_audio_manager
-from graphs.workflow_dispatcher import WorkflowDispatcher
+from graphs.core.workflow_dispatcher import WorkflowDispatcher
 from integrations.phillips_hue.animation.light_animation import \
     LightAnimationFactory
 from integrations.phillips_hue.bridge import HueBridge

@@ -1,6 +1,7 @@
 from typing import Optional
+
 from tools.notion.clipboard.notion_clipboard_tool import NotionClipboardTool
-from graphs.base_graph import BaseGraph
+from workflow.core.base_graph import BaseGraph
 
 
 class DocumentWorkflow(BaseGraph):
