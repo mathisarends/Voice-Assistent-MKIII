@@ -2,7 +2,12 @@ from assistant.speech_service import SpeechService
 from speech.recognition.audio_transcriber import AudioTranscriber
 from speech.recognition.whisper_speech_recognition import \
     WhisperSpeechRecognition
+from tools.lights.bridge import HueBridge
+from tools.lights.light_controller import LightController
+from tools.spotify.spotify_api import SpotifyPlaybackController
 
+# Hier will ich eigentlich eine config, die es mir auch erlaubt die Lichter, Spotify-Clients etc. zuzugreifen
+# SpotifySound muss weggedrückt werden wenn ein Wakeword erkannt wird oder der Assistent spricht.
 
 class ServiceLocator:
     _instance = None
@@ -23,6 +28,12 @@ class ServiceLocator:
         self.speech_recorder = WhisperSpeechRecognition()
         self.audio_transcriber = AudioTranscriber()
         self.speech_service = SpeechService()
+        
+        bridge = HueBridge.connect_by_ip()
+        self.lighting_controller = LightController(bridge)
+        
+        self.spotify_player = SpotifyPlaybackController()
+        
     
     def get_speech_service(self) -> 'SpeechService':
         return self.speech_service
@@ -32,6 +43,9 @@ class ServiceLocator:
     
     def get_speech_recorder(self) -> 'WhisperSpeechRecognition':
         return self.speech_recorder
+    
+    def get_lighting_controller(self) -> 'LightController':
+        return self.lighting_controller
     
 
 service_locator = ServiceLocator.get_instance()
