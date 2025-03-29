@@ -1,13 +1,14 @@
-import os
 import hashlib
+import os
 import time
-from typing import Optional, Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from openai import OpenAI
-from audio.strategy.audio_manager import get_audio_manager
-from util.loggin_mixin import LoggingMixin
-from util.decorator import log_exceptions_from_self_logger
 from singleton_decorator import singleton
+
+from audio.strategy.audio_manager import get_audio_manager
+from util.decorator import log_exceptions_from_self_logger
+from util.loggin_mixin import LoggingMixin
 
 
 @singleton

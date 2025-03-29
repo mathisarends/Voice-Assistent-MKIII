@@ -19,7 +19,7 @@ class SpeechService(LoggingMixin):
         self,
         voice: str = "nova",
         category: str = "tts_responses",
-        cache_dir: str = "audio/sounds/temp_responses",
+        cache_dir: str = "audio/sounds/temp",
         cache_cleanup_interval: int = 3600,
     ):
         """

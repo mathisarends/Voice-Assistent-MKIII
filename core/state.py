@@ -8,8 +8,8 @@ from typing_extensions import override
 
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
-from processing.wake_word_listener import WakeWordListener
 from service.service_locator import ServiceLocator
+from service.wake_word_listener import WakeWordListener
 from tools.lights.animation.light_animation import (AnimationType,
                                                     LightAnimationFactory)
 from tools.lights.bridge import HueBridge
@@ -139,6 +139,7 @@ class WaitingForWakeWordState(ConversationState):
         if wakeword_listener.listen_for_wakeword():
             await self.provide_light_feedback()
             self.play_audio_feedback("wakesound", block=True)
+            await asyncio.sleep(0.6)
             self.logger.info("🔔 Wake-Word erkannt!")
             
             return WakeWordDetectedState()

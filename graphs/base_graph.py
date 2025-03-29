@@ -1,5 +1,5 @@
 import textwrap
-from typing import Any, AsyncGenerator, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from langchain.schema import AIMessage
 from langchain_anthropic import ChatAnthropic

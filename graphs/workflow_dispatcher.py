@@ -1,5 +1,5 @@
 import textwrap
-from typing import Any, Dict, List, TypedDict
+from typing import Any, Dict, TypedDict
 
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI

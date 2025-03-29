@@ -1,5 +1,4 @@
-from processing.audio_transcriber import AudioTranscriber
-from processing.whisper_speech_recognition import WhisperSpeechRecognition
+from service.human_speech import AudioTranscriber, SpeechRecorder
 from service.speech_service import SpeechService
 from tools.lights.bridge import HueBridge
 from tools.lights.light_controller import LightController
@@ -24,7 +23,7 @@ class ServiceLocator:
     
     def initialize_all_services(self):
         """Initialisiert alle Services beim ersten Aufruf von get_instance"""
-        self.speech_recorder = WhisperSpeechRecognition()
+        self.speech_recorder = SpeechRecorder()
         self.audio_transcriber = AudioTranscriber()
         self.speech_service = SpeechService()
         
@@ -40,7 +39,7 @@ class ServiceLocator:
     def get_audio_transcriber(self) -> 'AudioTranscriber':
         return self.audio_transcriber
     
-    def get_speech_recorder(self) -> 'WhisperSpeechRecognition':
+    def get_speech_recorder(self) -> 'SpeechRecorder':
         return self.speech_recorder
     
     def get_lighting_controller(self) -> 'LightController':
