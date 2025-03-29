@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, cast
+
+from singleton_decorator import singleton
 
 from tools.lights.bridge import HueBridge
 from tools.lights.light_controller import LightController
@@ -13,9 +16,7 @@ from util.loggin_mixin import LoggingMixin
 
 class AnimationType(Enum):
     """Aufzählung der verfügbaren Animationstypen"""
-    ROTATE = auto()
     ERROR_FLASH = auto()
-    PULSE = auto()
     WAKE_FLASH = auto() 
 
 
@@ -96,6 +97,11 @@ class LightAnimationFactory:
             self._animation_instances[animation_type] = animation_class(self.controller)
             
         return self._animation_instances[animation_type]
+    
+    def get_wake_flash_animation(self) -> WakeFlashAnimation:
+        """Gibt eine spezialisierte WakeFlashAnimation zurück"""
+        animation = self.get_animation(AnimationType.WAKE_FLASH)
+        return cast(WakeFlashAnimation, animation)
 
 
 class LightAnimation(ABC, LoggingMixin):
@@ -211,54 +217,99 @@ class LightAnimation(ABC, LoggingMixin):
                 pass
             self._running_task = None
 
-
+@singleton
 class WakeFlashAnimation(LightAnimation):
-    """Animation für kurzes Aufleuchten als visuelle Bestätigung bei Wake Word-Erkennung"""
+    """Animation für kurzes Aufleuchten als visuelle Bestätigung bei Wake Word-Erkennung
+    mit separater Kontrolle über Start und Stop der Animation"""
+
+    def __init__(self, controller: LightController):
+        super().__init__(controller)
+        self._active_light_ids = []
+        self._brightness_state = {}
 
     def _get_default_config(self) -> AnimationConfig:
         return WakeFlashConfig()
 
-    async def _execute_once(self, light_ids: List[str], config: AnimationConfig) -> None:
-        """Führt eine einmalige Wake-Animation aus - kurzes Aufleuchten der Lampen"""
+    async def start_flash(self, light_ids: List[str], config: Optional[WakeFlashConfig] = None) -> None:
+        """Startet die Wake-Animation durch Erhöhen der Helligkeit.
+        
+        Args:
+            light_ids: Liste der Lampen-IDs für die Animation
+            config: Optional, spezifische Konfiguration für diese Animation
+        """
+        if not light_ids:
+            self.logger.warning("Keine Lampen für die Animation angegeben")
+            return
+            
+        if config is None:
+            config = self._get_default_config()
+            
         if not isinstance(config, WakeFlashConfig):
             config = WakeFlashConfig()
             
-        states = await self._save_light_states(light_ids)
-        
-        current_brightness = {}
-        for light_id, state in states.items():
-            if "bri" in state and state.get("on", False):
-                current_brightness[light_id] = state["bri"]
-            else:
-                current_brightness[light_id] = 127
-
         try:
-            brighter_states = {}
-            for light_id, current_bri in current_brightness.items():
-                new_brightness = min(254, current_bri + config.brightness_increase)
-                
-                brighter_states[light_id] = {
-                    "on": True,
-                    "bri": new_brightness,
-                    "transitiontime": config.transition_time_up
-                }
+            config.validate()
+        except ValueError as e:
+            self.logger.error(f"Ungültige Konfiguration: {e}")
+            return
 
-            brighten_tasks = []
-            for light_id, bright_state in brighter_states.items():
-                brighten_tasks.append(self.controller.set_light_state(light_id, bright_state))
+        self._active_light_ids = light_ids
+        
+        self._brightness_state = await self._save_light_states(light_ids)
+        
+        # Berechne erhöhte Helligkeit für alle Lampen
+        brighter_states = {}
+        for light_id, state in self._brightness_state.items():
+            current_bri = state.get("bri", 127) if state.get("on", False) else 127
+            new_brightness = min(254, current_bri + config.brightness_increase)
+            
+            brighter_states[light_id] = {
+                "on": True,
+                "bri": new_brightness,
+                "transitiontime": config.transition_time_up
+            }
 
-            if brighten_tasks:
-                await asyncio.gather(*brighten_tasks)
-                
-            await asyncio.sleep(config.hold_time)
+        # Führe die Helligkeitserhöhung durch
+        brighten_tasks = []
+        for light_id, bright_state in brighter_states.items():
+            brighten_tasks.append(self.controller.set_light_state(light_id, bright_state))
 
-            await self._restore_light_states(states, config.transition_time_down)
+        if brighten_tasks:
+            await asyncio.gather(*brighten_tasks)
+            
+        self.logger.info(f"Wake-Animation gestartet für Lampen {light_ids}")
 
-            self.logger.info(f"Wake-Animation für Lampen {light_ids} abgeschlossen")
-
+    async def stop_flash(self, transition_time: Optional[int] = None) -> None:
+        """Beendet die Wake-Animation durch Zurücksetzen der Helligkeit.
+        
+        Args:
+            transition_time: Optional, spezifische Übergangszeit für das Abblenden
+        """
+        if not self._active_light_ids or not self._brightness_state:
+            return
+            
+        config = self._get_default_config()
+        if not isinstance(config, WakeFlashConfig):
+            config = WakeFlashConfig()
+            
+        transition_time_down = transition_time if transition_time is not None else config.transition_time_down
+        
+        try:
+            await self._restore_light_states(self._brightness_state, transition_time_down)
+            self.logger.info(f"Wake-Animation beendet für Lampen {self._active_light_ids}")
         except Exception as e:
-            self.logger.error(f"Fehler während der Wake-Animation: {e}")
-            await self._restore_light_states(states)
+            self.logger.error(f"Fehler beim Beenden der Wake-Animation: {e}")
+        finally:
+            self._active_light_ids = []
+            self._brightness_state = {}
+
+    async def _execute_once(self, light_ids: List[str], config: AnimationConfig) -> None:
+        if not isinstance(config, WakeFlashConfig):
+            config = WakeFlashConfig()
+        
+        await self.start_flash(light_ids, config)
+        await asyncio.sleep(config.hold_time)
+        await self.stop_flash(config.transition_time_down)
 
 
 class ErrorFlashAnimation(LightAnimation):
@@ -306,9 +357,9 @@ async def main() -> None:
     controller = LightController(bridge)
 
     factory = LightAnimationFactory(controller)
-    error_anim = factory.get_animation(AnimationType.ERROR_FLASH)
-    wake_anim = factory.get_animation(AnimationType.WAKE_FLASH)
+    wake_anim = typing.cast(WakeFlashAnimation, factory.get_animation(AnimationType.WAKE_FLASH))
     
+    print("Teste normale execute() Methode (Kompletter Zyklus):")
     await wake_anim.execute(
         ["5", "6", "7"],
         config=WakeFlashConfig(
@@ -319,13 +370,28 @@ async def main() -> None:
         )
     )
     
-    await asyncio.sleep(5)
-
-    await error_anim.execute(
-        ["5", "6", "7"],
-        config=ErrorFlashConfig(transition_time=2, hold_time=0.5)
+    # Warte zwischen den Demonstrationen
+    await asyncio.sleep(3)
+    
+    print("\nTeste separate start_flash() und stop_flash() Methoden:")
+    print("1. Starte Aufblenden...")
+    await wake_anim.start_flash(
+        ["1", "5", "6", "7"],
+        config=WakeFlashConfig(
+            brightness_increase=70,  # Stärkere Helligkeitserhöhung
+            transition_time_up=2     # Langsamer aufblenden
+        )
     )
-
+    
+    # Simuliere einen Zeitraum für die Spracherkennung
+    print("2. Lampen bleiben hell während Spracherkennung...")
+    await asyncio.sleep(4)
+    
+    # Abblenden mit benutzerdefinierter Übergangszeit
+    print("3. Starte Abblenden...")
+    await wake_anim.stop_flash(transition_time=10)  # Langsames Abblenden
+    
+    print("Demo abgeschlossen!")
 
 if __name__ == "__main__":
     asyncio.run(main())

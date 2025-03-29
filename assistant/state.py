@@ -83,7 +83,10 @@ class ConversationState(ABC, LoggingMixin):
         
         bridge = HueBridge.connect_by_ip()
         controller = LightController(bridge)
+        
         self.light_animation_factory = LightAnimationFactory(controller)
+        
+        self.wake_flash_animation = self.light_animation_factory.get_wake_flash_animation()
         
         self._next_state = None
 
@@ -95,8 +98,8 @@ class ConversationState(ABC, LoggingMixin):
         """
         pass
     
-    def play_audio_feedback(self, sound_name):
-        self.audio_manager.play(sound_name)
+    def play_audio_feedback(self, sound_name, block=False):
+        self.audio_manager.play(sound_id=sound_name, block=block)
     
     @non_blocking
     async def provide_light_feedback(self):
@@ -132,10 +135,9 @@ class WaitingForWakeWordState(ConversationState):
         wakeword_listener = ConversationStateMachine.wakeword_listener
         
         if wakeword_listener.listen_for_wakeword():
-            self.play_audio_feedback("wakesound")
-            self.logger.info("🔔 Wake-Word erkannt!")
-            
             await self.provide_light_feedback()
+            self.play_audio_feedback("wakesound", block=True)
+            self.logger.info("🔔 Wake-Word erkannt!")
             
             return WakeWordDetectedState()
         
@@ -145,8 +147,7 @@ class WaitingForWakeWordState(ConversationState):
     @override
     @non_blocking
     async def provide_light_feedback(self):
-        wake_flash_anim = self.light_animation_factory.get_animation(animation_type=AnimationType.WAKE_FLASH)
-        await wake_flash_anim.execute(["1", "5", "6", "7"])
+        await self.wake_flash_animation.start_flash(["1", "5", "6", "7"])
 
 
 class WakeWordDetectedState(ConversationState):
@@ -164,6 +165,8 @@ class WakeWordDetectedState(ConversationState):
         
         try:
             audio_data = self.speech_recorder.record_audio()
+            await self.provide_light_feedback()
+            self.play_audio_feedback("wake-sound-new")
             
             return TranscribingState(
                 audio_data=audio_data,
@@ -171,6 +174,11 @@ class WakeWordDetectedState(ConversationState):
             
         except Exception as e:
             return self.handle_error(e)
+        
+    @override
+    @non_blocking
+    async def provide_light_feedback(self):
+        await self.wake_flash_animation.stop_flash(transition_time=10)
         
 
 class TranscribingState(ConversationState):

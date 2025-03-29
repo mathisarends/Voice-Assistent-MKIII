@@ -123,13 +123,6 @@ def register_workflows():
     )
 
     WorkflowRegistry.register(
-        "time",
-        TimeTool,
-        "Gibt das aktuelle Datum und die Uhrzeit zurück",
-        ["Zeit", "Datum", "Uhrzeit"],
-    )
-
-    WorkflowRegistry.register(
         "spotify",
         SpotifyWorkflow,
         "Steuert Spotify-Wiedergabe, Lautstärke, Geräte und Playlists per Sprachbefehl",
