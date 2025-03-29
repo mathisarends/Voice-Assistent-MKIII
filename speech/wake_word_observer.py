@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import List
+
 from typing_extensions import override
 
-from audio.strategy.audio_manager import play
+from audio.strategy.audio_manager import get_audio_manager
 from tools.spotify.spotify_controller import SpotifyController
 from tools.spotify.spotify_device_manager import SpotifyDeviceManager
 from tools.spotify.spotify_player import SpotifyPlayer
 
 # TODO: State Pattern implementieren -> Damit kann man dann auch wesenltich die Loop Logik verkürzen würde ich sagen:
-
 
 class WakeWordObserver(ABC):
     @abstractmethod
@@ -18,9 +18,12 @@ class WakeWordObserver(ABC):
 
 
 class WakeWordAudioFeedbackObserver(WakeWordObserver):
+    def __init__(self):
+        self.audio_manager = get_audio_manager()
+    
     @override
     def on_wakeword_detected(self):
-        play("wakesound")
+        self.audio_manager.play("wakesound")
 
 
 class SpotifyVolumeAdjustmentObserver(WakeWordObserver):

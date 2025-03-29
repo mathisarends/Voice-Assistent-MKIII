@@ -4,9 +4,10 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
+from singleton_decorator import singleton
+
 from audio.strategy.audio_strategies import AudioPlaybackStrategy
 from audio.strategy.sound_info import SoundInfo
-from singleton_decorator import singleton
 from util.loggin_mixin import LoggingMixin
 
 
@@ -25,8 +26,6 @@ class AudioManager(LoggingMixin):
         self.sound_map: Dict[str, SoundInfo] = {}
 
         self._lock = threading.Lock()
-
-        self.supported_formats = [".mp3"]
 
         self._stop_loop = False
         self._loop_thread = None
@@ -153,7 +152,6 @@ class AudioManager(LoggingMixin):
         self.strategy = strategy
         self.strategy.initialize()
 
-        # URLs für Sonos aktualisieren, falls nötig
         if hasattr(strategy, "http_server_ip") and hasattr(
             strategy, "http_server_port"
         ):
@@ -279,43 +277,6 @@ class AudioManager(LoggingMixin):
         self.logger.info(f"🔊 Lautstärke auf {value:.2f} ({value*100:.0f}%) gesetzt")
 
 
-# Factory-Funktionen für einfachen Zugriff
-def create_pygame_strategy():
-    """Erstellt eine Pygame-Audio-Strategie."""
-    from audio.strategy.audio_strategies import PygameAudioStrategy
-
-    return PygameAudioStrategy()
-
-
-def create_sonos_strategy(
-    speaker_name: str = None, speaker_ip: str = None, http_server_port: int = 8000
-):
-    """Erstellt eine Sonos-Audio-Strategie."""
-    from audio.strategy.audio_strategies import SonosAudioStrategy
-
-    return SonosAudioStrategy(speaker_name, speaker_ip, http_server_port)
-
-
-# Globaler Zugriff und Hilfsfunktionen
 def get_audio_manager() -> AudioManager:
     """Gibt die globale AudioManager-Instanz zurück."""
     return AudioManager()
-
-
-def switch_to_pygame():
-    """Wechselt zur Pygame-Wiedergabe-Strategie."""
-    get_audio_manager().set_strategy(create_pygame_strategy())
-
-
-def switch_to_sonos(
-    speaker_name: str = None, speaker_ip: str = None, http_server_port: int = 8000
-):
-    """Wechselt zur Sonos-Wiedergabe-Strategie."""
-    get_audio_manager().set_strategy(
-        create_sonos_strategy(speaker_name, speaker_ip, http_server_port)
-    )
-
-
-def play(sound_id: str, block: bool = False) -> bool:
-    """Spielt einen Sound ab."""
-    return get_audio_manager().play(sound_id, block)

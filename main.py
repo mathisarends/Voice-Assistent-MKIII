@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Haupteinstiegspunkt für den Sprachassistenten.
 """
@@ -8,18 +7,15 @@ from dotenv import load_dotenv
 
 from assistant.conversation_loop import ConversationLoop
 from assistant.speech_service import SpeechService
-from audio.strategy.audio_manager import get_audio_manager, switch_to_sonos
+from audio.strategy.audio_manager import get_audio_manager
+from audio.strategy.audio_strategies import AudioStrategyFactory
 from graphs.workflow_registry import register_workflows
 
-# Umgebungsvariablen laden
 load_dotenv()
 
-# Alle verfügbaren Workflows registrieren
 register_workflows()
 
-get_audio_manager()
-switch_to_sonos(speaker_ip="192.168.178.68")
-
+get_audio_manager().set_strategy(AudioStrategyFactory.create_sonos_strategy())
 
 async def main():
     speech_service = SpeechService(voice="nova")

@@ -99,7 +99,9 @@ class SonosAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
         try:
             devices = list(soco.discover())
             if not devices:
-                self.logger.error("❌ Keine Sonos-Lautsprecher im Netzwerk gefunden")
+                self.logger.error(
+                    "❌ Keine Sonos-Lautsprecher im Netzwerk gefunden"
+                )
                 return
 
             device = devices[0]
@@ -114,12 +116,17 @@ class SonosAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
             self.logger.error("❌ Fehler bei der Suche nach Sonos-Lautsprechern: %s", e)
 
     def _connect_by_ip(self, ip):
-        """Versucht eine Verbindung zu einem Sonos-Lautsprecher über IP herzustellen."""
+        """
+        Versucht eine Verbindung zu einem Sonos-Lautsprecher 
+        über IP herzustellen.
+        """
         try:
             device = soco.SoCo(ip)
-            device.player_name  # Dies schlägt fehl, wenn das Gerät nicht erreichbar ist
+            device.player_name
             self.logger.info(
-                "✅ Sonos-Lautsprecher gefunden: %s (%s)", device.player_name, ip
+                "✅ Sonos-Lautsprecher gefunden: %s (%s)",
+                device.player_name,
+                ip,
             )
             self.sonos_device = device
             self._initial_sonos_volume = self.sonos_device.volume
@@ -131,7 +138,10 @@ class SonosAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
             return False
 
     def _connect_by_name(self, name):
-        """Versucht eine Verbindung zu einem Sonos-Lautsprecher über Namen herzustellen."""
+        """
+        Versucht eine Verbindung zu einem Sonos-Lautsprecher über Namen 
+        herzustellen.
+        """
         try:
             devices = list(soco.discover())
             for device in devices:
@@ -185,17 +195,19 @@ class SonosAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
                 return False
 
             self.logger.info(
-                "✅ HTTP-Server für Sonos gestartet auf Port %d", self.http_server_port
+                (
+                    "✅ HTTP-Server für Sonos gestartet auf Port %d",
+                    self.http_server_port,
+                )
             )
             return True
 
-        except ImportError as e:
-            self.logger.error("❌ Fehler beim Importieren des HTTP-Servers: %s", e)
-            self.logger.warning("   Sonos-Funktionalität wird eingeschränkt sein!")
-            return False
         except Exception as e:
             self.logger.error(
-                "❌ Fehler beim Starten des HTTP-Servers für Sonos: %s", e
+                (
+                    "❌ Fehler beim Starten des HTTP-Servers für Sonos: %s", 
+                    e
+                )
             )
             self.logger.warning("   Sonos-Funktionalität wird eingeschränkt sein!")
             return False
@@ -259,7 +271,10 @@ class SonosAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
                 url,
             )
             self.logger.warning(
-                "   Stelle sicher, dass der HTTP-Server läuft und das Projektverzeichnis korrekt eingestellt ist."
+                (
+                    "   Stelle sicher, dass der HTTP-Server läuft und das "
+                    "Projektverzeichnis korrekt eingestellt ist."
+                )
             )
             return False
         except Exception as e:
@@ -310,16 +325,16 @@ class SonosAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
         if not self.sonos_device or not self.is_playing():
             return
 
-        self.logger.info("🔉 Führe Fade-Out über %.1f Sekunden durch...", duration)
+        self.logger.info(
+            "🔉 Führe Fade-Out über %.1f Sekunden durch...", duration
+        )
 
         try:
             self._perform_fade_out(duration)
         except Exception as e:
             self.logger.error("❌ Fehler beim Fade-Out: %s", e)
-            try:
-                self.sonos_device.stop()
-            except:
-                pass
+            self.sonos_device.stop()
+
 
     def _perform_fade_out(self, duration):
         """Führt den eigentlichen Fade-Out durch."""
@@ -403,8 +418,6 @@ class PygameAudioStrategy(AudioPlaybackStrategy, LoggingMixin):
 
     def fade_out(self, duration: float):
         """Führt einen Fade-Out-Effekt für alle Pygame-Kanäle durch."""
-        import pygame
-
         if not self.is_playing():
             return
 

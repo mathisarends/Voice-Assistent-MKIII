@@ -1,11 +1,12 @@
-from contextlib import asynccontextmanager
 import traceback
+from contextlib import asynccontextmanager
 
 from assistant.speech_service import SpeechService
-from audio.strategy.audio_manager import AudioManager, play
+from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
-from speech.recognition.whisper_speech_recognition import WhisperSpeechRecognition
 from speech.recognition.audio_transcriber import AudioTranscriber
+from speech.recognition.whisper_speech_recognition import \
+    WhisperSpeechRecognition
 from speech.wake_word_listener import WakeWordListener
 from util.loggin_mixin import LoggingMixin
 
@@ -24,6 +25,7 @@ class ConversationLoop(LoggingMixin):
         self.speech_recorder = WhisperSpeechRecognition()
         self.audio_transcriber = AudioTranscriber()
         self.workflow_dispatcher = WorkflowDispatcher()
+        self.audio_manager = get_audio_manager()
         self.should_stop = False
 
     @asynccontextmanager
@@ -46,7 +48,7 @@ class ConversationLoop(LoggingMixin):
         )
 
         if not user_prompt or user_prompt.strip() == "":
-            play("stop-listening-no-message")
+            self.audio_manager.play("stop-listening-no-message")
             self.logger.info("⚠️ Keine Sprache erkannt oder leerer Text")
             return False
 
@@ -76,7 +78,7 @@ class ConversationLoop(LoggingMixin):
                         try:
                             self.speech_service.interrupt_and_reset()
                             audio_data = self.speech_recorder.record_audio()
-                            play("process-sound-new")
+                            self.audio_manager.play("process-sound-new")
 
                             await self.handle_user_input(audio_data)
 
