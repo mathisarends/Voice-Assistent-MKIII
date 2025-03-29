@@ -11,13 +11,11 @@ register_workflows()
 
 async def main():
     
-    # Erstelle die Zustandsmaschine statt des ConversationLoop
     state_machine = ConversationStateMachine(
         wakeword="picovoice",
     )
     
     try:
-        # Starte die Zustandsmaschine
         await state_machine.run()
     except KeyboardInterrupt:
         print("Beende das Programm...")

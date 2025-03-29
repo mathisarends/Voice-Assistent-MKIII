@@ -34,7 +34,7 @@ class AudioTranscriber(LoggingMixin):
 
             async with aiofiles.open(filename, "rb") as audio_file:
                 audio_data = await audio_file.read()
-
+                
             transcription = await self.openai.audio.transcriptions.create(
                 model="whisper-1",
                 file=(file_basename, audio_data),

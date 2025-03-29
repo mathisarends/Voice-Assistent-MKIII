@@ -1,14 +1,15 @@
 import os
-import threading
 import queue
+import threading
 import time
 from typing import Optional
 
+from singleton_decorator import singleton
+
 from assistant.tts_generator import get_tts_generator
 from audio.strategy.audio_manager import get_audio_manager
+from util.decorator import log_exceptions_from_self_logger, non_blocking
 from util.loggin_mixin import LoggingMixin
-from singleton_decorator import singleton
-from util.decorator import log_exceptions_from_self_logger
 
 
 @singleton
@@ -117,7 +118,9 @@ class SpeechService(LoggingMixin):
             except queue.Empty:
                 # Queue Timeout, setze Schleife fort
                 pass
-
+    
+    # TODO: ist auch nur ein provisorischer Fix bislang
+    @non_blocking
     @log_exceptions_from_self_logger("beim Unterbrechen der Audioausgabe")
     def interrupt_and_reset(self) -> bool:
         """
