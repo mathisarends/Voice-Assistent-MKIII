@@ -9,8 +9,8 @@ from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from config.settings import DEFAULT_LLM_MODEL
+from graphs.core.state_definitions import State
 from service.speech_service import SpeechService
-from states.state_definitions import State
 from util.loggin_mixin import LoggingMixin
 
 

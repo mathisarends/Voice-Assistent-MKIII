@@ -8,8 +8,8 @@ from typing_extensions import override
 
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.core.workflow_dispatcher import WorkflowDispatcher
-from integrations.phillips_hue.animation.light_animation import \
-    LightAnimationFactory
+from integrations.phillips_hue.animation.light_animation import (
+    AnimationType, LightAnimationFactory)
 from integrations.phillips_hue.bridge import HueBridge
 from integrations.phillips_hue.light_controller import LightController
 from service.service_locator import ServiceLocator
@@ -134,7 +134,6 @@ class WaitingForWakeWordState(ConversationState):
         if wakeword_listener.listen_for_wakeword():
             await self.provide_light_feedback()
             self.play_audio_feedback("wakesound", block=True)
-            await asyncio.sleep(0.6)
             self.logger.info("🔔 Wake-Word erkannt!")
             
             return WakeWordDetectedState()

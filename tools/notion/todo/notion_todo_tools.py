@@ -1,6 +1,7 @@
 import asyncio
+from typing import Optional, Type
+
 from langchain.tools import BaseTool
-from typing import Type, Optional
 from pydantic import BaseModel, Field
 
 from tools.notion.todo.notion_todo_manager import NotionTodoManager
@@ -90,3 +91,14 @@ class NotionAddTodoTool(BaseTool):
             return await self.todo_manager.add_todo(title)
         except Exception as e:
             return f"Fehler beim Hinzufügen des TODOs: {str(e)}"
+
+def get_notion_todo_tools():
+    notion_add_todo_tool = NotionAddTodoTool()
+    notion_get_todos_by_project_tool = NotionGetTodosByProjectTool()
+    notion_get_daily_top_tasks_tool = NotionGetDailyTopTasksTool()
+    
+    return [
+        notion_add_todo_tool,
+        notion_get_todos_by_project_tool,
+        notion_get_daily_top_tasks_tool,
+    ]

@@ -7,8 +7,8 @@ from langgraph.graph import StateGraph
 from typing_extensions import Any, Dict, List, Optional, override
 
 from graphs.core.base_graph import BaseGraph
+from graphs.core.state_definitions import State
 from integrations.python_weather import PythonWeatherClient
-from states.state_definitions import State
 
 
 class WeatherWorkflowState(State):

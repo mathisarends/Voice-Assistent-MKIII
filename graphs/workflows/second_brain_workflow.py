@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional
 
 from langgraph.graph import StateGraph
 
-from states.state_definitions import State
+from graphs.core.base_graph import BaseGraph
+from graphs.core.state_definitions import State
 from tools.notion.second_brain.notion_project_repository import \
     NotionProjectsRepository
 from tools.notion.second_brain.notion_second_brain_notes_repository import \
     NotionNotesRepository
-from tools.tavily_tool import TavilySearchTool
+from tools.tavily_tool import tavily_search
 from util.extract_user_message import extract_user_message
-from workflow.core.base_graph import BaseGraph
 
 
 class SecondBrainWorkflowState(State):
@@ -37,7 +37,7 @@ class SecondBrainWorkflow(BaseGraph):
     def __init__(self, model_name: Optional[str] = None):
         self.notion_projects_repo = NotionProjectsRepository()
         self.notion_notes_repo = NotionNotesRepository()
-        self.tavily_search_tool = TavilySearchTool()
+        self.tavily_search_tool = tavily_search
 
         super().__init__(model_name=model_name)
         self.graph_builder = StateGraph(SecondBrainWorkflowState)

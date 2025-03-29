@@ -46,7 +46,7 @@ class SpeechRecorder(LoggingMixin):
         filename=None,
         silence_threshold=0.1,
         silence_duration=1.5,
-        gain=1.3,
+        gain=2.0,
     ):
         if filename is None:
             filename = str(self.base_path / "recorded_audio.wav")

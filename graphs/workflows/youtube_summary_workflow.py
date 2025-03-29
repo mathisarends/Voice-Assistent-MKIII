@@ -6,12 +6,12 @@ from langgraph.graph import END, StateGraph
 
 from config.settings import DEFAULT_LLM_MODEL
 from graphs.core.base_graph import BaseGraph
+from graphs.core.state_definitions import State
 from integrations.google.youtube.youtbe_video_summarizer import \
     YoutubeVideoSummarizer
 from integrations.google.youtube.youtube_finder import YoutubeFinder
 from integrations.google.youtube.youtube_transcript import YoutubeTranscript
 from service.speech_service import SpeechService
-from states.state_definitions import State
 from tools.notion.clipboard.notion_clipboard_manager import \
     NotionClipboardManager
 
