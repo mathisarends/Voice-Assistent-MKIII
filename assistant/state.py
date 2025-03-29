@@ -1,8 +1,7 @@
 import asyncio
-import time
 import traceback
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Optional
 
 from typing_extensions import override
 
@@ -12,8 +11,9 @@ from graphs.workflow_dispatcher import WorkflowDispatcher
 from speech.recognition.audio_transcriber import AudioTranscriber
 from speech.recognition.whisper_speech_recognition import \
     WhisperSpeechRecognition
-from tools.lights.animation.processing_step_animation import (
-    AnimationType, LightAnimationFactory)
+from speech.wake_word_listener import WakeWordListener
+from tools.lights.animation.light_animation import (AnimationType,
+                                                    LightAnimationFactory)
 from tools.lights.bridge.bridge import HueBridge
 from tools.lights.light_controller import LightController
 from util.loggin_mixin import LoggingMixin
@@ -58,7 +58,32 @@ class ConversationState(ABC, LoggingMixin):
             self.logger.error(f"❌ Fehlerfall in {source_state}: {error_message}")
         
         return ErrorState()
+    
 
+class WaitingForWakeWordState(ConversationState):
+    """Wartet auf die Erkennung des Wake-Words"""
+    
+    def __init__(self, wakeword_listener: WakeWordListener, speech_service: SpeechService, speech_recorder: WhisperSpeechRecognition):
+        super().__init__()
+        self.wakeword_listener = wakeword_listener
+        self.speech_service = speech_service
+        self.speech_recorder = speech_recorder
+    
+    async def process(self) -> Optional['ConversationState']:
+        self.logger.info("🎤 Warte auf Wake-Word...")
+        
+        if self.wakeword_listener.listen_for_wakeword():
+            self.play_audio_feedback("wakesound")
+            self.logger.info("🔔 Wake-Word erkannt!")
+            
+            return WakeWordDetectedState(
+                speech_service=self.speech_service,
+                speech_recorder=self.speech_recorder
+            )
+        
+        await asyncio.sleep(0.1)
+        return None
+    
 
 class WakeWordDetectedState(ConversationState):
     """Zustand nach Wake-Word-Erkennung, startet Audioaufnahme"""
@@ -76,15 +101,12 @@ class WakeWordDetectedState(ConversationState):
         
         try:
             audio_data = self.speech_recorder.record_audio()
-            self.play_audio_feedback("wakeword")
             
             audio_transcriber = AudioTranscriber()
-            vocabulary = "Wetterbericht, Abendroutine, Stopp Wetter"
             
             return TranscribingState(
                 audio_transcriber=audio_transcriber,
                 audio_data=audio_data,
-                vocabulary=vocabulary
             )
             
         except Exception as e:
@@ -95,11 +117,10 @@ class WakeWordDetectedState(ConversationState):
 class TranscribingState(ConversationState):
     """Transkribiert die aufgenommene Sprache"""
     
-    def __init__(self, audio_transcriber: AudioTranscriber, audio_data, vocabulary: str):
+    def __init__(self, audio_transcriber: AudioTranscriber, audio_data):
         super().__init__()
         self.audio_transcriber = audio_transcriber
         self.audio_data = audio_data
-        self.vocabulary = vocabulary
         
     @override
     async def process(self):
@@ -108,7 +129,7 @@ class TranscribingState(ConversationState):
         
         try:
             user_prompt = await self.audio_transcriber.transcribe_audio(
-                self.audio_data, vocabulary=self.vocabulary
+                self.audio_data
             )
             
             if not user_prompt or user_prompt.strip() == "":
@@ -141,15 +162,15 @@ class DispatchingState(ConversationState):
         await self.provide_light_feedback()
         
         try:
+            print("use prompt:", self.user_prompt)
             result = await self.workflow_dispatcher.dispatch(self.user_prompt)
             self.logger.info("🤖 AI-Antwort: %s", result)
-            await self.provide_light_feedback()
             
             return None
             
         except Exception as e:
             return self.handle_error(e)
-
+        
 
 class ErrorState(ConversationState):
     """

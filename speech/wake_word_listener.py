@@ -1,13 +1,15 @@
+import logging
 import os
-from typing import List
-from dotenv import load_dotenv
-import pvporcupine
-import pyaudio
-import numpy as np
 import threading
 import time
-import logging
-from speech.wake_word_observer import get_wake_word_observers, WakeWordObserver
+from typing import List
+
+import numpy as np
+import pvporcupine
+import pyaudio
+from dotenv import load_dotenv
+
+from speech.wake_word_observer import WakeWordObserver, get_wake_word_observers
 
 load_dotenv()
 
@@ -71,7 +73,7 @@ class WakeWordListener:
             if keyword_index >= 0:
                 self.logger.info("🚀 Wake-Word erkannt!")
                 self._detection_event.set()
-                self.notify_observers()
+                # self.notify_observers()
 
         return (in_data, pyaudio.paContinue)
 

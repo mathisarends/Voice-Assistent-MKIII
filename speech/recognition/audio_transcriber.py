@@ -1,35 +1,34 @@
-import time
 import os
+import time
 from typing import Optional
+
 import aiofiles
 from openai import AsyncOpenAI
 
+from util.decorator import measure_performance
+from util.loggin_mixin import LoggingMixin
 
-class AudioTranscriber:
+
+class AudioTranscriber(LoggingMixin):
     def __init__(self):
+        super().__init__()
         self.openai = AsyncOpenAI()
 
+    @measure_performance
     async def transcribe_audio(
-        self, filename, vocabulary=None, language="de"
+        self, filename, language="de"
     ) -> Optional[str]:
-        """Sendet die Audiodatei an OpenAI Whisper API und gibt den erkannten Text zurück"""
-        print("📝 Sende Audiodatei an OpenAI...")
+        """
+        Sendet die Audiodatei an OpenAI Whisper API und gibt den erkannten Text zurück
+        """
+        self.logger.info("📝 Sende Audiodatei an OpenAI...")
 
         try:
-            start_time = time.time()
-
             file_basename = os.path.basename(filename)
 
             prompt = ""
             if language == "de":
                 prompt = "Dies ist eine Aufnahme auf Deutsch. "
-
-            if vocabulary:
-                if isinstance(vocabulary, list):
-                    vocab_str = ", ".join(vocabulary)
-                else:
-                    vocab_str = vocabulary
-                prompt += f"Folgende Begriffe könnten vorkommen: {vocab_str}"
 
             async with aiofiles.open(filename, "rb") as audio_file:
                 audio_data = await audio_file.read()
@@ -41,13 +40,10 @@ class AudioTranscriber:
                 prompt=prompt if prompt else None,
             )
 
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            print(f"⏱️ API-Antwortzeit: {elapsed_time:.2f} Sekunden")
-            print(f"📊 Dateigröße: {os.path.getsize(filename) / 1024:.2f} KB")
+            self.logger.info(f"📊 Dateigröße: {os.path.getsize(filename) / 1024:.2f} KB")
 
             return transcription
 
         except Exception as e:
-            print(f"❌ Fehler bei der Transkription: {str(e)}")
+            self.logger.error(f"❌ Fehler bei der Transkription: {str(e)}")
             return None

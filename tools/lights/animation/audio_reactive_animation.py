@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import threading
+import time
+from abc import ABC, abstractmethod
+from collections import deque
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pyaudio
-import time
-from typing import Any, List, Dict, Optional, Tuple
-import math
 from scipy.fft import fft
-from collections import deque
-from abc import ABC, abstractmethod
 
 from tools.lights.bridge.bridge import HueBridge
 from tools.lights.light_controller import LightController

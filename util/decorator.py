@@ -1,5 +1,6 @@
+import time
 from functools import wraps
-import logging
+from typing import Any, Callable
 
 
 def log_exceptions_from_self_logger(context: str = ""):
@@ -27,3 +28,38 @@ def log_exceptions_from_self_logger(context: str = ""):
         return wrapper
 
     return decorator
+
+
+def measure_performance(func: Callable) -> Callable:
+    """
+    Einfacher Dekorator zum Messen der Ausführungszeit einer Funktion.
+    Funktioniert sowohl mit synchronen als auch mit asynchronen Funktionen.
+    """
+    @wraps(func)
+    async def async_wrapper(self, *args, **kwargs):
+        start_time = time.time()
+        
+        result = await func(self, *args, **kwargs)
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.logger.info(f"⏱️ API-Antwortzeit: {elapsed_time:.2f} Sekunden")
+        
+        return result
+    
+    @wraps(func)
+    def sync_wrapper(self, *args, **kwargs):
+        start_time = time.time()
+        
+        result = func(self, *args, **kwargs)
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.logger.info(f"⏱️ API-Antwortzeit: {elapsed_time:.2f} Sekunden")
+        
+        return result
+    
+    # Entscheide, ob es eine async-Funktion ist
+    if hasattr(func, '__code__') and (func.__code__.co_flags & 0x80):
+        return async_wrapper
+    return sync_wrapper
