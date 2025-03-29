@@ -41,13 +41,36 @@ def spotify_api_call(func):
 
 @singleton
 class SpotifyPlaybackController(LoggingMixin):
-    def __init__(self, default_device_name="Mathis PC"):
+    def __init__(self, fallback_device_pattern="PC"):
         self.client = SpotifyClient().api
-        self.default_device_name = default_device_name
+        self.fallback_device_pattern = fallback_device_pattern
         self.active_device_id = None
         self.devices = {}
         self.refresh_devices()
-        self.set_active_device(self.default_device_name)
+        
+        # Versuche ein passendes Gerät zu finden
+        self._find_and_set_initial_device()
+
+    def _find_and_set_initial_device(self):
+        # Zuerst schauen wir nach einem aktiven Gerät
+        active_device = self.get_active_device()
+        if active_device:
+            self.logger.info(f"✅ Aktives Gerät gefunden: {active_device['name']}")
+            self.active_device_id = active_device['id']
+            return True
+            
+        pc_devices = [name for name in self.devices.keys() if self.fallback_device_pattern.lower() in name.lower()]
+        if pc_devices:
+            self.set_active_device(pc_devices[0])
+            return True
+            
+        if self.devices:
+            first_device = list(self.devices.keys())[0]
+            self.set_active_device(first_device)
+            return True
+            
+        self.logger.warning("⚠️ Kein Spotify-Gerät gefunden!")
+        return False
 
     @spotify_api_call
     def refresh_devices(self):
@@ -64,6 +87,7 @@ class SpotifyPlaybackController(LoggingMixin):
 
     def get_active_device(self):
         """Findet das aktuell aktive Gerät."""
+        self.refresh_devices()
         for device in self.devices.values():
             if device["is_active"]:
                 return device
@@ -83,8 +107,8 @@ class SpotifyPlaybackController(LoggingMixin):
         """Stellt sicher, dass ein aktives Gerät verfügbar ist."""
         if not self.active_device_id:
             self.refresh_devices()
-            self.set_active_device(self.default_device_name)
-        return bool(self.active_device_id)
+            return self._find_and_set_initial_device()
+        return True
 
     @spotify_api_call
     def switch_device(self, device_name, force_play=False):

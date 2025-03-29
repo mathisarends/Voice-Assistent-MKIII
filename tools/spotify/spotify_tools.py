@@ -3,9 +3,32 @@ from typing import Literal, Optional
 
 from langchain.tools import tool
 
+from audio.workflow_audio_response_manager import WorkflowAudioResponseManager
 from tools.spotify.spotify_api import SpotifyPlaybackController
 
+# Konstanten für die Antworten
+# Konstanten für die Antworten
+VOLUME_SET_SUCCESS = "Lautstärke auf {volume}% gesetzt."
+VOLUME_ERROR_RANGE = "Fehler: Die Lautstärke muss zwischen 0 und 100 liegen."
+PLAYBACK_PAUSED = "Wiedergabe pausiert."
+PLAYBACK_RESUMED = "Wiedergabe fortgesetzt."
+PLAYBACK_CONTROL_ERROR = "Ungültige Aktion: {action}. Verwende 'pause' oder 'resume'."
+TRACK_PLAY_SUCCESS = "Spiele Track '{query}' ab."
+TRACK_PLAY_ERROR = "Konnte Track '{query}' nicht abspielen."
+NEXT_TRACK_SUCCESS = "Nächster Song abgespielt."
+NEXT_TRACK_ERROR = "Konnte nicht zum nächsten Song wechseln."
+PREV_TRACK_SUCCESS = "Vorheriger Song abgespielt."
+PREV_TRACK_ERROR = "Konnte nicht zum vorherigen Song wechseln."
+DEVICES_LIST = "Verfügbare Geräte: {devices}"
+DEVICES_EMPTY = "Keine verfügbaren Geräte gefunden."
+DEVICE_SWITCH_SUCCESS = "Zu '{device_name}' gewechselt."
+DEVICE_SWITCH_ERROR = "Konnte nicht zu '{device_name}' wechseln. Prüfe verfügbare Geräte mit spotify_get_active_devices()."
+
 spotify_playback_controller = SpotifyPlaybackController()
+
+audio_manager = WorkflowAudioResponseManager(
+    category="spotify_responses",
+)
 
 @tool
 async def spotify_set_volume(volume: int) -> str:
@@ -15,13 +38,15 @@ async def spotify_set_volume(volume: int) -> str:
         volume: Lautstärke in Prozent (0-100)
     """
     if not 0 <= volume <= 100:
-        return "Fehler: Die Lautstärke muss zwischen 0 und 100 liegen."
+        return audio_manager.respond_with_audio(VOLUME_ERROR_RANGE)
 
     try:
         spotify_playback_controller.set_volume(volume)
-        return f"Lautstärke auf {volume}% gesetzt."
+        response = VOLUME_SET_SUCCESS.format(volume=volume)
+        return audio_manager.respond_with_audio(response)
     except Exception as e:
-        return f"Fehler beim Ändern der Lautstärke: {str(e)}"
+        error_msg = f"Fehler beim Ändern der Lautstärke: {str(e)}"
+        return error_msg  # Fehlermeldungen nicht cachen
 
 
 @tool
@@ -34,14 +59,16 @@ async def spotify_playback_control(action: Literal["pause", "resume"]) -> str:
     try:
         if action == "pause":
             result = spotify_playback_controller.pause_playback()
-            return "Wiedergabe pausiert." if result else "Konnte Wiedergabe nicht pausieren."
+            return audio_manager.respond_with_audio(PLAYBACK_PAUSED) if result else "Konnte Wiedergabe nicht pausieren."
         elif action == "resume":
             result = spotify_playback_controller.resume_playback()
-            return "Wiedergabe fortgesetzt." if result else "Konnte Wiedergabe nicht fortsetzen."
+            return audio_manager.respond_with_audio(PLAYBACK_RESUMED) if result else "Konnte Wiedergabe nicht fortsetzen."
         else:
-            return f"Ungültige Aktion: {action}. Verwende 'pause' oder 'resume'."
+            response = PLAYBACK_CONTROL_ERROR.format(action=action)
+            return audio_manager.respond_with_audio(response)
     except Exception as e:
-        return f"Fehler bei der Wiedergabesteuerung: {str(e)}"
+        error_msg = f"Fehler bei der Wiedergabesteuerung: {str(e)}"
+        return error_msg
 
 
 @tool
@@ -53,9 +80,15 @@ async def spotify_play_track(query: str) -> str:
     """
     try:
         result = spotify_playback_controller.play_track(query)
-        return f"🎵 Spiele Track '{query}' ab." if result else f"Konnte Track '{query}' nicht abspielen."
+        if result:
+            response = TRACK_PLAY_SUCCESS.format(query=query)
+            return audio_manager.respond_with_audio(response)
+        else:
+            response = TRACK_PLAY_ERROR.format(query=query)
+            return audio_manager.respond_with_audio(response)
     except Exception as e:
-        return f"Fehler beim Abspielen des Tracks: {str(e)}"
+        error_msg = f"Fehler beim Abspielen des Tracks: {str(e)}"
+        return error_msg
 
 
 @tool
@@ -63,9 +96,13 @@ async def spotify_next_track() -> str:
     """Springt zum nächsten Song in der aktuellen Wiedergabe."""
     try:
         result = spotify_playback_controller.next_track()
-        return "⏭️ Nächster Song abgespielt." if result else "Konnte nicht zum nächsten Song wechseln."
+        if result:
+            return audio_manager.respond_with_audio(NEXT_TRACK_SUCCESS)
+        else:
+            return audio_manager.respond_with_audio(NEXT_TRACK_ERROR)
     except Exception as e:
-        return f"Fehler beim Wechseln zum nächsten Song: {str(e)}"
+        error_msg = f"Fehler beim Wechseln zum nächsten Song: {str(e)}"
+        return error_msg
 
 
 @tool
@@ -73,9 +110,13 @@ async def spotify_previous_track() -> str:
     """Springt zum vorherigen Song in der aktuellen Wiedergabe."""
     try:
         result = spotify_playback_controller.previous_track()
-        return "⏮️ Vorheriger Song abgespielt." if result else "Konnte nicht zum vorherigen Song wechseln."
+        if result:
+            return audio_manager.respond_with_audio(PREV_TRACK_SUCCESS)
+        else:
+            return audio_manager.respond_with_audio(PREV_TRACK_ERROR)
     except Exception as e:
-        return f"Fehler beim Wechseln zum vorherigen Song: {str(e)}"
+        error_msg = f"Fehler beim Wechseln zum vorherigen Song: {str(e)}"
+        return error_msg
 
 
 @tool
@@ -89,15 +130,18 @@ async def spotify_get_active_devices() -> str:
         devices = spotify_playback_controller.get_available_devices()
         if isinstance(devices, dict):
             device_names = list(devices.keys())
+        else:  # Falls es eine Liste von Geräten ist
             device_names = [device.get('name', 'Unbekannt') for device in devices]
             
-        return (
-            f"📱 Verfügbare Geräte: {', '.join(device_names)}"
-            if device_names
-            else "❌ Keine verfügbaren Geräte gefunden."
-        )
+        if device_names:
+            response = DEVICES_LIST.format(devices=', '.join(device_names))
+            return response
+        
+        return audio_manager.respond_with_audio(DEVICES_EMPTY)
+    
     except Exception as e:
-        return f"Fehler beim Abrufen der Geräte: {str(e)}"
+        error_msg = f"Fehler beim Abrufen der Geräte: {str(e)}"
+        return error_msg
 
 
 @tool
@@ -113,9 +157,16 @@ async def spotify_switch_device(device_name: str) -> str:
     """
     try:
         result = spotify_playback_controller.switch_device(device_name)
-        return f"✅ Zu '{device_name}' gewechselt." if result else f"❌ Konnte nicht zu '{device_name}' wechseln. Prüfe verfügbare Geräte mit spotify_get_active_devices()."
+        if result:
+            response = DEVICE_SWITCH_SUCCESS.format(device_name=device_name)
+            return response
+        
+        response = DEVICE_SWITCH_ERROR.format(device_name=device_name)
+        return audio_manager.respond_with_audio(response)
+    
     except Exception as e:
-        return f"❌ Fehler beim Wechseln des Geräts: {str(e)}"
+        error_msg = f"❌ Fehler beim Wechseln des Geräts: {str(e)}"
+        return error_msg
 
 
 def get_spotify_tools():

@@ -37,17 +37,6 @@ class AnimationConfig:
 
 
 @dataclass
-class RotateConfig(AnimationConfig):
-    """Konfiguration für die Farbrotation"""
-    dim_percentage: float = 0.0
-    
-    def validate(self) -> None:
-        super().validate()
-        if not 0 <= self.dim_percentage <= 1:
-            raise ValueError("Dimmfaktor muss zwischen 0 und 1 liegen")
-
-
-@dataclass
 class ErrorFlashConfig(AnimationConfig):
     """Konfiguration für die Fehler-Blitz-Animation"""
     flash_interval: float = 1.0
@@ -68,26 +57,9 @@ class ErrorFlashConfig(AnimationConfig):
 
 
 @dataclass
-class PulseConfig(AnimationConfig):
-    """Konfiguration für die Pulsanimation"""
-    max_increase_pct: float = 10.0
-    steps: int = 10
-    step_time: float = 0.1
-
-    def validate(self) -> None:
-        super().validate()
-        if self.max_increase_pct <= 0:
-            raise ValueError("Maximale Erhöhung muss größer als 0 sein")
-        if self.steps <= 0:
-            raise ValueError("Anzahl der Schritte muss größer als 0 sein")
-        if self.step_time <= 0:
-            raise ValueError("Zeit zwischen Schritten muss größer als 0 sein")
-
-
-@dataclass
 class WakeFlashConfig(AnimationConfig):
     """Konfiguration für die Wake-Flash-Animation"""
-    brightness_increase: int = 50
+    brightness_increase: int = 40
     transition_time_up: int = 1
     transition_time_down: int = 8
     
