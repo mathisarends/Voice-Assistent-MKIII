@@ -137,8 +137,6 @@ class WaitingForWakeWordState(ConversationState):
             
             await self.provide_light_feedback()
             
-            time.sleep(1) # TODO: Die audio sollte eigentlich blockierend abgespielt werden.
-            
             return WakeWordDetectedState()
         
         await asyncio.sleep(0.1)

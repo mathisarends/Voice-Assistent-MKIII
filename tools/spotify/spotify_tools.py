@@ -1,14 +1,14 @@
 import asyncio
 from typing import Literal, Optional
+
 from langchain.tools import tool
-from tools.spotify.spotify_controller import SpotifyController
+
 from tools.spotify.spotify_device_manager import SpotifyDeviceManager
 from tools.spotify.spotify_player import SpotifyPlayer
 
+# Direktes Erstellen der Objekte ohne Controller-Wrapper
 player = SpotifyPlayer()
 device_manager = SpotifyDeviceManager()
-
-controller = SpotifyController(player, device_manager)
 
 
 @tool
@@ -22,7 +22,7 @@ async def spotify_set_volume(volume: int) -> str:
         return "Fehler: Die Lautstärke muss zwischen 0 und 100 liegen."
 
     try:
-        controller.set_volume(volume)
+        player.set_volume(volume)
         return f"Lautstärke auf {volume}% gesetzt."
     except Exception as e:
         return f"Fehler beim Ändern der Lautstärke: {str(e)}"
@@ -37,39 +37,15 @@ async def spotify_playback_control(action: Literal["pause", "resume"]) -> str:
     """
     try:
         if action == "pause":
-            controller.pause()
-            return "Wiedergabe pausiert."
+            result = player.pause_playback()
+            return "Wiedergabe pausiert." if result else "Konnte Wiedergabe nicht pausieren."
         elif action == "resume":
-            controller.resume()
-            return "Wiedergabe fortgesetzt."
+            result = player.resume_playback()
+            return "Wiedergabe fortgesetzt." if result else "Konnte Wiedergabe nicht fortsetzen."
         else:
             return f"Ungültige Aktion: {action}. Verwende 'pause' oder 'resume'."
     except Exception as e:
         return f"Fehler bei der Wiedergabesteuerung: {str(e)}"
-
-
-@tool
-async def spotify_track_info() -> str:
-    """Ruft Informationen zum aktuell laufenden Song ab."""
-    try:
-        result = controller.current_track()
-        return f"Aktueller Song: {result}"
-    except Exception as e:
-        return f"Fehler beim Abrufen des aktuellen Songs: {str(e)}"
-
-
-@tool
-async def spotify_play_playlist(playlist_identifier: str) -> str:
-    """Spielt eine angegebene Spotify-Playlist ab.
-
-    Args:
-        playlist_identifier: Playlist-Name oder Spotify-URI
-    """
-    try:
-        controller.play_playlist(playlist_identifier)
-        return f"Playlist '{playlist_identifier}' gestartet."
-    except Exception as e:
-        return f"Fehler beim Abspielen der Playlist: {str(e)}"
 
 
 @tool
@@ -80,8 +56,8 @@ async def spotify_play_track(query: str) -> str:
         query: Suchbegriff oder Spotify-URI des Tracks
     """
     try:
-        controller.play_track(query)
-        return f"🎵 Spiele Track '{query}' ab."
+        result = player.play_track(query)
+        return f"🎵 Spiele Track '{query}' ab." if result else f"Konnte Track '{query}' nicht abspielen."
     except Exception as e:
         return f"Fehler beim Abspielen des Tracks: {str(e)}"
 
@@ -90,8 +66,8 @@ async def spotify_play_track(query: str) -> str:
 async def spotify_next_track() -> str:
     """Springt zum nächsten Song in der aktuellen Wiedergabe."""
     try:
-        controller.next_track()
-        return "⏭️ Nächster Song abgespielt."
+        result = player.next_track()
+        return "⏭️ Nächster Song abgespielt." if result else "Konnte nicht zum nächsten Song wechseln."
     except Exception as e:
         return f"Fehler beim Wechseln zum nächsten Song: {str(e)}"
 
@@ -100,8 +76,8 @@ async def spotify_next_track() -> str:
 async def spotify_previous_track() -> str:
     """Springt zum vorherigen Song in der aktuellen Wiedergabe."""
     try:
-        controller.previous_track()
-        return "⏮️ Vorheriger Song abgespielt."
+        result = player.previous_track()
+        return "⏮️ Vorheriger Song abgespielt." if result else "Konnte nicht zum vorherigen Song wechseln."
     except Exception as e:
         return f"Fehler beim Wechseln zum vorherigen Song: {str(e)}"
 
@@ -110,10 +86,15 @@ async def spotify_previous_track() -> str:
 async def spotify_get_active_devices() -> str:
     """Liefert eine Liste aller aktuell verbundenen Spotify-Geräte."""
     try:
-        devices = controller.get_active_devices()
+        devices = device_manager.get_available_devices()
+        if isinstance(devices, dict):
+            device_names = list(devices.keys())
+        else:  # Falls es eine Liste von Geräten ist
+            device_names = [device.get('name', 'Unbekannt') for device in devices]
+            
         return (
-            f"📱 Verfügbare Geräte: {', '.join(devices.keys())}"
-            if devices
+            f"📱 Verfügbare Geräte: {', '.join(device_names)}"
+            if device_names
             else "❌ Keine verfügbaren Geräte gefunden."
         )
     except Exception as e:
@@ -128,44 +109,36 @@ async def spotify_switch_device(device_name: str) -> str:
         device_name: Der Name des Geräts, auf das gewechselt werden soll
     """
     try:
-        result = controller.switch_device(device_name)
-        return result if result else f"❌ Konnte nicht zu '{device_name}' wechseln."
+        result = device_manager.switch_device(device_name)
+        return f"Zu '{device_name}' gewechselt." if result else f"❌ Konnte nicht zu '{device_name}' wechseln."
     except Exception as e:
         return f"Fehler beim Wechseln des Geräts: {str(e)}"
 
 
 @tool
-async def spotify_start_concentration(playlist_type: Optional[str] = None) -> str:
-    """Startet eine Konzentrations-Playlist für fokussiertes Arbeiten oder Lernen.
-
+async def spotify_start_concentration_phase(playlist_type: Optional[str] = None) -> str:
+    """Startet eine Konzentrations-Playlist.
+    
     Args:
-        playlist_type: Typ der Playlist (falls nicht angegeben, wird eine zufällig gewählt)
+        playlist_type: Optionaler Typ der Playlist (z.B. 'WHITE_NOISE', 'FOCUS', etc.)
     """
     try:
-        result = controller.start_concentration_phase(playlist_type)
-        return (
-            f"🧠 Konzentrationsmodus gestartet mit Playlist-Typ: {result}"
-            if result
-            else "❌ Konzentrationsmodus konnte nicht gestartet werden."
-        )
+        result = player.start_concentration_phase(playlist_type)
+        return f"Konzentrationsmodus gestartet: {result}" if result else "Konnte Konzentrationsmodus nicht starten."
     except Exception as e:
         return f"Fehler beim Starten des Konzentrationsmodus: {str(e)}"
 
 
 @tool
-async def spotify_start_evening(playlist_type: Optional[str] = None) -> str:
-    """Startet eine Playlist für den Abendmodus, um zu entspannen oder herunterzufahren.
-
+async def spotify_start_evening_phase(playlist_type: Optional[str] = None) -> str:
+    """Startet eine Abend-Playlist zum Entspannen.
+    
     Args:
-        playlist_type: Typ der Playlist (falls nicht angegeben, wird eine zufällig gewählt)
+        playlist_type: Optionaler Typ der Playlist
     """
     try:
-        result = controller.start_evening_phase(playlist_type)
-        return (
-            f"🌙 Abendmodus gestartet mit Playlist-Typ: {result}"
-            if result
-            else "❌ Abendmodus konnte nicht gestartet werden."
-        )
+        result = player.start_evening_phase(playlist_type)
+        return f"Abendmodus gestartet: {result}" if result else "Konnte Abendmodus nicht starten."
     except Exception as e:
         return f"Fehler beim Starten des Abendmodus: {str(e)}"
 
@@ -174,13 +147,11 @@ def get_spotify_tools():
     return [
         spotify_set_volume,
         spotify_playback_control,
-        spotify_track_info,
-        spotify_play_playlist,
         spotify_play_track,
         spotify_next_track,
         spotify_previous_track,
         spotify_get_active_devices,
         spotify_switch_device,
-        spotify_start_concentration,
-        spotify_start_evening,
+        spotify_start_concentration_phase,
+        spotify_start_evening_phase,
     ]

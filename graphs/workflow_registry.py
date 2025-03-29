@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from graphs.base_graph import BaseGraph
 from graphs.workflows.alarm_workflow import AlarmWorkflow
