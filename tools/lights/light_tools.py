@@ -23,7 +23,6 @@ audio_manager = WorkflowAudioResponseManager(
     category="light_responses",
 )
 
-
 def run_async(coro):
     return asyncio.run(coro)
 

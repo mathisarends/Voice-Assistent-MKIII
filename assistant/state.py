@@ -33,6 +33,8 @@ class ConversationStateMachine(LoggingMixin):
         self.should_stop = False
         self.current_state = None
         
+        ServiceLocator.get_instance()
+        
         ConversationStateMachine._instance = self
 
     @classmethod
@@ -166,7 +168,6 @@ class WakeWordDetectedState(ConversationState):
         try:
             audio_data = self.speech_recorder.record_audio()
             await self.provide_light_feedback()
-            self.play_audio_feedback("wake-sound-new")
             
             return TranscribingState(
                 audio_data=audio_data,

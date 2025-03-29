@@ -15,7 +15,7 @@ class AudioTranscriber(LoggingMixin):
 
     @measure_performance
     async def transcribe_audio(
-        self, filename, language="de", vocabulary: List[str] = ["Wetter"]
+        self, filename, language="de", vocabulary: List[str] = ["Wetter", "Licht", "Spotify", "Notion"]
     ) -> Optional[str]:
         """
         Sendet die Audiodatei an OpenAI Whisper API und gibt den erkannten Text zurück
