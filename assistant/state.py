@@ -5,12 +5,10 @@ from typing import Optional
 
 from typing_extensions import override
 
-from assistant.speech_service import SpeechService
+from assistant.service_locator import ServiceLocator
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from speech.recognition.audio_transcriber import AudioTranscriber
-from speech.recognition.whisper_speech_recognition import \
-    WhisperSpeechRecognition
 from speech.wake_word_listener import WakeWordListener
 from tools.lights.animation.light_animation import (AnimationType,
                                                     LightAnimationFactory)
@@ -63,35 +61,37 @@ class ConversationState(ABC, LoggingMixin):
 class WaitingForWakeWordState(ConversationState):
     """Wartet auf die Erkennung des Wake-Words"""
     
-    def __init__(self, wakeword_listener: WakeWordListener, speech_service: SpeechService, speech_recorder: WhisperSpeechRecognition):
+    def __init__(self, wakeword_listener: WakeWordListener):
         super().__init__()
         self.wakeword_listener = wakeword_listener
-        self.speech_service = speech_service
-        self.speech_recorder = speech_recorder
+
     
     async def process(self) -> Optional['ConversationState']:
         self.logger.info("🎤 Warte auf Wake-Word...")
         
         if self.wakeword_listener.listen_for_wakeword():
             self.play_audio_feedback("wakesound")
+            await self.provide_light_feedback()
             self.logger.info("🔔 Wake-Word erkannt!")
             
-            return WakeWordDetectedState(
-                speech_service=self.speech_service,
-                speech_recorder=self.speech_recorder
-            )
+            return WakeWordDetectedState()
         
         await asyncio.sleep(0.1)
         return None
     
+    # TODO: Muss eigentlich immer in einem anderen Thread abgespielt werden damit das hier nicht blockt.
+    @override
+    async def provide_light_feedback(self):
+        wake_flash_anim = self.light_animation_factory.get_animation(animation_type=AnimationType.WAKE_FLASH)
+        await wake_flash_anim.execute(["1", "5", "6", "7"])
 
 class WakeWordDetectedState(ConversationState):
     """Zustand nach Wake-Word-Erkennung, startet Audioaufnahme"""
     
-    def __init__(self, speech_service: SpeechService, speech_recorder: WhisperSpeechRecognition):
+    def __init__(self):
         super().__init__()
-        self.speech_service = speech_service
-        self.speech_recorder = speech_recorder
+        self.speech_service = ServiceLocator().get_instance().get_speech_service()
+        self.speech_recorder = ServiceLocator().get_instance().get_speech_recorder()
     
     @override
     async def process(self):

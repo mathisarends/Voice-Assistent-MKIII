@@ -2,16 +2,11 @@ import logging
 import os
 import threading
 import time
-from typing import List
+from contextlib import asynccontextmanager
 
 import numpy as np
 import pvporcupine
 import pyaudio
-from dotenv import load_dotenv
-
-from speech.wake_word_observer import WakeWordObserver, get_wake_word_observers
-
-load_dotenv()
 
 
 class WakeWordListener:
@@ -30,9 +25,6 @@ class WakeWordListener:
         access_key = os.getenv("PICO_ACCESS_KEY")
         if not access_key:
             raise ValueError("PICO_ACCESS_KEY nicht in .env Datei gefunden")
-
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info("🔧 Initialisiere Wake-Word Listener mit Wort: %s", wakeword)
 
         self.wakeword = wakeword
         self.handle = pvporcupine.create(
@@ -55,7 +47,6 @@ class WakeWordListener:
         self.should_stop = False
         self._detection_event = threading.Event()
 
-        self._observers: List[WakeWordObserver] = get_wake_word_observers()
 
     def __enter__(self):
         return self
@@ -64,6 +55,18 @@ class WakeWordListener:
         self.cleanup()
         return False
 
+    @classmethod
+    @asynccontextmanager
+    async def create(cls, wakeword="picovoice", sensitivity=0.8):
+        """
+        Erstellt einen WakeWordListener als async context manager.
+        """
+        listener = cls(wakeword=wakeword, sensitivity=sensitivity)
+        try:
+            yield listener
+        finally:
+            listener.cleanup()
+
     def _audio_callback(self, in_data, frame_count, time_info, status):
         """Callback für Audio-Processing"""
         if self.is_listening and not self.should_stop:
@@ -71,14 +74,11 @@ class WakeWordListener:
             keyword_index = self.handle.process(pcm)
 
             if keyword_index >= 0:
-                self.logger.info("🚀 Wake-Word erkannt!")
                 self._detection_event.set()
-                # self.notify_observers()
 
         return (in_data, pyaudio.paContinue)
 
     def listen_for_wakeword(self):
-        self.logger.info("🎤 Warte auf Wake-Word...")
         self._detection_event.clear()
         self.is_listening = True
 
@@ -89,18 +89,15 @@ class WakeWordListener:
         while not self.should_stop:
             if self._detection_event.wait(timeout=0.1):
                 self._detection_event.clear()
-                self.logger.info("✅ Wake-Word erkannt und Event signalisiert")
                 return True
 
         return False
 
     def cleanup(self):
-        """Ressourcen aufräumen."""
         self.logger.info("🧹 Räume Wake-Word-Listener auf...")
         self.should_stop = True
         self.is_listening = False
 
-        # Warte kurz, damit laufende Operationen beendet werden können
         time.sleep(0.2)
 
         if self.stream:
@@ -112,24 +109,3 @@ class WakeWordListener:
             self.handle.delete()
 
         self.logger.info("✅ Wake-Word-Listener erfolgreich beendet")
-
-    def add_observer(self, observer: WakeWordObserver):
-        """Fügt einen neuen Observer hinzu."""
-        if observer not in self._observers:
-            self._observers.append(observer)
-            self.logger.info(f"Observer {observer.__class__.__name__} hinzugefügt")
-
-    def remove_observer(self, observer: WakeWordObserver):
-        """Entfernt einen Observer."""
-        if observer in self._observers:
-            self._observers.remove(observer)
-            self.logger.info(f"Observer {observer.__class__.__name__} entfernt")
-
-    def notify_observers(self):
-        """Benachrichtigt alle Observer über die Wakeword-Erkennung."""
-        for observer in self._observers:
-            # Jeder Observer wird in einem eigenen Thread benachrichtigt,
-            # damit langsame Observer die anderen nicht blockieren
-            threading.Thread(
-                target=observer.on_wakeword_detected, args=(), daemon=True
-            ).start()

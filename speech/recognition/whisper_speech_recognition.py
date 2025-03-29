@@ -1,17 +1,14 @@
-import queue
 import os
+import queue
 import time
 import wave
-import sounddevice as sd
+
 import numpy as np
-from openai import OpenAI
+import sounddevice as sd
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
-
-# TODO: Die Terminierung ist hier echt schnell aber möglicherweise zu schnell Informationen gehen verloren
-# Evevntuell kann man weiter aufnehmen und hier zwischen den Klassen kommunzieren, das hier noch informationen nachgeliefert werden.
-
 
 class WhisperSpeechRecognition:
     def __init__(self, samplerate=16000):

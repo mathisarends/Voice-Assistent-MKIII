@@ -15,6 +15,7 @@ class AnimationType(Enum):
     ROTATE = auto()
     ERROR_FLASH = auto()
     PULSE = auto()
+    WAKE_FLASH = auto() 
 
 
 class LightAnimationFactory:
@@ -31,6 +32,7 @@ class LightAnimationFactory:
             AnimationType.ROTATE: RotateColorsAnimation,
             AnimationType.ERROR_FLASH: ErrorFlashAnimation,
             AnimationType.PULSE: PulseAnimation,
+            AnimationType.WAKE_FLASH: WakeFlashAnimation,
         }
         
         self._animation_instances: Dict[AnimationType, LightAnimation] = {}
@@ -122,6 +124,99 @@ class LightAnimation(ABC, LoggingMixin):
                 pass
             self._running_task = None
 
+
+class WakeFlashAnimation(LightAnimation):
+    """Animation für kurzes Aufleuchten als visuelle Bestätigung bei Wake Word-Erkennung"""
+
+    async def _execute_once(
+        self, 
+        light_ids: List[str], 
+        brightness_increase: int = 50,  # Helligkeit erhöhen um X Einheiten
+        transition_time_up: int = 1,     # 0.1 Sekunden hoch (in Zehntelsekunden)
+        transition_time_down: int = 10,  # 1.0 Sekunden zurück (in Zehntelsekunden)
+        hold_time: float = 0.1           # Kurze Haltezeit am hellsten Punkt
+    ) -> None:
+        """
+        Führt eine einmalige Wake-Animation aus - kurzes Aufleuchten der Lampen
+        
+        Args:
+            light_ids: Liste der Lampen-IDs
+            brightness_increase: Erhöhung der Helligkeit (0-254)
+            transition_time_up: Übergangszeit nach oben in Zehntelsekunden
+            transition_time_down: Übergangszeit zurück in Zehntelsekunden
+            hold_time: Zeit in Sekunden, die im helleren Zustand gehalten wird
+        """
+        if not light_ids:
+            self.logger.warning("Keine Lampen für die Wake-Animation angegeben")
+            return
+
+        # Speichere den aktuellen Zustand aller Lampen
+        original_states = {}
+        current_brightness = {}
+
+        for light_id in light_ids:
+            try:
+                state = await self.controller.get_light_state(light_id)
+                original_states[light_id] = state.copy()
+
+                # Aktuelle Helligkeit bestimmen
+                if "bri" in state and state.get("on", False):
+                    current_brightness[light_id] = state["bri"]
+                else:
+                    # Standardwert, falls die Lampe aus ist
+                    current_brightness[light_id] = 127
+            except Exception as e:
+                self.logger.error(
+                    f"Fehler beim Abrufen des Zustands für Lampe {light_id}: {e}"
+                )
+                # Standardwerte bei Fehler
+                original_states[light_id] = {"on": True, "bri": 127}
+                current_brightness[light_id] = 127
+
+        try:
+            # Helleren Zustand berechnen
+            brighter_states = {}
+            for light_id, current_bri in current_brightness.items():
+                # Erhöhte Helligkeit berechnen (mit Obergrenze)
+                new_brightness = min(254, current_bri + brightness_increase)
+                
+                # Zustand mit erhöhter Helligkeit vorbereiten
+                brighter_states[light_id] = {
+                    "on": True,
+                    "bri": new_brightness,
+                    "transitiontime": transition_time_up
+                }
+
+            # Phase 1: Schnell aufleuchten (alle Lampen gleichzeitig)
+            brighten_tasks = []
+            for light_id, bright_state in brighter_states.items():
+                brighten_tasks.append(self.controller.set_light_state(light_id, bright_state))
+
+            if brighten_tasks:
+                await asyncio.gather(*brighten_tasks)
+                
+            # Kurz in hellem Zustand bleiben
+            await asyncio.sleep(hold_time)
+
+            # Phase 2: Sanft zurück zum Originalzustand
+            restore_tasks = []
+            for light_id, original_state in original_states.items():
+                restore_state = {}
+                for key in ["on", "hue", "sat", "bri", "xy", "ct"]:
+                    if key in original_state:
+                        restore_state[key] = original_state[key]
+
+                # Längere Übergangszeit für sanftes Abdunkeln
+                restore_state["transitiontime"] = transition_time_down
+                restore_tasks.append(self.controller.set_light_state(light_id, restore_state))
+
+            if restore_tasks:
+                await asyncio.gather(*restore_tasks)
+
+            self.logger.info(f"Wake-Animation für Lampen {light_ids} abgeschlossen")
+
+        except Exception as e:
+            self.logger.error(f"Fehler während der Wake-Animation: {e}")
 
 class RotateColorsAnimation(LightAnimation):
     """Animation zum Rotieren von Farben zwischen Lampen"""
