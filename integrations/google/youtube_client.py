@@ -1,7 +1,4 @@
-import sys
-import os
-
-from tools.google.core.google_auth import GoogleAuth
+from integrations.google.core.google_auth import GoogleAuth
 
 
 class YouTubeClient:

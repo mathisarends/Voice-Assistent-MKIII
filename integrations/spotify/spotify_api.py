@@ -25,7 +25,7 @@ class SpotifyClient:
                 client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
                 redirect_uri="http://localhost:8080",
                 scope="user-modify-playback-state user-read-playback-state user-read-currently-playing streaming app-remote-control user-library-read user-library-modify user-read-private user-top-read",
-                cache_path=cache_file,  # Hier wird der Cache-Pfad gesetzt
+                cache_path=cache_file,
             )
         )
         

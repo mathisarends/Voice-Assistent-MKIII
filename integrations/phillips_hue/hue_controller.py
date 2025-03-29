@@ -1,10 +1,11 @@
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from tools.lights.bridge import HueBridge
-from tools.lights.brightness_controller import BrightnessController
-from tools.lights.group_controller import GroupController
-from tools.lights.scene_controller import SceneController
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.brightness_controller import \
+    BrightnessController
+from integrations.phillips_hue.group_controller import GroupController
+from integrations.phillips_hue.scene_controller import SceneController
 
 
 class HueController:

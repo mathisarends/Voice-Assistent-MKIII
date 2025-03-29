@@ -8,11 +8,11 @@ from typing import Callable, Optional, Tuple
 from singleton_decorator import singleton
 
 from audio.strategy.audio_manager import AudioManager
+from integrations.phillips_hue.animation.sunrise_controller import \
+    SceneBasedSunriseController
+from integrations.phillips_hue.bridge import HueBridge
 from tools.alarm.alarm_config import DEFAULT_GET_UP_SOUND, DEFAULT_WAKE_SOUND
 from tools.alarm.alarm_item import AlarmItem
-from tools.lights.animation.sunrise_controller import \
-    SceneBasedSunriseController
-from tools.lights.bridge import HueBridge
 from util.loggin_mixin import LoggingMixin
 
 

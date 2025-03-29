@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from tools.lights.bridge import HueBridge
+from integrations.phillips_hue.bridge import HueBridge
 
 
 class GroupController:

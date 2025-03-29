@@ -3,7 +3,7 @@ from typing import Literal
 from langchain.tools import tool
 
 from audio.workflow_audio_response_manager import WorkflowAudioResponseManager
-from tools.spotify.spotify_api import SpotifyPlaybackController
+from integrations.spotify.spotify_api import SpotifyPlaybackController
 
 # Konstanten für die Antworten
 # Konstanten für die Antworten

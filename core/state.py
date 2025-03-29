@@ -8,11 +8,11 @@ from typing_extensions import override
 
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
+from integrations.phillips_hue.animation.light_animation import \
+    LightAnimationFactory
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.light_controller import LightController
 from service.service_locator import ServiceLocator
-from tools.lights.animation.light_animation import (AnimationType,
-                                                    LightAnimationFactory)
-from tools.lights.bridge import HueBridge
-from tools.lights.light_controller import LightController
 from util.decorator import non_blocking
 from util.loggin_mixin import LoggingMixin
 

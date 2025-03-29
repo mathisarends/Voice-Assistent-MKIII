@@ -4,10 +4,10 @@ import asyncio
 import math
 from typing import Any, Dict, List, Tuple
 
-from tools.lights.bridge import HueBridge
-from tools.lights.group_controller import GroupController
-from tools.lights.light_controller import LightController
-from tools.lights.scene_controller import SceneController
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.group_controller import GroupController
+from integrations.phillips_hue.light_controller import LightController
+from integrations.phillips_hue.scene_controller import SceneController
 
 
 class SceneBasedSunriseController:

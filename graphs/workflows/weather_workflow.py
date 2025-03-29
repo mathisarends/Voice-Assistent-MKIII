@@ -1,13 +1,14 @@
-from datetime import datetime
 import textwrap
-from typing_extensions import Any, Dict, List, Optional, override
-from graphs.base_graph import BaseGraph
-from langchain_core.messages import HumanMessage, SystemMessage
-from langgraph.graph import StateGraph
-from langchain_google_genai import ChatGoogleGenerativeAI
+from datetime import datetime
 
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import StateGraph
+from typing_extensions import Any, Dict, List, Optional, override
+
+from graphs.base_graph import BaseGraph
+from integrations.python_weather import PythonWeatherClient
 from states.state_definitions import State
-from tools.weather.weather_client import WeatherClient
 from util.loggin_mixin import LoggingMixin
 
 
@@ -21,7 +22,7 @@ class WeatherWorkflow(BaseGraph, LoggingMixin):
     """Ein Workflow für Lichtsteuerung."""
 
     def __init__(self, model_name: Optional[str] = None):
-        self.weather_client = WeatherClient()
+        self.weather_client = PythonWeatherClient()
 
         super().__init__(model_name=model_name)
         self.graph_builder = StateGraph(WeatherWorkflowState)

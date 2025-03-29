@@ -9,8 +9,8 @@ from typing import Any, Dict, List, Optional, Type, cast
 
 from singleton_decorator import singleton
 
-from tools.lights.bridge import HueBridge
-from tools.lights.light_controller import LightController
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.light_controller import LightController
 from util.loggin_mixin import LoggingMixin
 
 
@@ -350,48 +350,3 @@ class ErrorFlashAnimation(LightAnimation):
         except Exception as e:
             self.logger.error(f"Fehler während der Fehler-Blitz-Animation: {e}")
             await self._restore_light_states(states)
-
-
-async def main() -> None:
-    bridge = HueBridge.connect_by_ip()
-    controller = LightController(bridge)
-
-    factory = LightAnimationFactory(controller)
-    wake_anim = typing.cast(WakeFlashAnimation, factory.get_animation(AnimationType.WAKE_FLASH))
-    
-    print("Teste normale execute() Methode (Kompletter Zyklus):")
-    await wake_anim.execute(
-        ["5", "6", "7"],
-        config=WakeFlashConfig(
-            brightness_increase=50,
-            transition_time_up=1,
-            transition_time_down=8,
-            hold_time=0.5
-        )
-    )
-    
-    # Warte zwischen den Demonstrationen
-    await asyncio.sleep(3)
-    
-    print("\nTeste separate start_flash() und stop_flash() Methoden:")
-    print("1. Starte Aufblenden...")
-    await wake_anim.start_flash(
-        ["1", "5", "6", "7"],
-        config=WakeFlashConfig(
-            brightness_increase=70,  # Stärkere Helligkeitserhöhung
-            transition_time_up=2     # Langsamer aufblenden
-        )
-    )
-    
-    # Simuliere einen Zeitraum für die Spracherkennung
-    print("2. Lampen bleiben hell während Spracherkennung...")
-    await asyncio.sleep(4)
-    
-    # Abblenden mit benutzerdefinierter Übergangszeit
-    print("3. Starte Abblenden...")
-    await wake_anim.stop_flash(transition_time=10)  # Langsames Abblenden
-    
-    print("Demo abgeschlossen!")
-
-if __name__ == "__main__":
-    asyncio.run(main())

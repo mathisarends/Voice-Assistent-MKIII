@@ -1,9 +1,10 @@
-from typing import Dict, Tuple, Optional, List
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import ChatPromptTemplate
 import json
+from typing import Dict, List, Optional, Tuple
 
-from tools.google.youtube_client import YouTubeClient
+from langchain.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+from integrations.google.youtube_client import YouTubeClient
 
 
 class YoutubeFinder:

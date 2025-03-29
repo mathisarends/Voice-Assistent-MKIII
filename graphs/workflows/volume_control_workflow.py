@@ -1,6 +1,7 @@
 from typing import Optional
+
 from graphs.base_graph import BaseGraph
-from tools.volume.volume_control_tool import get_volume_tools
+from tools.volume_control_tool import get_volume_tools
 
 
 class VolumeControlWorkflow(BaseGraph):

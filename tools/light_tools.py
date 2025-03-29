@@ -3,8 +3,8 @@ import asyncio
 from langchain.tools import tool
 
 from audio.workflow_audio_response_manager import WorkflowAudioResponseManager
-from tools.lights.bridge import HueBridge
-from tools.lights.hue_controller import HueController
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.hue_controller import HueController
 
 SCENE_NEXT_SUCCESS = "Zur nächsten Lichtszene gewechselt."
 SCENE_PREVIOUS_SUCCESS = "Zur vorherigen Lichtszene gewechselt."

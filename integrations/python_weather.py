@@ -1,14 +1,10 @@
-import asyncio
-from typing import Type, Optional, List
-import aiohttp
-from pydantic import BaseModel, Field
-from langchain.tools import BaseTool
+from typing import List, Optional
+
 import python_weather
 
 FALLBACK_CITY = "Münster"
 
-
-class WeatherClient:
+class PythonWeatherClient:
     def __init__(self, city: Optional[str] = None):
         self.city = city or FALLBACK_CITY
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from tools.lights.bridge import HueBridge
-from tools.lights.group_controller import GroupController
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.group_controller import GroupController
 
 
 class BrightnessController:

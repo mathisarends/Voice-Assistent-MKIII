@@ -1,7 +1,7 @@
 from typing import Optional
 
 from graphs.base_graph import BaseGraph
-from tools.spotify.spotify_tools import get_spotify_tools
+from tools.spotify_tools import get_spotify_tools
 
 
 class SpotifyWorkflow(BaseGraph):

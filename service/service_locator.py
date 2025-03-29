@@ -1,9 +1,9 @@
+from integrations.phillips_hue.bridge import HueBridge
+from integrations.phillips_hue.light_controller import LightController
+from integrations.spotify.spotify_api import SpotifyPlaybackController
 from service.human_speech import AudioTranscriber, SpeechRecorder
 from service.speech_service import SpeechService
 from service.wake_word_listener import WakeWordListener
-from tools.lights.bridge import HueBridge
-from tools.lights.light_controller import LightController
-from tools.spotify.spotify_api import SpotifyPlaybackController
 
 # Hier will ich eigentlich eine config, die es mir auch erlaubt die Lichter, Spotify-Clients etc. zuzugreifen
 # SpotifySound muss weggedrückt werden wenn ein Wakeword erkannt wird oder der Assistent spricht.

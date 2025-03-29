@@ -1,5 +1,6 @@
 import datetime
 from typing import List
+
 from langchain.tools import tool
 
 # Importiere die Alarm-Klasse aus deinem Originalcode
