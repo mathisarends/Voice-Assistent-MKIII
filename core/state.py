@@ -33,7 +33,7 @@ class ConversationStateMachine(LoggingMixin):
         self.should_stop = False
         self.current_state = None
         
-        ServiceLocator.get_instance()
+        ConversationStateMachine.wakeword_listener = ServiceLocator.get_instance().get_wake_word_listener()
         
         ConversationStateMachine._instance = self
 
@@ -43,13 +43,9 @@ class ConversationStateMachine(LoggingMixin):
 
     async def run(self):
         """Startet die Zustandsmaschine"""
-        async with WakeWordListener.create(wakeword=self.wakeword) as wakeword_listener:
-            ConversationStateMachine.wakeword_listener = wakeword_listener
+        self.current_state = WaitingForWakeWordState()
             
-            # Setze den initialen Zustand
-            self.current_state = WaitingForWakeWordState()
-            
-            await self._run_state_machine()
+        await self._run_state_machine()
 
     async def _run_state_machine(self):
         while not self.should_stop:

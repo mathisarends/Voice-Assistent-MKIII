@@ -55,18 +55,6 @@ class WakeWordListener:
         self.cleanup()
         return False
 
-    @classmethod
-    @asynccontextmanager
-    async def create(cls, wakeword="picovoice", sensitivity=0.8):
-        """
-        Erstellt einen WakeWordListener als async context manager.
-        """
-        listener = cls(wakeword=wakeword, sensitivity=sensitivity)
-        try:
-            yield listener
-        finally:
-            listener.cleanup()
-
     def _audio_callback(self, in_data, frame_count, time_info, status):
         """Callback für Audio-Processing"""
         if self.is_listening and not self.should_stop:

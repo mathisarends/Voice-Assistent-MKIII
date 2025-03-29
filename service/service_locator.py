@@ -1,5 +1,6 @@
 from service.human_speech import AudioTranscriber, SpeechRecorder
 from service.speech_service import SpeechService
+from service.wake_word_listener import WakeWordListener
 from tools.lights.bridge import HueBridge
 from tools.lights.light_controller import LightController
 from tools.spotify.spotify_api import SpotifyPlaybackController
@@ -32,6 +33,8 @@ class ServiceLocator:
         
         self.spotify_player = SpotifyPlaybackController()
         
+        self.wake_word_listener = WakeWordListener()
+        
     
     def get_speech_service(self) -> 'SpeechService':
         return self.speech_service
@@ -43,7 +46,10 @@ class ServiceLocator:
         return self.speech_recorder
     
     def get_lighting_controller(self) -> 'LightController':
-        return self.lighting_controller
+        return self.lighting_controller#
+    
+    def get_wake_word_listener(self) -> 'WakeWordListener':
+        return self.wake_word_listener
     
 
 service_locator = ServiceLocator.get_instance()
