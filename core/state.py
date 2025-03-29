@@ -9,7 +9,6 @@ from typing_extensions import override
 from audio.strategy.audio_manager import get_audio_manager
 from graphs.workflow_dispatcher import WorkflowDispatcher
 from service.service_locator import ServiceLocator
-from service.wake_word_listener import WakeWordListener
 from tools.lights.animation.light_animation import (AnimationType,
                                                     LightAnimationFactory)
 from tools.lights.bridge import HueBridge

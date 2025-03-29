@@ -13,15 +13,22 @@ from util.loggin_mixin import LoggingMixin
 class SpotifyClient:
     def __init__(self):
         load_dotenv()
+        
+        cache_folder = os.path.join(os.path.dirname(__file__), ".cache")
+        cache_file = os.path.join(cache_folder, ".spotify_cache")
+        
+        os.makedirs(cache_folder, exist_ok=True)
+        
         self.api = spotipy.Spotify(
             auth_manager=SpotifyOAuth(
                 client_id=os.getenv("SPOTIFY_CLIENT_ID"),
                 client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
                 redirect_uri="http://localhost:8080",
                 scope="user-modify-playback-state user-read-playback-state user-read-currently-playing streaming app-remote-control user-library-read user-library-modify user-read-private user-top-read",
-                # cache_path=".cache"
+                cache_path=cache_file,  # Hier wird der Cache-Pfad gesetzt
             )
         )
+        
         
 def spotify_api_call(func):
     @wraps(func)
@@ -232,3 +239,8 @@ class SpotifyPlaybackController(LoggingMixin):
         self.client.start_playback(device_id=self.active_device_id)
         self.logger.info("▶️ Wiedergabe fortgesetzt")
         return True
+    
+    
+if __name__ == "__main__":
+    spot = SpotifyPlaybackController()
+    spot.play_track("Sticky Drake")

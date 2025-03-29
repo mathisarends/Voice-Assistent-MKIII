@@ -63,7 +63,6 @@ def measure_performance(func: Callable) -> Callable:
         
         return result
     
-    # Entscheide, ob es eine async-Funktion ist
     if hasattr(func, '__code__') and (func.__code__.co_flags & 0x80):
         return async_wrapper
     return sync_wrapper
@@ -80,13 +79,11 @@ def non_blocking(func):
         loop = asyncio.get_running_loop()
 
         if inspect.iscoroutinefunction(func):
-            # async-Funktion: führe sie im Eventloop in einem separaten Thread aus
             return await loop.run_in_executor(
                 _thread_pool,
                 lambda: asyncio.run(func(self, *args, **kwargs))
             )
         else:
-            # normale Funktion: direkt in Executor ausführen
             return await loop.run_in_executor(
                 _thread_pool,
                 functools.partial(func, self, *args, **kwargs)
